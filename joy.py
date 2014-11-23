@@ -125,7 +125,7 @@ DEFINITIONS = '''
 
   average == [sum 1.0 *] [size] cleave / ;
 
-  gcd == [0 >] [dup rollup rem] while pop ;
+  gcd == [0 >] [dup rollup modulus] while pop ;
 
   least_fraction == dup [gcd] infra [/] concat map ;
 
@@ -438,7 +438,7 @@ ALIASES = (
   ('add', ['+']),
   ('mul', ['*']),
   ('div', ['/']),
-  ('mod', ['%', 'rem']),
+  ('mod', ['%', 'rem', 'remainder', 'modulus']),
   ('eq', ['=']),
   ('ge', ['>=']),
   ('gt', ['>']),
