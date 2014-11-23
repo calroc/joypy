@@ -1129,7 +1129,7 @@ class mousebindingsmixin:
 
       else:
         #left-right-interclick - copy selection to stack
-        self.dothis = self.copyfrom
+        self.dothis = self.run_selection
 
     elif self.B2_DOWN :
       #middle-right-interclick - Pop/Cut from TOS to insertion cursor
@@ -1422,12 +1422,16 @@ class TextViewerWidget(Text, mousebindingsmixin):
     if self.command:
 
       #Interpret the current command.
-      try:
-        self.world.interpret(self.command)
-      except SystemExit:
-        raise
-      except:
-        self.popupTB(format_exc().rstrip())
+      self.run_command(self.command)
+
+  def run_command(self, command):
+    '''Given a string run it on the stack, report errors.'''
+    try:
+      self.world.interpret(self.command)
+    except SystemExit:
+      raise
+    except:
+      self.popupTB(format_exc().rstrip())
 
   def unset_command(self):
     '''Remove any command highlighting.'''
@@ -1509,8 +1513,8 @@ class TextViewerWidget(Text, mousebindingsmixin):
     #Key pasting should still work fine, allowing one to select a piece
     #of text and paste to it, replacing the selection.
 
-  def copyfrom(self, event):
-    '''copy from selection to stack and system clipboard.'''
+  def run_selection(self, event):
+    '''Run the current selection if any on the stack.'''
 
     #Get the selection.
     select_indices = self.tag_ranges(SEL)
@@ -1519,20 +1523,12 @@ class TextViewerWidget(Text, mousebindingsmixin):
     if select_indices:
 
       #Get the text of the selection.
-      s = self.get(select_indices[0], select_indices[1])
+      selection = self.get(select_indices[0], select_indices[1])
 
       #Remove the SEL tag from the whole Text.
       self.tag_remove(SEL, 1.0, END)
 
-      #Put the selection text on the system clipboard.
-      self.clipboard_clear()
-      self.clipboard_append(s)
-
-##            #And put it on the stack.
-##            self.world.push(s)
-
-      # No, let's try running it instead.
-      self.world.interpret(s)
+      self.run_command(selection)
 
   def pastecut(self, event):
     '''Cut the TOS item to the mouse.'''
