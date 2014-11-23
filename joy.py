@@ -258,7 +258,7 @@ def _scan_str(scanner, token): return token[1:-1].replace('\\"', '"')
 scanner = Scanner([
   (r'-?\d+\.\d*', _scan_float),
   (r'-?\d+', _scan_int),
-  (r'[\w!@$%^&*()_+<>?|\/;:`~,.=-]+', _scan_identifier),
+  (r'[•\w!@$%^&*()_+<>?|\/;:`~,.=-]+', _scan_identifier),
   (r'\[|\]', _scan_bracket),
   (r'"(?:[^"\\]|\\.)*"', _scan_str),
   (r'\s+', None),
@@ -453,6 +453,7 @@ ALIASES = (
   ('pred', ['--']),
   ('rolldown', ['roll<']),
   ('rollup', ['roll>']),
+  ('id', ['•']),
 #  ('', ['']),
   )
 
