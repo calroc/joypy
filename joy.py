@@ -333,10 +333,15 @@ def stack_to_string(expression):
   '''
   if not isinstance(expression, tuple):
     return repr(expression)
-  if not expression: # shortcut
-    return '[]'
-  strs = map(stack_to_string, iter_stack(expression))
-  return '[%s]' % ' '.join(strs)
+  return '[%s]' % strstack(expression)
+
+
+def strstack(stack):
+  if not isinstance(stack, tuple):
+    return repr(stack)
+  if not stack: # shortcut
+    return ''
+  return ' '.join(map(stack_to_string, iter_stack(stack)))
 
 
 '''
@@ -555,9 +560,10 @@ def zip_((tos, (second, stack))):
   Replace the two lists on the top of the stack with a list of the pairs
   from each list.  The smallest list sets the length of the result list.
   '''
-  accumulator = []
-  for a, b in zip(iter_stack(tos), iter_stack(second)):
-    accumulator.append((a, (b, ())))
+  accumulator = [
+    (a, (b, ()))
+    for a, b in zip(iter_stack(tos), iter_stack(second))
+    ]
   return list_to_stack(accumulator), stack
 
 
@@ -905,7 +911,7 @@ def add_definition(d):
         print '#', name, 'done.'
 
   f.__name__ = name
-  f.__doc__ = stack_to_string(body)[1:-1]
+  f.__doc__ = strstack(body)
   f.__body__ = body
   return note(f)
 
@@ -933,7 +939,7 @@ def repl(stack=()):
     print_words(None)
     while 'HALT' not in stack:
       print
-      print '->', stack_to_string(stack)[1:-1]
+      print '->', strstack(stack)
       print
       try:
         text = raw_input('joy? ')
@@ -952,8 +958,8 @@ def repl(stack=()):
 def _print_trace(stack, expression):
   stack = list(iter_stack(stack))
   stack.reverse()
-  print stack_to_string(list_to_stack(stack))[1:-1],
-  print u'\u2022', stack_to_string(expression)[1:-1]
+  print strstack(list_to_stack(stack)),
+  print u'\u2022', strstack(expression)
 
 
 '''
@@ -1014,12 +1020,12 @@ class WorldWrapper:
     stack_out_index = self.text_widget.search('<' 'STACK', 1.0)
     if stack_out_index:
       self.text_widget.see(stack_out_index)
-      s = stack_to_string(self.stack)[1:-1]
-      self.text_widget.insert(stack_out_index, s + '\n')
+      s = strstack(self.stack) + '\n'
+      self.text_widget.insert(stack_out_index, s)
 
 
 #Do-nothing event handler.
-nothing = lambda event : None
+nothing = lambda event: None
 
 
 class mousebindingsmixin:
@@ -1427,7 +1433,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
   def run_command(self, command):
     '''Given a string run it on the stack, report errors.'''
     try:
-      self.world.interpret(self.command)
+      self.world.interpret(command)
     except SystemExit:
       raise
     except:
@@ -1655,10 +1661,7 @@ def get_font(family='EB Garamond', size=18):
 
 
 def own_source():
-  module = modules[__name__]
-##  import joy
-##  module = joy
-  return getsource(module)
+  return getsource(modules[__name__])
 
 
 if __name__ == "__main__":
