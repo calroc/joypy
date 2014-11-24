@@ -6,6 +6,13 @@
 A dialect of Joy in Python.
 
 
+Joy is a programming language created by Manfred von Thun that is easy to
+use and understand and has many other nice properties.  This Python script
+is an interpreter for a dialect of Joy that attempts to stay very close
+to the spirit of Joy but does not precisely match the behaviour of the
+original version(s) written in C.  A Tkinter GUI is provided too.
+
+
     Copyright © 2014 Simon Forman
 
     This file is joy.py
@@ -24,22 +31,10 @@ A dialect of Joy in Python.
     along with joy.py.  If not see <http://www.gnu.org/licenses/>.
 
 
-Quick-start, right-click on the numbers and words here
-(if you get a gray error window just close it):
-
-123 500 add mul pop
-
-<STACK
-
-
-Put two numbers on the stack and add them together.
-
-
-
-
 Table of Contents
 
   Introduction
+    GUI Quick-start
 
   Part I - Joy
     Manfred von Thun, Appreciation
@@ -89,6 +84,19 @@ Table of Contents
 
 
 Introduction
+
+  Quick-start for the GUI ('joy.py --gui'):
+
+  Right-click on the numbers and words here to put two numbers on the stack
+  and add them together.  (If you get a gray error window just close it.)
+
+  123 500 add
+
+<STACK
+
+
+--------------------------------------------------
+
 
 Part I - Joy
   Manfred von Thun, Appreciation
