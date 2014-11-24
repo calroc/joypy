@@ -122,6 +122,7 @@ DEFINITIONS = '''
 
   run == [] swap infra ;
   size == [1] map sum ;
+  size == 0 swap [pop ++] step ;
 
   average == [sum 1.0 *] [size] cleave / ;
 
@@ -145,7 +146,7 @@ from time import time
 from inspect import getmembers, isbuiltin, getdoc, getsource
 from traceback import print_exc, format_exc
 from functools import wraps
-from re import Scanner, compile as regular_expression 
+from re import Scanner, compile as regular_expression
 from Tkinter import (Text, Toplevel, TclError, END,
                      INSERT, SEL, DISABLED, NORMAL, BOTH)
 from tkFont import families, Font
@@ -652,7 +653,7 @@ def simple_manual(stack):
 
 @note
 def help_((quote, stack)):
-  '''Accepts a quoted word on the top os the stack and prints it's docs.'''
+  '''Accepts a quoted word on the top os the stack and prints its docs.'''
   word = quote[0]
   print getdoc(word)
   return stack
@@ -902,9 +903,12 @@ def add_definition(d):
     return
 
   body = parse(tokenize(body_text))
+  strbody = strstack(body)
 
   def f(stack):
     global TRACE
+    if TRACE:
+      print '#', name, '==', strbody
     try:
       return joy(body, stack)
     finally:
@@ -912,7 +916,7 @@ def add_definition(d):
         print '#', name, 'done.'
 
   f.__name__ = name
-  f.__doc__ = strstack(body)
+  f.__doc__ = strbody
   f.__body__ = body
   return note(f)
 
