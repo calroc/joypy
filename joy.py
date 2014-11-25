@@ -163,6 +163,7 @@ import operator
 
 
 TRACE = False
+COMBINATOR_STACK = []
 
 
 '''
@@ -739,6 +740,25 @@ for name, aliases in ALIASES:
 '''
 
 
+def combo(c):
+  f = c.f
+  @wraps(f)
+  def cc(stack):
+    global TRACE, COMBINATOR_STACK
+    COMBINATOR_STACK.append(c.name)
+##    if TRACE:
+##      print '# COMB', ' -> '.join(COMBINATOR_STACK)
+    try:
+      return f(stack)
+    finally:
+      COMBINATOR_STACK.pop()
+      if TRACE:
+        print '#', c.name, 'done.'
+  c.f = cc
+  return c
+
+
+@combo
 @note
 def map_((quote, (aggregate, stack))):
   '''
@@ -752,12 +772,14 @@ def map_((quote, (aggregate, stack))):
   return results, stack
 
 
+@combo
 @note
 def i((quote, stack)):
   '''Execute the quoted program on TOS on the rest of the stack.'''
   return joy(quote, stack)
 
 
+@combo
 @note
 def x((quote, stack)):
   '''
@@ -767,6 +789,7 @@ def x((quote, stack)):
   return joy(quote, (quote, stack))
 
 
+@combo
 @note
 def infra((quote, (aggregate, stack))):
   '''
@@ -776,6 +799,7 @@ def infra((quote, (aggregate, stack))):
   return joy(quote, aggregate), stack
 
 
+@combo
 @note
 def b((Q, (P, stack))):
   '''
@@ -785,6 +809,7 @@ def b((Q, (P, stack))):
   return joy(Q, joy(P, stack))
 
 
+@combo
 @note
 def cleave((Q, (P, (x, stack)))):
   '''
@@ -799,6 +824,7 @@ def cleave((Q, (P, (x, stack)))):
   return q, (p, stack)
 
 
+@combo
 @note
 def ifte((else_, (then, (if_, stack)))):
   '''[if] [then] [else] ifte'''
@@ -810,6 +836,7 @@ def ifte((else_, (then, (if_, stack)))):
   return result, stack
 
 
+@combo
 @note
 def dip((quote, (x, stack))):
   '''
@@ -819,18 +846,21 @@ def dip((quote, (x, stack))):
   return x, joy(quote, stack)
 
 
+@combo
 @note
 def dipd((quote, (x, (y, stack)))):
   '''Like dip but expects two items.'''
   return x, (y, joy(quote, stack))
 
 
+@combo
 @note
 def dipdd((quote, (x, (y, (z, stack))))):
   '''Like dip but expects three items.'''
   return x, (y, (z, joy(quote, stack)))
 
 
+@combo
 @note
 def app1((quote, (x, stack))):
   '''
@@ -842,6 +872,7 @@ def app1((quote, (x, stack))):
   return result[0], stack
 
 
+@combo
 @note
 def app2((quote, (x, (y, stack)))):
   '''Like app1 with two items.'''
@@ -850,6 +881,7 @@ def app2((quote, (x, (y, stack)))):
   return resultx, (resulty, stack)
 
 
+@combo
 @note
 def app3((quote, (x, (y, (z, stack))))):
   '''Like app1 with three items.'''
@@ -859,6 +891,7 @@ def app3((quote, (x, (y, (z, stack))))):
   return resultx, (resulty, (resultz, stack))
 
 
+@combo
 @note
 def step((quote, (aggregate, stack))):
   '''
@@ -871,6 +904,7 @@ def step((quote, (aggregate, stack))):
   return stack
 
 
+@combo
 @note
 def while_((body, (if_, stack))):
   '''[if] [body] while'''
@@ -879,6 +913,7 @@ def while_((body, (if_, stack))):
   return stack
 
 
+@combo
 @note
 def nullary((quote, stack)):
   '''
@@ -971,7 +1006,7 @@ def repl(stack=()):
 def _print_trace(stack, expression):
   stack = list(iter_stack(stack))
   stack.reverse()
-  print strstack(list_to_stack(stack)),
+  print ' '.join(COMBINATOR_STACK), strstack(list_to_stack(stack)),
   print u'\u2022', strstack(expression)
 
 
