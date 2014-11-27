@@ -128,6 +128,7 @@ DEFINITIONS = '''
 
   enstacken == stack [clear] dip ;
 
+  pam == [i] map ;
   run == [] swap infra ;
   size == [1] map sum ;
   size == 0 swap [pop ++] step ;
@@ -137,6 +138,18 @@ DEFINITIONS = '''
   gcd == [0 >] [dup rollup modulus] while pop ;
 
   least_fraction == dup [gcd] infra [/] concat map ;
+
+
+  divisor == popop 2 * ;
+  minusb == pop neg ;
+  radical == swap dup * rollup * 4 * - sqrt ;
+  root1 == + swap / ;
+  root2 == - swap / ;
+
+
+  quadratic == 
+    [[[divisor] [minusb] [radical]] pam] ternary i
+    [[[root1] [root2]] pam] ternary ;
 
 
 ''' # End of DEFINITIONS
