@@ -903,6 +903,27 @@ def nullary((quote, stack)):
   return result[0], stack
 
 
+@note
+def unary((quote, stack)):
+  _, return_stack = stack
+  result = joy(quote, stack)
+  return result[0], return_stack
+
+
+@note
+def binary((quote, stack)):
+  _, (_, return_stack) = stack
+  result = joy(quote, stack)
+  return result[0], return_stack
+
+
+@note
+def ternary((quote, stack)):
+  _, (_, (_, return_stack)) = stack
+  result = joy(quote, stack)
+  return result[0], return_stack
+
+
 '''
 
 
