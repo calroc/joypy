@@ -147,7 +147,7 @@ DEFINITIONS = '''
   root2 == - swap / ;
 
 
-  quadratic == 
+  quadratic ==
     [[[divisor] [minusb] [radical]] pam] ternary i
     [[[root1] [root2]] pam] ternary ;
 
@@ -172,7 +172,7 @@ from Tkinter import (Text, Toplevel, TclError, END,
                      INSERT, SEL, DISABLED, NORMAL, BOTH)
 from tkFont import families, Font
 import os
-import operator
+import operator, math
 
 
 TRACE = False
@@ -721,19 +721,20 @@ def is_binary_math_op(op):
 
 _non = [] # TODO: look through these later and see about adding them..
 
-for name, function in getmembers(operator, isbuiltin):
+for module in (operator, math):
+  for name, function in getmembers(module, isbuiltin):
 
-  if name.startswith('_') or name.startswith('i'):
-    continue
+    if name.startswith('_') or name.startswith('i'):
+      continue
 
-  if is_unary_math_op(function):
-    note(joyful_1_arg_op(function))
+    if is_unary_math_op(function):
+      note(joyful_1_arg_op(function))
 
-  elif is_binary_math_op(function):
-    note(joyful_2_arg_op(function))
+    elif is_binary_math_op(function):
+      note(joyful_2_arg_op(function))
 
-  else:
-    _non.append(function)
+    else:
+      _non.append(function)
 
 
 # Now that all the functions are in the dict, add the aliases.
