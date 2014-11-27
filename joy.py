@@ -99,7 +99,9 @@ Introduction
 
 
 Part I - Joy
+
   Manfred von Thun, Appreciation
+
   Simplicity
 
 
@@ -721,7 +723,7 @@ def is_binary_math_op(op):
 
 _non = [] # TODO: look through these later and see about adding them..
 
-for module in (operator, math):
+for module in (operator,): # math):
   for name, function in getmembers(module, isbuiltin):
 
     if name.startswith('_') or name.startswith('i'):
