@@ -129,6 +129,7 @@ DEFINITIONS = '''
   unquoted == [i] dip ;
 
   enstacken == stack [clear] dip ;
+  disenstacken == [truth] [uncons] while pop ;
 
   pam == [i] map ;
   run == [] swap infra ;
