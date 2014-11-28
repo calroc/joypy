@@ -154,6 +154,13 @@ DEFINITIONS = '''
     [[[divisor] [minusb] [radical]] pam] ternary i
     [[[root1] [root2]] pam] ternary ;
 
+  *fraction ==
+    [uncons] dip uncons
+    [swap] dip concat
+    [*] infra [*] dip cons ;
+
+  *fraction0 == concat [[swap] dip * [*] dip] infra ;
+
 
 ''' # End of DEFINITIONS
 
