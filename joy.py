@@ -240,7 +240,8 @@ DEFINITIONS = '''
   reverse == [] swap shunt ;
   flatten == [] swap [concat] step ;
 
-    quoted == [[] cons] dip ;
+      unit == [] cons ;
+    quoted == [unit] dip ;
   unquoted == [i] dip ;
 
   enstacken == stack [clear] dip ;
@@ -264,10 +265,10 @@ DEFINITIONS = '''
   root1 == + swap / ;
   root2 == - swap / ;
 
-
   quadratic ==
     [[[divisor] [minusb] [radical]] pam] ternary i
     [[[root1] [root2]] pam] ternary ;
+
 
   *fraction ==
     [uncons] dip uncons
@@ -275,6 +276,10 @@ DEFINITIONS = '''
     [*] infra [*] dip cons ;
 
   *fraction0 == concat [[swap] dip * [*] dip] infra ;
+
+
+   down_to_zero == [0 >] [dup --] while ;
+  range_to_zero == unit [down_to_zero] infra ;
 
 
 ''' # End of DEFINITIONS
@@ -1729,12 +1734,8 @@ class TextViewerWidget(Text, mousebindingsmixin):
 
   def cancel(self, event):
     '''Cancel whatever we're doing.'''
-    
-    #Remove any old highlighting.
-    self.unset_command()
 
-    #Unset our command variable
-    self.command = ''
+    self.leave(None)
 
     #Remove the SEL tag
     self.tag_remove(SEL, 1.0, END)
@@ -1815,6 +1816,14 @@ class TextViewerWidget(Text, mousebindingsmixin):
     T.see(END)
 
 
+def make_gui():
+  t = TextViewerWidget(WorldWrapper())
+  t['font'] = get_font()
+  t._root().title('Joy')
+  t.pack(expand=True, fill=BOTH)
+  return t
+
+
 class FileFaker(object):
   def __init__(self, T):
     self.T = T
@@ -1843,16 +1852,9 @@ def own_source():
 if __name__ == "__main__":
   import sys
   if '--gui' in sys.argv:
-    t = TextViewerWidget(WorldWrapper())
-    t['font'] = get_font()
-    t._root().title('Joy')
+    t = make_gui()
     sys.stdout = FileFaker(t)
-
     print own_source()
-    print_words(None)
-    print '\n\n1 2 3 4 5\n\n'
-
-    t.pack(expand=True, fill=BOTH)
     t.mainloop()
 
   else:
