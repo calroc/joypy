@@ -1174,7 +1174,16 @@ class WorldWrapper:
     self.print_stack()
 
   def do_opendoc(self, name):
-    self.do_lookup(name)
+    if isNumerical(name):
+      print 'The number', name
+    else:
+      try:
+        word = FUNCTIONS[name]
+      except KeyError:
+        print repr(name), '???'
+      else:
+        print getdoc(word)
+    self.text_widget.see(END)
 
   def pop(self):
     if self.stack:
