@@ -10,7 +10,7 @@ Joy is a programming language created by Manfred von Thun that is easy to
 use and understand and has many other nice properties.  This Python script
 is an interpreter for a dialect of Joy that attempts to stay very close
 to the spirit of Joy but does not precisely match the behaviour of the
-original version(s) written in C.  A Tkinter GUI is provided too.
+original version(s) written in C.  A Tkinter GUI is provided as well.
 
 
     Copyright © 2014 Simon Forman
@@ -280,6 +280,8 @@ DEFINITIONS = '''
 
    down_to_zero == [0 >] [dup --] while ;
   range_to_zero == unit [down_to_zero] infra ;
+
+  times == [-- dip] cons [swap] infra [0 >] swap while pop ;
 
 
 ''' # End of DEFINITIONS
@@ -807,7 +809,7 @@ def simple_manual(stack):
 
 @note
 def help_((quote, stack)):
-  '''Accepts a quoted word on the top os the stack and prints its docs.'''
+  '''Accepts a quoted word on the top of the stack and prints its docs.'''
   word = quote[0]
   print getdoc(word)
   return stack
