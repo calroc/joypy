@@ -103,10 +103,11 @@ Table of Contents
 § Introduction
 
 I don't recall exactly how or when I first heard of the Joy programming
-language, or even what it was that recently prompted me to investigate it
-and write this interpreter.  I am glad it happened though because as I
-study Joy I find that it is very aptly named.  It is clear, concise, and
-ameniable to advanced techniques for constructing bug-free software.
+language, or even what it was that recently prompted me to investigate
+it and write this interpreter.  I am glad it happened though because as
+I study Joy I find that it is very aptly named.  It is clear, concise,
+and ameniable to advanced techniques for constructing bug-free
+software.
 
 Backus' Turing award paper - Functional programming - Notation for
 mathematical programming
@@ -120,70 +121,70 @@ state - The GUI
 
 Part I - Joy
 
-  Developed by Manfred von Thun, don't know much about him, not much on
-  the web about Joy and von Thun (Von Thun?) Several other people have
-  played with it.  Other languages (Factor, Cat, Kont, etc?) I wish I had
-  known of it a decade ago when it was the subject of active work.
+Developed by Manfred von Thun, don't know much about him, not much on
+the web about Joy and von Thun (Von Thun?) Several other people have
+played with it.  Other languages (Factor, Cat, Kont, etc?) I wish I had
+known of it a decade ago when it was the subject of active work.
 
-  Stack based - literals (as functions) - functions - combinators -
-  Refactoring and making new definitions - traces and comparing
-  performance - metaprogramming as programming, even the lowly integer
-  range function can be expressed in two phases: building a specialized
-  program and then executing it with a combinator - ?Partial evaluation?
-  - ?memoized dynamic dependency graphs? - algebra
+Stack based - literals (as functions) - functions - combinators -
+Refactoring and making new definitions - traces and comparing
+performance - metaprogramming as programming, even the lowly integer
+range function can be expressed in two phases: building a specialized
+program and then executing it with a combinator - ?Partial evaluation?
+- ?memoized dynamic dependency graphs? - algebra
 
-  Because it has desirable properties (concise, highly factored) the
-  programming process changes, the ratio of designing to writing code
-  shifts in favor of design.  The documentation becomes extensive while
-  the code shrinks to stable bodies of small well-factored incantations
-  that are highly expressive, much like mathematical papers consist of
-  large bodies of exposition interlaced with mathematical formula that
-  concisely and precisely express the meaning of the text.
+Because it has desirable properties (concise, highly factored) the
+programming process changes, the ratio of designing to writing code
+shifts in favor of design.  The documentation becomes extensive while
+the code shrinks to stable bodies of small well-factored incantations
+that are highly expressive, much like mathematical papers consist of
+large bodies of exposition interlaced with mathematical formula that
+concisely and precisely express the meaning of the text.
 
-  The time and attention of the programmer shifts from thinking about the
-  language to thinking in the language, and the development process feels
-  more like deriving mathematical truths than like writing ad-hoc
-  solitions.
+The time and attention of the programmer shifts from thinking about the
+language to thinking in the language, and the development process feels
+more like deriving mathematical truths than like writing ad-hoc
+solitions.
 
-  I hope that this script is useful in the sense that it provides an
-  additional joy interpreter (the binary in the archive from La Trobe
-  seems to run just fine on my modern Linux machine!)  But I also hope
-  that you can read and understand the Python code if you want to and
-  play with the implementation itself.
+I hope that this script is useful in the sense that it provides an
+additional joy interpreter (the binary in the archive from La Trobe
+seems to run just fine on my modern Linux machine!)  But I also hope
+that you can read and understand the Python code if you want to and
+play with the implementation itself.
 
-  The best source (no pun intended) for learning about Joy is the
-  information made available at the website of La Trobe University (see
-  the references section at the end of this script for the URL) which
-  contains source code for the original C interpreter, Joy language source
-  code for various functions, and a great deal of fascinating material
-  mostly written by Von Thun on Joy and its deeper facets as well as how
-  to program in it and several interesting aspects.  It's quite a
-  treasure trove.
+The best source (no pun intended) for learning about Joy is the
+information made available at the website of La Trobe University (see
+the references section at the end of this script for the URL) which
+contains source code for the original C interpreter, Joy language source
+code for various functions, and a great deal of fascinating material
+mostly written by Von Thun on Joy and its deeper facets as well as how
+to program in it and several interesting aspects.  It's quite a
+treasure trove.
 
 § Basics of Joy
 
-  Joy is stack-based.  There is a main stack that holds data items:
-  numbers, strings, functions, and sequences which hold data items
-  themselves.  All functions are considered to be unary, accepting a
-  stack and returning a stack (including technically number, string, and
-  sequence literals which are considered functions that return stacks
-  with their value on the top.)
+Joy is stack-based.  There is a main stack that holds data items:
+numbers, strings, functions, and sequences which hold data items
+themselves.  All functions are considered to be unary, accepting a
+stack and returning a stack (including technically number, string, and
+sequence literals which are considered functions that return stacks
+with their value on the top.)
 
-  A Joy expression is just a sequence of items.  The evaluation proceeds
-  by putting all literals onto the main stack and executing functions as
-  they are encountered, passing them the current main stack and replacing
-  the main stack with the result returned.
+A Joy expression is just a sequence of items.  The evaluation proceeds
+by putting all literals onto the main stack and executing functions as
+they are encountered, passing them the current main stack and replacing
+the main stack with the result returned.
 
-  The main loop is very simple as most of the action happens through what
-  are called "Combinators", which accept sequences on the stack and run
-  them (using the joy() function) in various ways.  These combinators
-  factor specific patterns that provide the effect of control-flow in
-  other languages (such as ifte which is like if..then..else..) and
-  strange and wonderful effects (such as cleave which is a simple
-  concurrency combinator.)
+The main loop is very simple as most of the action happens through what
+are called "Combinators", which accept sequences on the stack and run
+them (using the joy() function) in various ways.  These combinators
+factor specific patterns that provide the effect of control-flow in
+other languages (such as ifte which is like if..then..else..) and
+strange and wonderful effects (such as cleave which is a simple
+concurrency combinator.)
 
-  **Mention that sequences intended as programs are called "quoted
-  programs".
+**Mention that sequences intended as programs are called "quoted
+programs".
 
 § Literals and Simple Functions
 
@@ -226,22 +227,22 @@ Part I - Joy
 DEFINITIONS = '''
 
 
-    rest == uncons popd ;
-   first == uncons pop ;
+  rest == uncons popd ;
+  first == uncons pop ;
   second == rest first ;
-   third == rest rest first ;
+  third == rest rest first ;
 
-      sum == 0 swap [+] step ;
+  sum == 0 swap [+] step ;
   product == 1 swap [*] step ;
 
-    swons == swap cons ;
+  swons == swap cons ;
   swoncat == swap concat ;
-    shunt == [swons] step ;
+  shunt == [swons] step ;
   reverse == [] swap shunt ;
   flatten == [] swap [concat] step ;
 
-      unit == [] cons ;
-    quoted == [unit] dip ;
+  unit == [] cons ;
+  quoted == [unit] dip ;
   unquoted == [i] dip ;
 
   enstacken == stack [clear] dip ;
@@ -278,7 +279,7 @@ DEFINITIONS = '''
   *fraction0 == concat [[swap] dip * [*] dip] infra ;
 
 
-   down_to_zero == [0 >] [dup --] while ;
+  down_to_zero == [0 >] [dup --] while ;
   range_to_zero == unit [down_to_zero] infra ;
 
   times == [-- dip] cons [swap] infra [0 >] swap while pop ;
@@ -1856,7 +1857,10 @@ if __name__ == "__main__":
   if '--gui' in sys.argv:
     t = make_gui()
     sys.stdout = FileFaker(t)
-    print own_source()
+    print_words(None)
+    print
+    print '<STACK'
+    # print own_source()
     t.mainloop()
 
   else:
