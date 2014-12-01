@@ -280,9 +280,9 @@ Part II - This Implementation
 from sys import stderr, modules
 from time import time
 from inspect import getmembers, isbuiltin, getdoc, getsource
-from traceback import print_exc, format_exc
+from traceback import print_exc
 from functools import wraps
-from re import Scanner, compile as regular_expression
+from re import Scanner
 import os
 import operator, math
 

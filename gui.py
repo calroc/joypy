@@ -35,12 +35,22 @@ The GUI
 
 
 '''
-from Tkinter import (Text, Toplevel, TclError, END,
-                     INSERT, SEL, DISABLED, NORMAL, BOTH)
+from re import compile as regular_expression
+from traceback import format_exc
+from inspect import getdoc
+from Tkinter import (
+  Text,
+  Toplevel,
+  TclError,
+  END,
+  INSERT,
+  SEL,
+  DISABLED,
+  NORMAL,
+  BOTH,
+  )
 from tkFont import families, Font
-
-
-'''
+from joy import run, strstack, FUNCTIONS
 
 
 class WorldWrapper:
@@ -744,6 +754,7 @@ def own_source():
 
 if __name__ == "__main__":
   import sys
+  from joy import print_words
   t = make_gui()
   sys.stdout = FileFaker(t)
   print_words(None)
