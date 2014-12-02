@@ -6,11 +6,17 @@
 A dialect of Joy in Python.
 
 
+--------------------------------------------------
+
+
 Joy is a programming language created by Manfred von Thun that is easy to
 use and understand and has many other nice properties.  This Python script
 is an interpreter for a dialect of Joy that attempts to stay very close
 to the spirit of Joy but does not precisely match the behaviour of the
 original version(s) written in C.  A Tkinter GUI is provided as well.
+
+
+--------------------------------------------------
 
 
     Copyright © 2014 Simon Forman
@@ -29,6 +35,9 @@ original version(s) written in C.  A Tkinter GUI is provided as well.
 
     You should have received a copy of the GNU General Public License
     along with joy.py.  If not see <http://www.gnu.org/licenses/>.
+
+
+--------------------------------------------------
 
 
 Table of Contents
@@ -330,7 +339,8 @@ def joy(expression, stack):
 '''
 
 
-Converting text to a joy expression.
+§ Converting text to a joy expression.
+
   parse()
   tokenize()
   convert()
@@ -520,7 +530,8 @@ two separate things.  The two argspecs are not equivalent.
 With stacks out of the way let's talk about functions.
 
 
-Functions
+§ Functions
+
   stack → stack
   note() decorator
   define several functions
@@ -861,8 +872,9 @@ for name, aliases in ALIASES:
 '''
 
 
-  Combinators
-    functions that call joy()
+§ Combinators
+
+  functions that call joy()
 
 
 '''
