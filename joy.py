@@ -239,6 +239,19 @@ import os
 import operator, math
 
 
+'''
+
+Machinery for tracing the execution of an expression.
+
+You can ignore this for now.  It's not central to the Joy language and
+it more properly should appear lower down in this script, however it is
+used as a decorator for the joy() function and therefore must be in scope
+when that function is declared (immediately below.)
+
+
+'''
+
+
 TRACE = False
 
 
@@ -250,11 +263,22 @@ class TraceWrapper(object):
   some expression, and it can be useful for exploring and re-running.
 
   Note that the frame attribute is accumulating the actual stack and
-  expression tuples not copies or records.
+  expression tuples not copies or records.  You can pass these to joy()
+  to rerun that expression on that stack.
+
+  In order to allow the joy() function to call the _print_trace() method
+  we temporarily replace the global _print_trace() function on each call.
+  This is pretty clunky, for one thing it stacks up a chain of references
+  from each __call__() Python stack frame to the previous value of the
+  global name "_print_trace" as it pointlessly keeps replacing it after
+  the first call.  Due to the try..finally.. clauses this should always
+  unwind properly even in the event of exceptions being raised, and so
+  the "toplevel" function should be restored no matter what.  Hope so.
+  Not worth improving at the moment.
   '''
 
-  def __init__(self, J):
-    self.joy = J
+  def __init__(self, joy):
+    self.joy = joy
     self.reset()
 
   def reset(self):
@@ -263,7 +287,7 @@ class TraceWrapper(object):
 
   def __call__(self, expression, stack):
     global _print_trace
-    _print_trace, pt = self._print_trace, _print_trace
+    _print_trace, pt = self.add_trace, _print_trace
     self._start_call()
     try:
       return self.joy(expression, stack)
@@ -271,8 +295,11 @@ class TraceWrapper(object):
       _print_trace = pt
       self._end_call()
 
-  def _print_trace(self, stack, expression):
+  def add_trace(self, stack, expression):
     self.frame.append((stack, expression))
+
+  def add_message(self, message):
+    self.frame.append('# ' + message)
 
   def _start_call(self):
     self.stack.append(self.frame)
@@ -281,10 +308,6 @@ class TraceWrapper(object):
 
   def _end_call(self):
     self.frame = self.stack.pop()
-    self.frame[-1] = self.frame[-1]
-
-  def add_message(self, message):
-    self.frame.append('# ' + message)
 
   def show_trace(self, f=None, indent=0):
     if f is None:
@@ -335,6 +358,9 @@ def joy(expression, stack):
       stack = term(stack)
     else:
       stack = term, stack
+
+  if TRACE:
+    _print_trace(stack, expression)
 
   return stack
 
