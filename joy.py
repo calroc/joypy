@@ -255,7 +255,7 @@ when that function is declared (immediately below.)
 TRACE = False
 
 
-class TraceWrapper(object):
+class Tracer(object):
   '''
   Wrap the joy() function in an object that keeps track of the execution
   trace of the interpreter.  This trace datastructure contains each stack
@@ -265,16 +265,6 @@ class TraceWrapper(object):
   Note that the frame attribute is accumulating the actual stack and
   expression tuples not copies or records.  You can pass these to joy()
   to rerun that expression on that stack.
-
-  In order to allow the joy() function to call the _print_trace() method
-  we temporarily replace the global _print_trace() function on each call.
-  This is pretty clunky, for one thing it stacks up a chain of references
-  from each __call__() Python stack frame to the previous value of the
-  global name "_print_trace" as it pointlessly keeps replacing it after
-  the first call.  Due to the try..finally.. clauses this should always
-  unwind properly even in the event of exceptions being raised, and so
-  the "toplevel" function should be restored no matter what.  Hope so.
-  Not worth improving at the moment.
   '''
 
   def __init__(self, joy):
@@ -286,13 +276,10 @@ class TraceWrapper(object):
     self.stack = []
 
   def __call__(self, expression, stack):
-    global _print_trace
-    _print_trace, pt = self.add_trace, _print_trace
     self._start_call()
     try:
       return self.joy(expression, stack)
     finally:
-      _print_trace = pt
       self._end_call()
 
   def add_trace(self, stack, expression):
@@ -316,11 +303,17 @@ class TraceWrapper(object):
       if isinstance(n, tuple):
         s, e = n
         print ' ' * indent,
-        _print_trace(s, e)
+        self._print_trace(s, e)
       elif isinstance(n, str):
         print '-' * (indent + 1) + n
       else:
         self.show_trace(n, indent + 2)
+
+  @staticmethod
+  def _print_trace(stack, expression):
+    stack = list(iter_stack(stack))
+    stack.reverse()
+    print strstack(list_to_stack(stack)), u'\u2022', strstack(expression)
 
 
 '''
@@ -342,15 +335,13 @@ new stack with the literal value on top.
 
 
 
-@TraceWrapper
+@Tracer
 def joy(expression, stack):
   '''
   Evaluate the Joy expression on the stack.
   '''
   while expression:
-
-    if TRACE:
-      _print_trace(stack, expression)
+    if TRACE: joy.add_trace(stack, expression)
 
     term, expression = expression
 
@@ -359,9 +350,7 @@ def joy(expression, stack):
     else:
       stack = term, stack
 
-  if TRACE:
-    _print_trace(stack, expression)
-
+  if TRACE: joy.add_trace(stack, expression)
   return stack
 
 
@@ -1267,12 +1256,6 @@ def repl(stack=()):
     print_exc()
   print
   return stack
-
-
-def _print_trace(stack, expression):
-  stack = list(iter_stack(stack))
-  stack.reverse()
-  print strstack(list_to_stack(stack)), u'\u2022', strstack(expression)
 
 
 '''
