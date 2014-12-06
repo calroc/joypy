@@ -255,6 +255,9 @@ class TraceWrapper(object):
 
   def __init__(self, J):
     self.joy = J
+    self.reset()
+
+  def reset(self):
     self.frame = []
     self.stack = []
 
@@ -280,6 +283,9 @@ class TraceWrapper(object):
     self.frame = self.stack.pop()
     self.frame[-1] = self.frame[-1]
 
+  def add_message(self, message):
+    self.frame.append('# ' + message)
+
   def show_trace(self, f=None, indent=0):
     if f is None:
       f = self.frame
@@ -288,6 +294,8 @@ class TraceWrapper(object):
         s, e = n
         print ' ' * indent,
         _print_trace(s, e)
+      elif isinstance(n, str):
+        print '-' * (indent + 1) + n
       else:
         self.show_trace(n, indent + 2)
 
@@ -1094,12 +1102,12 @@ def add_definition(d):
   def f(stack):
     global TRACE
     if TRACE:
-      print '#', name, '==', strbody
+      joy.add_message('%s == %s' % (name, strbody))
     try:
       return joy(body, stack)
     finally:
       if TRACE:
-        print '#', name, 'done.'
+        joy.add_message('%s done.' % name)
 
   f.__name__ = name
   f.__doc__ = strbody
@@ -1206,17 +1214,27 @@ def repl(stack=()):
   try:
     print_words(None)
     while 'HALT' not in stack:
+
+      if TRACE:
+        joy.reset()
+
       print
       print '->', strstack(stack)
       print
+
       try:
         text = raw_input('joy? ')
       except (EOFError, KeyboardInterrupt):
         break
+
       try:
         stack = run(text, stack)
       except:
         print_exc()
+
+      if TRACE:
+        joy.show_trace()
+
   except:
     print_exc()
   print
@@ -1260,5 +1278,3 @@ http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/jo
 if __name__ == "__main__":
   initialize()
   stack = repl()
-  if TRACE:
-    joy.show_trace()
