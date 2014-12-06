@@ -1098,16 +1098,18 @@ def add_definition(d):
   name, body_text = partition_definition(d)
   body = parse(tokenize(body_text))
   strbody = strstack(body) # Normalized body_text.
+  _enter_message = '%s == %s' % (name, strbody)
+  _exit_message = '%s done.' % name
 
   def f(stack):
     global TRACE
     if TRACE:
-      joy.add_message('%s == %s' % (name, strbody))
+      joy.add_message(_enter_message)
     try:
       return joy(body, stack)
     finally:
       if TRACE:
-        joy.add_message('%s done.' % name)
+        joy.add_message(_exit_message)
 
   f.__name__ = name
   f.__doc__ = strbody
