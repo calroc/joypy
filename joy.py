@@ -1117,14 +1117,11 @@ def add_definition(d):
   _exit_message = '%s done.' % name
 
   def f(stack):
-    global TRACE
-    if TRACE:
-      joy.add_message(_enter_message)
+    if TRACE: joy.add_message(_enter_message)
     try:
       return joy(body, stack)
     finally:
-      if TRACE:
-        joy.add_message(_exit_message)
+      if TRACE: joy.add_message(_exit_message)
 
   f.__name__ = name
   f.__doc__ = strbody
@@ -1232,8 +1229,7 @@ def repl(stack=()):
     print_words(None)
     while 'HALT' not in stack:
 
-      if TRACE:
-        joy.reset()
+      if TRACE: joy.reset()
 
       print
       print '->', strstack(stack)
@@ -1249,8 +1245,7 @@ def repl(stack=()):
       except:
         print_exc()
 
-      if TRACE:
-        joy.show_trace()
+      if TRACE: joy.show_trace()
 
   except:
     print_exc()
