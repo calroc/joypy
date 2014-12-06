@@ -47,6 +47,12 @@ Table of Contents
   Part I - Joy
     Manfred von Thun, Appreciation
     Simplicity
+    Basics of Joy
+    Literals and Simple Functions
+    Simple Combinators
+    Definitions and More Elaborate Functions
+    Programming and Metaprogramming
+    Further Reading
 
   Part II - This Implementation
 
@@ -66,13 +72,17 @@ Table of Contents
       stack → stack
       note() decorator
       define several functions
-      wrap functions from Python operator module
 
     Combinators
       functions that call joy()
 
     Definitions
       functions as equations
+
+    Initialize
+      add functions from Python operator module
+      add aliases
+      add definitions
 
     REPL (Read, Eval, Print Loop)
 
@@ -212,74 +222,7 @@ programs".
 § Further Reading
 
 
-'''
-
-
-DEFINITIONS = '''
-
-
-  rest == uncons popd ;
-  first == uncons pop ;
-  second == rest first ;
-  third == rest rest first ;
-
-  sum == 0 swap [+] step ;
-  product == 1 swap [*] step ;
-
-  swons == swap cons ;
-  swoncat == swap concat ;
-  shunt == [swons] step ;
-  reverse == [] swap shunt ;
-  flatten == [] swap [concat] step ;
-
-  unit == [] cons ;
-  quoted == [unit] dip ;
-  unquoted == [i] dip ;
-
-  enstacken == stack [clear] dip ;
-  disenstacken == [truth] [uncons] while pop ;
-
-  pam == [i] map ;
-  run == [] swap infra ;
-  size == [1] map sum ;
-  size == 0 swap [pop ++] step ;
-
-  average == [sum 1.0 *] [size] cleave / ;
-
-  gcd == [0 >] [dup rollup modulus] while pop ;
-
-  least_fraction == dup [gcd] infra [/] concat map ;
-
-
-  divisor == popop 2 * ;
-  minusb == pop neg ;
-  radical == swap dup * rollup * 4 * - sqrt ;
-  root1 == + swap / ;
-  root2 == - swap / ;
-
-  quadratic ==
-    [[[divisor] [minusb] [radical]] pam] ternary i
-    [[[root1] [root2]] pam] ternary ;
-
-
-  *fraction ==
-    [uncons] dip uncons
-    [swap] dip concat
-    [*] infra [*] dip cons ;
-
-  *fraction0 == concat [[swap] dip * [*] dip] infra ;
-
-
-  down_to_zero == [0 >] [dup --] while ;
-  range_to_zero == unit [down_to_zero] infra ;
-
-  times == [-- dip] cons [swap] infra [0 >] swap while pop ;
-
-
-''' # End of DEFINITIONS
-
-
-'''
+--------------------------------------------------
 
 
 Part II - This Implementation
@@ -328,7 +271,7 @@ def joy(expression, stack):
 
     term, expression = expression
 
-    if callable(term) and not isinstance(term, tuple):
+    if is_function(term):
       stack = term(stack)
     else:
       stack = term, stack
@@ -582,6 +525,16 @@ def note(f):
   return F
 
 
+def is_function(term):
+  '''
+  Return a Boolean value indicating whether or not a term is a function.
+  '''
+  # In Python the tuple type is callable so we have to check for that.
+  # We could also just check isinstance(term, FunctionWrapper), but this
+  # way we can use any old callable as a function if we like.
+  return callable(term) and not isinstance(term, tuple)
+
+
 ALIASES = (
   ('add', ['+']),
   ('mul', ['*']),
@@ -814,61 +767,6 @@ def TRACE_(stack):
   return stack
 
 
-# Auto-generate functions from Python builtins.
-
-
-def joyful_1_arg_op(f):
-  '''
-  Return a Joy function that pops the top argument from the stack and
-  pushes f(tos) back.
-  '''
-  return wraps(f)(lambda ((tos, stack)): (f(tos), stack))
-
-
-def joyful_2_arg_op(f):
-  '''
-  Return a Joy function that pops the top two arguments from the stack
-  and pushes f(second, tos) back.
-  '''
-  return wraps(f)(lambda ((tos, (second, stack))): (f(second, tos), stack))
-
-
-def is_unary_math_op(op):
-  try: op(1)
-  except: return False
-  else: return True
-
-
-def is_binary_math_op(op):
-  try: op(1, 1)
-  except: return False
-  else: return True
-
-
-_non = [] # TODO: look through these later and see about adding them..
-
-for module in (operator,): # math):
-  for name, function in getmembers(module, isbuiltin):
-
-    if name.startswith('_') or name.startswith('i'):
-      continue
-
-    if is_unary_math_op(function):
-      note(joyful_1_arg_op(function))
-
-    elif is_binary_math_op(function):
-      note(joyful_2_arg_op(function))
-
-    else:
-      _non.append(function)
-
-
-# Now that all the functions are in the dict, add the aliases.
-for name, aliases in ALIASES:
-  for alias in aliases:
-    FUNCTIONS[alias] = FUNCTIONS[name]
-
-
 '''
 
 
@@ -1061,19 +959,85 @@ Definitions
 '''
 
 
+DEFINITIONS = '''
+
+
+  rest == uncons popd ;
+  first == uncons pop ;
+  second == rest first ;
+  third == rest rest first ;
+
+  sum == 0 swap [+] step ;
+  product == 1 swap [*] step ;
+
+  swons == swap cons ;
+  swoncat == swap concat ;
+  shunt == [swons] step ;
+  reverse == [] swap shunt ;
+  flatten == [] swap [concat] step ;
+
+  unit == [] cons ;
+  quoted == [unit] dip ;
+  unquoted == [i] dip ;
+
+  enstacken == stack [clear] dip ;
+  disenstacken == [truth] [uncons] while pop ;
+
+  pam == [i] map ;
+  run == [] swap infra ;
+  size == [1] map sum ;
+  size == 0 swap [pop ++] step ;
+
+  average == [sum 1.0 *] [size] cleave / ;
+
+  gcd == [0 >] [dup rollup modulus] while pop ;
+
+  least_fraction == dup [gcd] infra [/] concat map ;
+
+
+  divisor == popop 2 * ;
+  minusb == pop neg ;
+  radical == swap dup * rollup * 4 * - sqrt ;
+  root1 == + swap / ;
+  root2 == - swap / ;
+
+  quadratic ==
+    [[[divisor] [minusb] [radical]] pam] ternary i
+    [[[root1] [root2]] pam] ternary ;
+
+
+  *fraction ==
+    [uncons] dip uncons
+    [swap] dip concat
+    [*] infra [*] dip cons ;
+
+  *fraction0 == concat [[swap] dip * [*] dip] infra ;
+
+
+  down_to_zero == [0 >] [dup --] while ;
+  range_to_zero == unit [down_to_zero] infra ;
+
+  times == [-- dip] cons [swap] infra [0 >] swap while pop ;
+
+
+''' # End of DEFINITIONS
+
+
+def partition_definition(d):
+  name, proper, body_text = (n.strip() for n in d.partition('=='))
+  if not proper and d:
+    raise ValueError('Definition %r failed' % (d,))
+  return name, body_text
+
+
 def add_definition(d):
   '''
   Given the text of a definition such as "sum == 0 swap [+] step" add the
   parsed body expression to FUNCTIONS under that name.
   '''
-  name, proper, body_text = (n.strip() for n in d.partition('=='))
-  if not proper:
-    if d: # Ignore chunks of blankspace, report failed text.
-      print >> stderr, 'definition', repr(d), 'failed'
-    return
-
+  name, body_text = partition_definition(d)
   body = parse(tokenize(body_text))
-  strbody = strstack(body)
+  strbody = strstack(body) # Normalized body_text.
 
   def f(stack):
     global TRACE
@@ -1091,8 +1055,85 @@ def add_definition(d):
   return note(f)
 
 
-for definition in DEFINITIONS.split(';'):
-  add_definition(definition.strip())
+'''
+
+
+Initialize additional functions.
+
+This is a bit of functionality to load up some additional names and
+functions in the FUNCTIONS dict.  We grab some mathematical functions
+from the math and operator modules, then we add in aliases and definitions.
+
+It's a little rough around the edges but it works.
+
+
+'''
+
+
+# Helper functions tp auto-generate Joy functions from Python builtins.
+
+
+def joyful_1_arg_op(f):
+  '''
+  Return a Joy function that pops the top argument from the stack and
+  pushes f(tos) back.
+  '''
+  return wraps(f)(lambda ((tos, stack)): (f(tos), stack))
+
+
+def joyful_2_arg_op(f):
+  '''
+  Return a Joy function that pops the top two arguments from the stack
+  and pushes f(second, tos) back.
+  '''
+  return wraps(f)(lambda ((tos, (second, stack))): (f(second, tos), stack))
+
+
+def is_unary_math_op(op):
+  try: op(1)
+  except: return False
+  else: return True
+
+
+def is_binary_math_op(op):
+  try: op(1, 1)
+  except: return False
+  else: return True
+
+
+_non = [] # TODO: look through these later and see about adding them..
+
+
+def initialize(modules=(operator, math)):
+  '''
+  Initialize additional functions (from Python modules and DEFINITIONS)
+  and enter ALIASES into FUNCTIONS.
+  '''
+
+  # Note that the operator module defines a bunch of "in-place" versions of
+  # functions that all start with 'i' and that we don't want.
+  # Fortunately, the math module only defines two functions that start with
+  # 'i' and we don't want either of them either, so the exclusion of names
+  # that start with 'i' below is okay for these two modules.  Eventually if
+  # we pull Joy functions from more Python modules we should add something
+  # to let us properly specify the names of the functions to wrap.
+
+  # Add functions from Python modules.
+  for module in modules:
+    for name, function in getmembers(module, isbuiltin):
+      if name.startswith('_') or name.startswith('i'): continue
+      if is_unary_math_op(function): note(joyful_1_arg_op(function))
+      elif is_binary_math_op(function): note(joyful_2_arg_op(function))
+      else: _non.append(function)
+
+  # Now that all the functions are in the dict, add the aliases.
+  for name, aliases in ALIASES:
+    for alias in aliases:
+      FUNCTIONS[alias] = FUNCTIONS[name]
+
+  # Parse and enter the definitions.
+  for definition in DEFINITIONS.split(';'):
+    add_definition(definition.strip())
 
 
 '''
@@ -1133,16 +1174,21 @@ def repl(stack=()):
 def _print_trace(stack, expression):
   stack = list(iter_stack(stack))
   stack.reverse()
-  print strstack(list_to_stack(stack)),
-  print u'\u2022', strstack(expression)
+  print strstack(list_to_stack(stack)), u'\u2022', strstack(expression)
 
 
 '''
 
 
+--------------------------------------------------
+
+
 Part III - The GUI
 
   See gui.py.
+
+
+--------------------------------------------------
 
 
 References
@@ -1160,4 +1206,5 @@ http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/jo
 
 
 if __name__ == "__main__":
+  initialize()
   stack = repl()
