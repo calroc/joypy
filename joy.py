@@ -242,6 +242,56 @@ import operator, math
 TRACE = False
 
 
+class TraceWrapper(object):
+  '''
+  Wrap the joy() function in an object that keeps track of the execution
+  trace of the interpreter.  This trace datastructure contains each stack
+  and expression that the joy() function has run during the execution of
+  some expression, and it can be useful for exploring and re-running.
+
+  Note that the frame attribute is accumulating the actual stack and
+  expression tuples not copies or records.
+  '''
+
+  def __init__(self, J):
+    self.joy = J
+    self.frame = []
+    self.stack = []
+
+  def __call__(self, expression, stack):
+    global _print_trace
+    _print_trace, pt = self._print_trace, _print_trace
+    self._start_call()
+    try:
+      return self.joy(expression, stack)
+    finally:
+      _print_trace = pt
+      self._end_call()
+
+  def _print_trace(self, stack, expression):
+    self.frame.append((stack, expression))
+
+  def _start_call(self):
+    self.stack.append(self.frame)
+    self.frame = []
+    self.stack[-1].append(self.frame)
+
+  def _end_call(self):
+    self.frame = self.stack.pop()
+    self.frame[-1] = self.frame[-1]
+
+  def show_trace(self, f=None, indent=0):
+    if f is None:
+      f = self.frame
+    for n in f:
+      if isinstance(n, tuple):
+        s, e = n
+        print ' ' * indent,
+        _print_trace(s, e)
+      else:
+        self.show_trace(n, indent + 2)
+
+
 '''
 
 
@@ -260,6 +310,8 @@ new stack with the literal value on top.
 '''
 
 
+
+@TraceWrapper
 def joy(expression, stack):
   '''
   Evaluate the Joy expression on the stack.
@@ -1208,3 +1260,5 @@ http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/jo
 if __name__ == "__main__":
   initialize()
   stack = repl()
+  if TRACE:
+    joy.show_trace()
