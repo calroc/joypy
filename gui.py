@@ -35,21 +35,36 @@ The GUI
 
 
 '''
+from __future__ import print_function
+try:
+  from tkinter import (
+    Text,
+    Toplevel,
+    TclError,
+    END,
+    INSERT,
+    SEL,
+    DISABLED,
+    NORMAL,
+    BOTH,
+    )
+  from tkinter.font import families, Font
+except ImportError:
+  from Tkinter import (
+    Text,
+    Toplevel,
+    TclError,
+    END,
+    INSERT,
+    SEL,
+    DISABLED,
+    NORMAL,
+    BOTH,
+    )
+  from tkFont import families, Font
 from re import compile as regular_expression
 from traceback import format_exc
 from inspect import getdoc
-from Tkinter import (
-  Text,
-  Toplevel,
-  TclError,
-  END,
-  INSERT,
-  SEL,
-  DISABLED,
-  NORMAL,
-  BOTH,
-  )
-from tkFont import families, Font
 from joy import run, strstack, FUNCTIONS
 
 
@@ -66,14 +81,14 @@ class WorldWrapper:
 
   def do_opendoc(self, name):
     if isNumerical(name):
-      print 'The number', name
+      print('The number', name)
     else:
       try:
         word = FUNCTIONS[name]
       except KeyError:
-        print repr(name), '???'
+        print(repr(name), '???')
       else:
-        print getdoc(word)
+        print(getdoc(word))
     self.text_widget.see(END)
 
   def pop(self):
@@ -356,7 +371,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
 
     #Activate event bindings. Modify text_bindings in your config
     #file to affect the key bindings and whatnot here.
-    for event_sequence, callback_finder in text_bindings.iteritems():
+    for event_sequence, callback_finder in text_bindings.items():
       callback = callback_finder(self)
       self.bind(event_sequence, callback)
 
@@ -561,7 +576,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
   def insert_it(self, s):
 
     #Make sure it's a string.
-    if not isinstance(s, basestring):
+    if not isinstance(s, str):
       s = str(s)
 
     #When pasting from the mouse we have to remove the current selection
@@ -732,6 +747,8 @@ class FileFaker(object):
     self.T = T
   def write(self, text):
     self.T.insert(END, text)
+  def flush(self):
+    pass
 
 
 def isNumerical(s):
@@ -754,11 +771,12 @@ def own_source():
 
 if __name__ == "__main__":
   import sys
-  from joy import print_words
+  from joy import print_words, initialize
   t = make_gui()
   sys.stdout = FileFaker(t)
+  initialize()
   print_words(None)
-  print
-  print '<STACK'
+  print()
+  print('<STACK')
   # print own_source()
   t.mainloop()
