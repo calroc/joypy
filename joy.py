@@ -644,23 +644,23 @@ ALIASES = (
 
 
 @note
-def cons(xxx_todo_changeme):
+def cons(S):
   '''
   The cons operator expects a list on top of the stack and the potential
   member below. The effect is to add the potential member into the
   aggregate.
   '''
-  (tos, (second, stack)) = xxx_todo_changeme
+  (tos, (second, stack)) = S
   return (second, tos), stack
 
 
 @note
-def uncons(xxx_todo_changeme1):
+def uncons(S):
   '''
   Inverse of cons, removes an item from the top of the list on the stack
   and places it under the remaining list.
   '''
-  (tos, stack) = xxx_todo_changeme1
+  (tos, stack) = S
   item, tos = tos
   return tos, (item, stack)
 
@@ -672,16 +672,16 @@ def clear(stack):
 
 
 @note
-def dup(xxx_todo_changeme2):
+def dup(S):
   '''Duplicate the top item on the stack.'''
-  (tos, stack) = xxx_todo_changeme2
+  (tos, stack) = S
   return tos, (tos, stack)
 
 
 @note
-def swap(xxx_todo_changeme3):
+def swap(S):
   '''Swap the top two items on stack.'''
-  (tos, (second, stack)) = xxx_todo_changeme3
+  (tos, (second, stack)) = S
   return second, (tos, stack)
 
 
@@ -695,47 +695,47 @@ def stack_(stack):
 
 
 @note
-def unstack(xxx_todo_changeme4):
+def unstack(S):
   '''
   The unstack operator expects a list on top of the stack and makes that
   the stack discarding the rest of the stack.
   '''
-  (tos, stack) = xxx_todo_changeme4
+  (tos, stack) = S
   return tos
 
 
 @note
-def pop(xxx_todo_changeme5):
+def pop(S):
   '''Pop and discard the top item from the stack.'''
-  (tos, stack) = xxx_todo_changeme5
+  (tos, stack) = S
   return stack
 
 
 @note
-def popd(xxx_todo_changeme6):
+def popd(S):
   '''Pop and discard the second item from the stack.'''
-  (tos, (second, stack)) = xxx_todo_changeme6
+  (tos, (second, stack)) = S
   return tos, stack
 
 
 @note
-def popop(xxx_todo_changeme7):
+def popop(S):
   '''Pop and discard the first and second items from the stack.'''
-  (tos, (second, stack)) = xxx_todo_changeme7
+  (tos, (second, stack)) = S
   return stack
 
 
 @note
-def dupd(xxx_todo_changeme8):
+def dupd(S):
   '''Duplicate the second item on the stack.'''
-  (tos, (second, stack)) = xxx_todo_changeme8
+  (tos, (second, stack)) = S
   return tos, (second, (second, stack))
 
 
 @note
-def reverse(xxx_todo_changeme9):
+def reverse(S):
   '''Reverse the list on the top of the stack.'''
-  (tos, stack) = xxx_todo_changeme9
+  (tos, stack) = S
   res = ()
   for term in iter_stack(tos):
     res = term, res
@@ -743,21 +743,21 @@ def reverse(xxx_todo_changeme9):
 
 
 @note
-def concat(xxx_todo_changeme10):
+def concat(S):
   '''Concatinate the two lists on the top of the stack.'''
-  (tos, (second, stack)) = xxx_todo_changeme10
+  (tos, (second, stack)) = S
   for term in reversed(list(iter_stack(second))):
     tos = term, tos
   return tos, stack
 
 
 @note
-def zip_(xxx_todo_changeme11):
+def zip_(S):
   '''
   Replace the two lists on the top of the stack with a list of the pairs
   from each list.  The smallest list sets the length of the result list.
   '''
-  (tos, (second, stack)) = xxx_todo_changeme11
+  (tos, (second, stack)) = S
   accumulator = [
     (a, (b, ()))
     for a, b in zip(iter_stack(tos), iter_stack(second))
@@ -766,36 +766,36 @@ def zip_(xxx_todo_changeme11):
 
 
 @note
-def succ(xxx_todo_changeme12):
+def succ(S):
   '''Increment TOS.'''
-  (tos, stack) = xxx_todo_changeme12
+  (tos, stack) = S
   return tos + 1, stack
 
 
 @note
-def pred(xxx_todo_changeme13):
+def pred(S):
   '''Decrement TOS.'''
-  (tos, stack) = xxx_todo_changeme13
+  (tos, stack) = S
   return tos - 1, stack
 
 
 @note
-def rollup(xxx_todo_changeme14):
+def rollup(S):
   '''a b c -> b c a'''
-  (a, (b, (c, stack))) = xxx_todo_changeme14
+  (a, (b, (c, stack))) = S
   return b, (c, (a, stack))
 
 
 @note
-def rolldown(xxx_todo_changeme15):
+def rolldown(S):
   '''a b c -> c a b'''
-  (a, (b, (c, stack))) = xxx_todo_changeme15
+  (a, (b, (c, stack))) = S
   return c, (a, (b, stack))
 
 
 @note
-def execute(xxx_todo_changeme16):
-  (text, stack) = xxx_todo_changeme16
+def execute(S):
+  (text, stack) = S
   if isinstance(text, str):
     return run(text, stack)
   return stack
@@ -853,9 +853,9 @@ def simple_manual(stack):
 
 
 @note
-def help_(xxx_todo_changeme17):
+def help_(S):
   '''Accepts a quoted word on the top of the stack and prints its docs.'''
-  (quote, stack) = xxx_todo_changeme17
+  (quote, stack) = S
   word = quote[0]
   print(getdoc(word))
   return stack
@@ -881,12 +881,12 @@ def TRACE_(stack):
 
 
 @note
-def map_(xxx_todo_changeme18):
+def map_(S):
   '''
   Run the quoted program on TOS on the items in the list under it, push a
   new list with the results (in place of the program and original list.
   '''
-  (quote, (aggregate, stack)) = xxx_todo_changeme18
+  (quote, (aggregate, stack)) = S
   results = list_to_stack([
     joy(quote, (term, stack))[0]
     for term in iter_stack(aggregate)
@@ -895,44 +895,44 @@ def map_(xxx_todo_changeme18):
 
 
 @note
-def i(xxx_todo_changeme19):
+def i(S):
   '''Execute the quoted program on TOS on the rest of the stack.'''
-  (quote, stack) = xxx_todo_changeme19
+  (quote, stack) = S
   return joy(quote, stack)
 
 
 @note
-def x(xxx_todo_changeme20):
+def x(S):
   '''
   Like i but don't remove the program first.  In other words the
   program gets itself as its first arg.
   '''
-  (quote, stack) = xxx_todo_changeme20
+  (quote, stack) = S
   return joy(quote, (quote, stack))
 
 
 @note
-def infra(xxx_todo_changeme21):
+def infra(S):
   '''
   Accept a quoted program and a list on the stack and run the program
   with the list as its stack.
   '''
-  (quote, (aggregate, stack)) = xxx_todo_changeme21
+  (quote, (aggregate, stack)) = S
   return joy(quote, aggregate), stack
 
 
 @note
-def b(xxx_todo_changeme22):
+def b(S):
   '''
   Given two quoted programs on the stack run the second one then the one
   on TOS.
   '''
-  (Q, (P, stack)) = xxx_todo_changeme22
+  (Q, (P, stack)) = S
   return joy(Q, joy(P, stack))
 
 
 @note
-def cleave(xxx_todo_changeme23):
+def cleave(S):
   '''
   The cleave combinator expects two quotations, and below that an item X.
   It first executes [P], with X on top, and saves the top result element.
@@ -940,16 +940,16 @@ def cleave(xxx_todo_changeme23):
   Finally it restores the stack to what it was below X and pushes the two
   results P(X) and Q(X).
   '''
-  (Q, (P, (x, stack))) = xxx_todo_changeme23
+  (Q, (P, (x, stack))) = S
   p = joy(P, (x, stack))[0]
   q = joy(Q, (x, stack))[0]
   return q, (p, stack)
 
 
 @note
-def ifte(xxx_todo_changeme24):
+def ifte(S):
   '''[if] [then] [else] ifte'''
-  (else_, (then, (if_, stack))) = xxx_todo_changeme24
+  (else_, (then, (if_, stack))) = S
   if_res = joy(if_, stack)[0]
   if if_res:
     result = joy(then, stack)[0]
@@ -959,54 +959,54 @@ def ifte(xxx_todo_changeme24):
 
 
 @note
-def dip(xxx_todo_changeme25):
+def dip(S):
   '''
   dip expects a program [P] and below that another item X. It pops both,
   saves X, executes P and then restores X.
   '''
-  (quote, (x, stack)) = xxx_todo_changeme25
+  (quote, (x, stack)) = S
   return x, joy(quote, stack)
 
 
 @note
-def dipd(xxx_todo_changeme26):
+def dipd(S):
   '''Like dip but expects two items.'''
-  (quote, (x, (y, stack))) = xxx_todo_changeme26
+  (quote, (x, (y, stack))) = S
   return x, (y, joy(quote, stack))
 
 
 @note
-def dipdd(xxx_todo_changeme27):
+def dipdd(S):
   '''Like dip but expects three items.'''
-  (quote, (x, (y, (z, stack)))) = xxx_todo_changeme27
+  (quote, (x, (y, (z, stack)))) = S
   return x, (y, (z, joy(quote, stack)))
 
 
 @note
-def app1(xxx_todo_changeme28):
+def app1(S):
   '''
   Given a quoted program on TOS and anything as the second stack item run
   the program and replace the two args with the first result of the
   program.
   '''
-  (quote, (x, stack)) = xxx_todo_changeme28
+  (quote, (x, stack)) = S
   result = joy(quote, (x, stack))
   return result[0], stack
 
 
 @note
-def app2(xxx_todo_changeme29):
+def app2(S):
   '''Like app1 with two items.'''
-  (quote, (x, (y, stack))) = xxx_todo_changeme29
+  (quote, (x, (y, stack))) = S
   resultx = joy(quote, (x, stack))[0]
   resulty = joy(quote, (y, stack))[0]
   return resultx, (resulty, stack)
 
 
 @note
-def app3(xxx_todo_changeme30):
+def app3(S):
   '''Like app1 with three items.'''
-  (quote, (x, (y, (z, stack)))) = xxx_todo_changeme30
+  (quote, (x, (y, (z, stack)))) = S
   resultx = joy(quote, (x, stack))[0]
   resulty = joy(quote, (y, stack))[0]
   resultz = joy(quote, (z, stack))[0]
@@ -1014,57 +1014,57 @@ def app3(xxx_todo_changeme30):
 
 
 @note
-def step(xxx_todo_changeme31):
+def step(S):
   '''
   The step combinator removes the aggregate and the quotation, and then
   repeatedly puts the members of the aggregate on top of the remaining
   stack and executes the quotation.
   '''
-  (quote, (aggregate, stack)) = xxx_todo_changeme31
+  (quote, (aggregate, stack)) = S
   for term in iter_stack(aggregate):
     stack = joy(quote, (term, stack))
   return stack
 
 
 @note
-def while_(xxx_todo_changeme32):
+def while_(S):
   '''[if] [body] while'''
-  (body, (if_, stack)) = xxx_todo_changeme32
+  (body, (if_, stack)) = S
   while joy(if_, stack)[0]:
     stack = joy(body, stack)
   return stack
 
 
 @note
-def nullary(xxx_todo_changeme33):
+def nullary(S):
   '''
   Run the program on TOS and return its first result without consuming
   any of the stack (except the program on TOS.)
   '''
-  (quote, stack) = xxx_todo_changeme33
+  (quote, stack) = S
   result = joy(quote, stack)
   return result[0], stack
 
 
 @note
-def unary(xxx_todo_changeme34):
-  (quote, stack) = xxx_todo_changeme34
+def unary(S):
+  (quote, stack) = S
   _, return_stack = stack
   result = joy(quote, stack)
   return result[0], return_stack
 
 
 @note
-def binary(xxx_todo_changeme35):
-  (quote, stack) = xxx_todo_changeme35
+def binary(S):
+  (quote, stack) = S
   _, (_, return_stack) = stack
   result = joy(quote, stack)
   return result[0], return_stack
 
 
 @note
-def ternary(xxx_todo_changeme36):
-  (quote, stack) = xxx_todo_changeme36
+def ternary(S):
+  (quote, stack) = S
   _, (_, (_, return_stack)) = stack
   result = joy(quote, stack)
   return result[0], return_stack
