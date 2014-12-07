@@ -229,6 +229,7 @@ Part II - This Implementation
 
 
 '''
+from __future__ import print_function
 from sys import stderr, modules
 from time import time
 from inspect import getmembers, isbuiltin, getdoc, getsource
@@ -237,6 +238,14 @@ from functools import wraps
 from re import Scanner
 import os
 import operator, math
+import collections
+
+
+# We run in Python 2 and Python 3
+try:
+  input = raw_input
+except NameError:
+  pass
 
 
 '''
@@ -302,10 +311,10 @@ class Tracer(object):
     for n in f:
       if isinstance(n, tuple):
         s, e = n
-        print ' ' * indent,
+        print(' ' * indent, end=' ')
         self._print_trace(s, e)
       elif isinstance(n, str):
-        print '-' * (indent + 1) + n
+        print('-' * (indent + 1) + n)
       else:
         self.show_trace(n, indent + 2)
 
@@ -313,7 +322,7 @@ class Tracer(object):
   def _print_trace(stack, expression):
     stack = list(iter_stack(stack))
     stack.reverse()
-    print strstack(list_to_stack(stack)), u'\u2022', strstack(expression)
+    print(strstack(list_to_stack(stack)), '•', strstack(expression))
 
 
 '''
@@ -432,7 +441,7 @@ def convert(token):
   try:
     return FUNCTIONS[token]
   except KeyError:
-    print >> stderr, 'unknown word', token
+    print('unknown word', token, file=stderr)
     return token
 
 
@@ -607,13 +616,13 @@ def is_function(term):
   # In Python the tuple type is callable so we have to check for that.
   # We could also just check isinstance(term, FunctionWrapper), but this
   # way we can use any old callable as a function if we like.
-  return callable(term) and not isinstance(term, tuple)
+  return isinstance(term, collections.Callable) and not isinstance(term, tuple)
 
 
 ALIASES = (
   ('add', ['+']),
   ('mul', ['*']),
-  ('div', ['/']),
+  ('truediv', ['/']),
   ('mod', ['%', 'rem', 'remainder', 'modulus']),
   ('eq', ['=']),
   ('ge', ['>=']),
@@ -635,21 +644,23 @@ ALIASES = (
 
 
 @note
-def cons((tos, (second, stack))):
+def cons(xxx_todo_changeme):
   '''
   The cons operator expects a list on top of the stack and the potential
   member below. The effect is to add the potential member into the
   aggregate.
   '''
+  (tos, (second, stack)) = xxx_todo_changeme
   return (second, tos), stack
 
 
 @note
-def uncons((tos, stack)):
+def uncons(xxx_todo_changeme1):
   '''
   Inverse of cons, removes an item from the top of the list on the stack
   and places it under the remaining list.
   '''
+  (tos, stack) = xxx_todo_changeme1
   item, tos = tos
   return tos, (item, stack)
 
@@ -661,14 +672,16 @@ def clear(stack):
 
 
 @note
-def dup((tos, stack)):
+def dup(xxx_todo_changeme2):
   '''Duplicate the top item on the stack.'''
+  (tos, stack) = xxx_todo_changeme2
   return tos, (tos, stack)
 
 
 @note
-def swap((tos, (second, stack))):
+def swap(xxx_todo_changeme3):
   '''Swap the top two items on stack.'''
+  (tos, (second, stack)) = xxx_todo_changeme3
   return second, (tos, stack)
 
 
@@ -682,41 +695,47 @@ def stack_(stack):
 
 
 @note
-def unstack((tos, stack)):
+def unstack(xxx_todo_changeme4):
   '''
   The unstack operator expects a list on top of the stack and makes that
   the stack discarding the rest of the stack.
   '''
+  (tos, stack) = xxx_todo_changeme4
   return tos
 
 
 @note
-def pop((tos, stack)):
+def pop(xxx_todo_changeme5):
   '''Pop and discard the top item from the stack.'''
+  (tos, stack) = xxx_todo_changeme5
   return stack
 
 
 @note
-def popd((tos, (second, stack))):
+def popd(xxx_todo_changeme6):
   '''Pop and discard the second item from the stack.'''
+  (tos, (second, stack)) = xxx_todo_changeme6
   return tos, stack
 
 
 @note
-def popop((tos, (second, stack))):
+def popop(xxx_todo_changeme7):
   '''Pop and discard the first and second items from the stack.'''
+  (tos, (second, stack)) = xxx_todo_changeme7
   return stack
 
 
 @note
-def dupd((tos, (second, stack))):
+def dupd(xxx_todo_changeme8):
   '''Duplicate the second item on the stack.'''
+  (tos, (second, stack)) = xxx_todo_changeme8
   return tos, (second, (second, stack))
 
 
 @note
-def reverse((tos, stack)):
+def reverse(xxx_todo_changeme9):
   '''Reverse the list on the top of the stack.'''
+  (tos, stack) = xxx_todo_changeme9
   res = ()
   for term in iter_stack(tos):
     res = term, res
@@ -724,19 +743,21 @@ def reverse((tos, stack)):
 
 
 @note
-def concat((tos, (second, stack))):
+def concat(xxx_todo_changeme10):
   '''Concatinate the two lists on the top of the stack.'''
+  (tos, (second, stack)) = xxx_todo_changeme10
   for term in reversed(list(iter_stack(second))):
     tos = term, tos
   return tos, stack
 
 
 @note
-def zip_((tos, (second, stack))):
+def zip_(xxx_todo_changeme11):
   '''
   Replace the two lists on the top of the stack with a list of the pairs
   from each list.  The smallest list sets the length of the result list.
   '''
+  (tos, (second, stack)) = xxx_todo_changeme11
   accumulator = [
     (a, (b, ()))
     for a, b in zip(iter_stack(tos), iter_stack(second))
@@ -745,32 +766,37 @@ def zip_((tos, (second, stack))):
 
 
 @note
-def succ((tos, stack)):
+def succ(xxx_todo_changeme12):
   '''Increment TOS.'''
+  (tos, stack) = xxx_todo_changeme12
   return tos + 1, stack
 
 
 @note
-def pred((tos, stack)):
+def pred(xxx_todo_changeme13):
   '''Decrement TOS.'''
+  (tos, stack) = xxx_todo_changeme13
   return tos - 1, stack
 
 
 @note
-def rollup((a, (b, (c, stack)))):
+def rollup(xxx_todo_changeme14):
   '''a b c -> b c a'''
+  (a, (b, (c, stack))) = xxx_todo_changeme14
   return b, (c, (a, stack))
 
 
 @note
-def rolldown((a, (b, (c, stack)))):
+def rolldown(xxx_todo_changeme15):
   '''a b c -> c a b'''
+  (a, (b, (c, stack))) = xxx_todo_changeme15
   return c, (a, (b, stack))
 
 
 @note
-def execute((text, stack)):
-  if isinstance(text, basestring):
+def execute(xxx_todo_changeme16):
+  (text, stack) = xxx_todo_changeme16
+  if isinstance(text, str):
     return run(text, stack)
   return stack
 
@@ -802,7 +828,7 @@ def id_(stack):
 @note
 def print_words(stack):
   '''Print all the words in alphabetical order.'''
-  print ' '.join(sorted(FUNCTIONS))
+  print(' '.join(sorted(FUNCTIONS)))
   return stack
 
 
@@ -814,7 +840,7 @@ def simple_manual(stack):
   for name, f in sorted(FUNCTIONS.items()):
     d = getdoc(f)
     boxline = '+%s+' % ('-' * (len(name) + 2))
-    print '\n'.join((
+    print('\n'.join((
       boxline,
       '| %s |' % (name,),
       boxline,
@@ -822,15 +848,16 @@ def simple_manual(stack):
       '',
       '--' * 40,
       '',
-      ))
+      )))
   return stack
 
 
 @note
-def help_((quote, stack)):
+def help_(xxx_todo_changeme17):
   '''Accepts a quoted word on the top of the stack and prints its docs.'''
+  (quote, stack) = xxx_todo_changeme17
   word = quote[0]
-  print getdoc(word)
+  print(getdoc(word))
   return stack
 
 
@@ -854,11 +881,12 @@ def TRACE_(stack):
 
 
 @note
-def map_((quote, (aggregate, stack))):
+def map_(xxx_todo_changeme18):
   '''
   Run the quoted program on TOS on the items in the list under it, push a
   new list with the results (in place of the program and original list.
   '''
+  (quote, (aggregate, stack)) = xxx_todo_changeme18
   results = list_to_stack([
     joy(quote, (term, stack))[0]
     for term in iter_stack(aggregate)
@@ -867,40 +895,44 @@ def map_((quote, (aggregate, stack))):
 
 
 @note
-def i((quote, stack)):
+def i(xxx_todo_changeme19):
   '''Execute the quoted program on TOS on the rest of the stack.'''
+  (quote, stack) = xxx_todo_changeme19
   return joy(quote, stack)
 
 
 @note
-def x((quote, stack)):
+def x(xxx_todo_changeme20):
   '''
   Like i but don't remove the program first.  In other words the
   program gets itself as its first arg.
   '''
+  (quote, stack) = xxx_todo_changeme20
   return joy(quote, (quote, stack))
 
 
 @note
-def infra((quote, (aggregate, stack))):
+def infra(xxx_todo_changeme21):
   '''
   Accept a quoted program and a list on the stack and run the program
   with the list as its stack.
   '''
+  (quote, (aggregate, stack)) = xxx_todo_changeme21
   return joy(quote, aggregate), stack
 
 
 @note
-def b((Q, (P, stack))):
+def b(xxx_todo_changeme22):
   '''
   Given two quoted programs on the stack run the second one then the one
   on TOS.
   '''
+  (Q, (P, stack)) = xxx_todo_changeme22
   return joy(Q, joy(P, stack))
 
 
 @note
-def cleave((Q, (P, (x, stack)))):
+def cleave(xxx_todo_changeme23):
   '''
   The cleave combinator expects two quotations, and below that an item X.
   It first executes [P], with X on top, and saves the top result element.
@@ -908,14 +940,16 @@ def cleave((Q, (P, (x, stack)))):
   Finally it restores the stack to what it was below X and pushes the two
   results P(X) and Q(X).
   '''
+  (Q, (P, (x, stack))) = xxx_todo_changeme23
   p = joy(P, (x, stack))[0]
   q = joy(Q, (x, stack))[0]
   return q, (p, stack)
 
 
 @note
-def ifte((else_, (then, (if_, stack)))):
+def ifte(xxx_todo_changeme24):
   '''[if] [then] [else] ifte'''
+  (else_, (then, (if_, stack))) = xxx_todo_changeme24
   if_res = joy(if_, stack)[0]
   if if_res:
     result = joy(then, stack)[0]
@@ -925,48 +959,54 @@ def ifte((else_, (then, (if_, stack)))):
 
 
 @note
-def dip((quote, (x, stack))):
+def dip(xxx_todo_changeme25):
   '''
   dip expects a program [P] and below that another item X. It pops both,
   saves X, executes P and then restores X.
   '''
+  (quote, (x, stack)) = xxx_todo_changeme25
   return x, joy(quote, stack)
 
 
 @note
-def dipd((quote, (x, (y, stack)))):
+def dipd(xxx_todo_changeme26):
   '''Like dip but expects two items.'''
+  (quote, (x, (y, stack))) = xxx_todo_changeme26
   return x, (y, joy(quote, stack))
 
 
 @note
-def dipdd((quote, (x, (y, (z, stack))))):
+def dipdd(xxx_todo_changeme27):
   '''Like dip but expects three items.'''
+  (quote, (x, (y, (z, stack)))) = xxx_todo_changeme27
   return x, (y, (z, joy(quote, stack)))
 
 
 @note
-def app1((quote, (x, stack))):
+def app1(xxx_todo_changeme28):
   '''
   Given a quoted program on TOS and anything as the second stack item run
   the program and replace the two args with the first result of the
   program.
   '''
+  (quote, (x, stack)) = xxx_todo_changeme28
   result = joy(quote, (x, stack))
   return result[0], stack
 
 
 @note
-def app2((quote, (x, (y, stack)))):
+def app2(xxx_todo_changeme29):
   '''Like app1 with two items.'''
+  (quote, (x, (y, stack))) = xxx_todo_changeme29
   resultx = joy(quote, (x, stack))[0]
   resulty = joy(quote, (y, stack))[0]
   return resultx, (resulty, stack)
 
 
 @note
-def app3((quote, (x, (y, (z, stack))))):
+def app3(xxx_todo_changeme30):
   '''Like app1 with three items.'''
+  (quote, (x, (y, (z, stack)))) = xxx_todo_changeme30
   resultx = joy(quote, (x, stack))[0]
   resulty = joy(quote, (y, stack))[0]
   resultz = joy(quote, (z, stack))[0]
@@ -974,51 +1014,57 @@ def app3((quote, (x, (y, (z, stack))))):
 
 
 @note
-def step((quote, (aggregate, stack))):
+def step(xxx_todo_changeme31):
   '''
   The step combinator removes the aggregate and the quotation, and then
   repeatedly puts the members of the aggregate on top of the remaining
   stack and executes the quotation.
   '''
+  (quote, (aggregate, stack)) = xxx_todo_changeme31
   for term in iter_stack(aggregate):
     stack = joy(quote, (term, stack))
   return stack
 
 
 @note
-def while_((body, (if_, stack))):
+def while_(xxx_todo_changeme32):
   '''[if] [body] while'''
+  (body, (if_, stack)) = xxx_todo_changeme32
   while joy(if_, stack)[0]:
     stack = joy(body, stack)
   return stack
 
 
 @note
-def nullary((quote, stack)):
+def nullary(xxx_todo_changeme33):
   '''
   Run the program on TOS and return its first result without consuming
   any of the stack (except the program on TOS.)
   '''
+  (quote, stack) = xxx_todo_changeme33
   result = joy(quote, stack)
   return result[0], stack
 
 
 @note
-def unary((quote, stack)):
+def unary(xxx_todo_changeme34):
+  (quote, stack) = xxx_todo_changeme34
   _, return_stack = stack
   result = joy(quote, stack)
   return result[0], return_stack
 
 
 @note
-def binary((quote, stack)):
+def binary(xxx_todo_changeme35):
+  (quote, stack) = xxx_todo_changeme35
   _, (_, return_stack) = stack
   result = joy(quote, stack)
   return result[0], return_stack
 
 
 @note
-def ternary((quote, stack)):
+def ternary(xxx_todo_changeme36):
+  (quote, stack) = xxx_todo_changeme36
   _, (_, (_, return_stack)) = stack
   result = joy(quote, stack)
   return result[0], return_stack
@@ -1152,7 +1198,8 @@ def joyful_1_arg_op(f):
   Return a Joy function that pops the top argument from the stack and
   pushes f(tos) back.
   '''
-  return wraps(f)(lambda ((tos, stack)): (f(tos), stack))
+# return wraps(f)(lambda ((tos, stack)): (f(tos), stack))
+  return wraps(f)(lambda tos_stack: (f(tos_stack[0]), tos_stack[1]))
 
 
 def joyful_2_arg_op(f):
@@ -1160,7 +1207,8 @@ def joyful_2_arg_op(f):
   Return a Joy function that pops the top two arguments from the stack
   and pushes f(second, tos) back.
   '''
-  return wraps(f)(lambda ((tos, (second, stack))): (f(second, tos), stack))
+# return wraps(f)(lambda ((tos, (second, stack))): (f(second, tos), stack))
+  return wraps(f)(lambda tos_second_stack: (f(tos_second_stack[1][0], tos_second_stack[0]), tos_second_stack[1][1]))
 
 
 def is_unary_math_op(op):
@@ -1231,12 +1279,12 @@ def repl(stack=()):
 
       if TRACE: joy.reset()
 
-      print
-      print '->', strstack(stack)
-      print
+      print()
+      print('->', strstack(stack))
+      print()
 
       try:
-        text = raw_input('joy? ')
+        text = input('joy? ')
       except (EOFError, KeyboardInterrupt):
         break
 
@@ -1249,7 +1297,7 @@ def repl(stack=()):
 
   except:
     print_exc()
-  print
+  print()
   return stack
 
 
