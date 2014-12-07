@@ -229,7 +229,14 @@ Part II - This Implementation
 
 
 '''
+# We run in Python 2 and Python 3
 from __future__ import print_function
+try:
+  input = raw_input
+except NameError:
+  pass
+
+
 from sys import stderr, modules
 from time import time
 from inspect import getmembers, isbuiltin, getdoc, getsource
@@ -239,13 +246,6 @@ from re import Scanner
 import os
 import operator, math
 import collections
-
-
-# We run in Python 2 and Python 3
-try:
-  input = raw_input
-except NameError:
-  pass
 
 
 '''
