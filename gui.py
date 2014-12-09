@@ -37,30 +37,10 @@ The GUI
 '''
 from __future__ import print_function
 try:
-  from tkinter import (
-    Text,
-    Toplevel,
-    TclError,
-    END,
-    INSERT,
-    SEL,
-    DISABLED,
-    NORMAL,
-    BOTH,
-    )
+  import tkinter as tk
   from tkinter.font import families, Font
 except ImportError:
-  from Tkinter import (
-    Text,
-    Toplevel,
-    TclError,
-    END,
-    INSERT,
-    SEL,
-    DISABLED,
-    NORMAL,
-    BOTH,
-    )
+  import Tkinter as tk
   from tkFont import families, Font
 from re import compile as regular_expression
 from traceback import format_exc
@@ -89,7 +69,7 @@ class WorldWrapper:
         print(repr(name), '???')
       else:
         print(getdoc(word))
-    self.text_widget.see(END)
+    self.text_widget.see(tk.END)
 
   def pop(self):
     if self.stack:
@@ -324,7 +304,7 @@ text_bindings = {
   }
 
 
-class TextViewerWidget(Text, mousebindingsmixin):
+class TextViewerWidget(tk.Text, mousebindingsmixin):
   """
   This class is a Tkinter Text with special mousebindings to make
   it act as a Xerblin Text Viewer.
@@ -358,7 +338,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
     kw.setdefault('font', 'arial 12')
 
     #Create ourselves as a Tkinter Text
-    Text.__init__(self, master, **kw)
+    tk.Text.__init__(self, master, **kw)
 
     #Initialize our mouse mixin.
     mousebindingsmixin.__init__(self)
@@ -409,7 +389,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
     self._save = None
     if not self.filename:
       return
-    self['state'] = DISABLED
+    self['state'] = tk.DISABLED
     try:
       text = self.get_contents()
       with open(self.filename, 'w') as f:
@@ -418,7 +398,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
         os.fsync(f.fileno())
       self.world.save()
     finally:
-      self['state'] = NORMAL
+      self['state'] = tk.NORMAL
 
 ##        tags = self._saveTags()
 ##        chunks = self.DUMP()
@@ -441,7 +421,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
         save = None
 
   def get_contents(self):
-    return self.get('0.0', END)[:-1]
+    return self.get('0.0', tk.END)[:-1]
 
   def find_command_in_line(self, line, index):
     '''
@@ -457,7 +437,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
     '''Paste the X selection to the mouse pointer.'''
     try:
       text = self.selection_get()
-    except TclError:
+    except tk.TclError:
       return 'break'
     self.insert_it(text)
 
@@ -511,16 +491,16 @@ class TextViewerWidget(Text, mousebindingsmixin):
 
   def unhighlight_command(self):
     '''Remove any command highlighting.'''
-    self.tag_remove('command', 1.0, END)
+    self.tag_remove('command', 1.0, tk.END)
 
   def set_insertion_point(self, event):
     '''Set the insertion cursor to the current mouse location.'''
     self.focus()
-    self.mark_set(INSERT, '@%d,%d' % (event.x, event.y))
+    self.mark_set(tk.INSERT, '@%d,%d' % (event.x, event.y))
 
   def cut(self, event):
     '''Cut selection to stack.'''
-    select_indices = self.tag_ranges(SEL)
+    select_indices = self.tag_ranges(tk.SEL)
     if select_indices:
       s = self.get(select_indices[0], select_indices[1])
       self.world.push(s)
@@ -541,26 +521,26 @@ class TextViewerWidget(Text, mousebindingsmixin):
 
     # When pasting from the mouse we have to remove the current selection
     # to prevent destroying it by the paste operation.
-    select_indices = self.tag_ranges(SEL)
+    select_indices = self.tag_ranges(tk.SEL)
     if select_indices:
       # Set two marks to remember the selection.
       self.mark_set('_sel_start', select_indices[0])
       self.mark_set('_sel_end', select_indices[1])
-      self.tag_remove(SEL, 1.0, END)
+      self.tag_remove(tk.SEL, 1.0, tk.END)
 
-    self.insert(INSERT, s)
+    self.insert(tk.INSERT, s)
 
     if select_indices:
-      self.tag_add(SEL, '_sel_start', '_sel_end')
+      self.tag_add(tk.SEL, '_sel_start', '_sel_end')
       self.mark_unset('_sel_start')
       self.mark_unset('_sel_end')
 
   def run_selection(self, event):
     '''Run the current selection if any on the stack.'''
-    select_indices = self.tag_ranges(SEL)
+    select_indices = self.tag_ranges(tk.SEL)
     if select_indices:
       selection = self.get(select_indices[0], select_indices[1])
-      self.tag_remove(SEL, 1.0, END)
+      self.tag_remove(tk.SEL, 1.0, tk.END)
       self.run_command(selection)
 
   def pastecut(self, event):
@@ -581,9 +561,9 @@ class TextViewerWidget(Text, mousebindingsmixin):
   def cancel(self, event):
     '''Cancel whatever we're doing.'''
     self.leave(None)
-    self.tag_remove(SEL, 1.0, END)
+    self.tag_remove(tk.SEL, 1.0, tk.END)
     self._sel_anchor = '0.0'
-    self.mark_unset(INSERT)
+    self.mark_unset(tk.INSERT)
 
   def leave(self, event):
     '''Called when mouse leaves the Text window.'''
@@ -601,12 +581,12 @@ class TextViewerWidget(Text, mousebindingsmixin):
     # to the selection so the pasted text gets inserted at the
     # location of the deleted selection.
 
-    select_indices = self.tag_ranges(SEL)
+    select_indices = self.tag_ranges(tk.SEL)
     if select_indices:
       # Mark the location of the current insertion cursor 
-      self.mark_set('tmark', INSERT)
+      self.mark_set('tmark', tk.INSERT)
       # Put the insertion cursor at the selection
-      self.mark_set(INSERT, select_indices[1])
+      self.mark_set(tk.INSERT, select_indices[1])
 
     # Paste to the current selection, or if none, to the insertion cursor.
     self.event_generate("<<Paste>>")
@@ -614,14 +594,14 @@ class TextViewerWidget(Text, mousebindingsmixin):
     # If we mess with the insertion cursor above, fix it now.
     if select_indices:
       # Put the insertion cursor back where it was.
-      self.mark_set(INSERT, 'tmark')
+      self.mark_set(tk.INSERT, 'tmark')
       # And get rid of our unneeded mark.
       self.mark_unset('tmark')
 
     return 'break'
 
   def popupTB(self, tb):
-    top = Toplevel()
+    top = tk.Toplevel()
     T = TextViewerWidget(
       self.world,
       top,
@@ -632,22 +612,22 @@ class TextViewerWidget(Text, mousebindingsmixin):
     T['foreground'] = 'darkblue'
     T.tag_config('err', foreground='yellow')
 
-    T.insert(END, tb)
-    last_line = str(int(T.index(END).split('.')[0]) - 1) + '.0'
-    T.tag_add('err', last_line, END)
-    T['state'] = DISABLED
+    T.insert(tk.END, tb)
+    last_line = str(int(T.index(tk.END).split('.')[0]) - 1) + '.0'
+    T.tag_add('err', last_line, tk.END)
+    T['state'] = tk.DISABLED
 
-    top.title(T.get(last_line, END).strip())
+    top.title(T.get(last_line, tk.END).strip())
 
-    T.pack(expand=1, fill=BOTH)
-    T.see(END)
+    T.pack(expand=1, fill=tk.BOTH)
+    T.see(tk.END)
 
 
 def make_gui():
   t = TextViewerWidget(WorldWrapper())
   t['font'] = get_font()
   t._root().title('Joy')
-  t.pack(expand=True, fill=BOTH)
+  t.pack(expand=True, fill=tk.BOTH)
   return t
 
 
@@ -655,7 +635,7 @@ class FileFaker(object):
   def __init__(self, T):
     self.T = T
   def write(self, text):
-    self.T.insert(END, text)
+    self.T.insert(tk.END, text)
   def flush(self):
     pass
 
@@ -674,10 +654,6 @@ def get_font(family='EB Garamond', size=14):
   return Font(family=family, size=size)
 
 
-def own_source():
-  return getsource(modules[__name__])
-
-
 if __name__ == "__main__":
   import sys
   from joy import print_words, initialize
@@ -687,5 +663,4 @@ if __name__ == "__main__":
   print_words(None)
   print()
   print('<STACK')
-  # print own_source()
   t.mainloop()
