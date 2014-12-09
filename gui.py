@@ -45,7 +45,7 @@ except ImportError:
 from re import compile as regular_expression
 from traceback import format_exc
 from inspect import getdoc
-from joy import run, strstack, FUNCTIONS
+import joy
 
 
 class WorldWrapper:
@@ -55,7 +55,7 @@ class WorldWrapper:
     self.text_widget = text_widget
 
   def do_lookup(self, name):
-    word = FUNCTIONS[name]
+    word = joy.FUNCTIONS[name]
     self.stack = word, self.stack
     self.print_stack()
 
@@ -64,7 +64,7 @@ class WorldWrapper:
       print('The number', name)
     else:
       try:
-        word = FUNCTIONS[name]
+        word = joy.FUNCTIONS[name]
       except KeyError:
         print(repr(name), '???')
       else:
@@ -86,11 +86,13 @@ class WorldWrapper:
       return self.stack[0]
 
   def interpret(self, command):
-    self.stack = run(command, self.stack)
+    if joy.TRACE: joy.joy.reset()
+    self.stack = joy.run(command, self.stack)
     self.print_stack()
+    if joy.TRACE: joy.joy.show_trace()
 
   def has(self, name):
-    return name in FUNCTIONS
+    return name in joy.FUNCTIONS
 
   def save(self):
     pass
@@ -99,7 +101,7 @@ class WorldWrapper:
     stack_out_index = self.text_widget.search('<' 'STACK', 1.0)
     if stack_out_index:
       self.text_widget.see(stack_out_index)
-      s = strstack(self.stack) + '\n'
+      s = joy.strstack(self.stack) + '\n'
       self.text_widget.insert(stack_out_index, s)
 
 
@@ -656,11 +658,10 @@ def get_font(family='EB Garamond', size=14):
 
 if __name__ == "__main__":
   import sys
-  from joy import print_words, initialize
   t = make_gui()
   sys.stdout = FileFaker(t)
-  initialize()
-  print_words(None)
+  joy.initialize()
+  joy.print_words(None)
   print()
   print('<STACK')
   t.mainloop()
