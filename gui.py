@@ -176,7 +176,7 @@ class mousebindingsmixin:
 
     if self.B2_DOWN:
 
-      self.unset_command()
+      self.unhighlight_command()
 
       if self.B3_DOWN :
         self.dothis = self.cancel
@@ -186,7 +186,7 @@ class mousebindingsmixin:
         self.dothis = self.copyto #middle-left-interclick
 
     elif self.B3_DOWN :
-      self.unset_command()
+      self.unhighlight_command()
       self.dothis = self.opendoc #right-left-interclick
 
     else:
@@ -212,7 +212,7 @@ class mousebindingsmixin:
         self.dothis = self.cut
 
     elif self.B3_DOWN :
-      self.unset_command()
+      self.unhighlight_command()
       self.dothis = self.lookup #right-middle-interclick - lookup
 
     else:
@@ -238,7 +238,7 @@ class mousebindingsmixin:
 
     elif self.B2_DOWN :
       #middle-right-interclick - Pop/Cut from TOS to insertion cursor
-      self.unset_command()
+      self.unhighlight_command()
       self.dothis = self.pastecut
 
     else:
@@ -443,90 +443,61 @@ class TextViewerWidget(Text, mousebindingsmixin):
   def get_contents(self):
     return self.get('0.0', END)[:-1]
 
-  def findCommandInLine(self, line, index):
-    '''findCommandInLine(line, index) => command, begin, end
-    Return the command at index in line and its begin and end indices.'''
-
-    #Iterate through the possible commands in the line...
+  def find_command_in_line(self, line, index):
+    '''
+    Return the command at index in line and its begin and end indices.
+    find_command_in_line(line, index) => command, begin, end
+    '''
     for match in self.command_re.finditer(line):
-
-      #Pull out the indices of the possible command.
       b, e = match.span()
-
-      #If the indices bracket the index return the result.
       if b <= index <= e:
         return match.group(), b, e
 
   def paste_X_selection_to_mouse_pointer(self, event):
     '''Paste the X selection to the mouse pointer.'''
-
-    #Use the Tkinter method selection_get() to try to get the X selection.
     try:
       text = self.selection_get()
-
-    #TclError gets raised if no current selection.
     except TclError:
-
-      #So just carry on, there's nothing to do.
       return 'break'
-
     self.insert_it(text)
 
   def update_command_word(self, event):
     '''Highlight the command under the mouse.'''
-
-    #Get rid of any old command highlighting.
-    self.unset_command()
-
-    #Get the index of the mouse.
+    self.unhighlight_command()
+    self.command = ''
     index = '@%d,%d' % (event.x, event.y)
-
-    #Find coordinates for the line under the mouse.
     linestart = self.index(index + 'linestart')
     lineend = self.index(index + 'lineend')
-
-    #Get the entire line under the mouse.
     line = self.get(linestart, lineend)
-
-    #Parse out the row and offset of the mouse
     row, offset = self._get_index(index)
 
-    #If the mouse is off the end of the line or on a space..
     if offset >= len(line) or line[offset].isspace():
-
-      #There's no command, we're done.
-      self.command = ''
+      # The mouse is off the end of the line or on a space so there's no
+      # command, we're done.
       return
 
-    #Get the command at the offset in the line.
-    cmd = self.findCommandInLine(line, offset)
+    cmd = self.find_command_in_line(line, offset)
+    if cmd is None:
+      return
 
-    if cmd and (self.world.has(cmd[0]) or isNumerical(cmd[0])):
+    cmd, b, e = cmd
+    if self.world.has(cmd) or isNumerical(cmd):
+      self.command = cmd
+      self.highlight_command(
+        '%d.%d' % (row, b),
+        '%d.%d' % (row, e),
+        )
 
-      #Set self's command variable and extract the indices of it.
-      self.command, b, e = cmd
-
-      #Get the indices relative to the Text.
-      cmdstart = self.index('%d.%d' % (row, b))
-      cmdend = self.index('%d.%d' % (row, e))
-
-      #Add the command highlighting tags to the command text.
-      self.tag_add('command', cmdstart, cmdend)
-
-    #If there was no command, clear our command variable.
-    else:
-      self.command = ''
+  def highlight_command(self, from_, to):
+    '''Apply command style from from_ to to.'''
+    cmdstart = self.index(from_)
+    cmdend = self.index(to)
+    self.tag_add('command', cmdstart, cmdend)
 
   def do_command(self, event):
     '''Do the currently highlighted command.'''
-
-    #Remove any old highlighting.
-    self.unset_command()
-
-    #If there is a current command..
+    self.unhighlight_command()
     if self.command:
-
-      #Interpret the current command.
       self.run_command(self.command)
 
   def run_command(self, command):
@@ -538,7 +509,7 @@ class TextViewerWidget(Text, mousebindingsmixin):
     except:
       self.popupTB(format_exc().rstrip())
 
-  def unset_command(self):
+  def unhighlight_command(self):
     '''Remove any command highlighting.'''
     self.tag_remove('command', 1.0, END)
 
@@ -549,20 +520,11 @@ class TextViewerWidget(Text, mousebindingsmixin):
 
   def cut(self, event):
     '''Cut selection to stack.'''
-
-    #Get the indices of the current selection if any.
     select_indices = self.tag_ranges(SEL)
-
-    #If there is a current selection..
     if select_indices:
-
-      #Get the text of it.
       s = self.get(select_indices[0], select_indices[1])
-
-      #Append the text to our interpreter's stack.
       self.world.push(s)
-
-      #Let the pre-existing machinery take care of cutting the selection.
+      # Let the pre-existing machinery take care of cutting the selection.
       self.event_generate("<<Cut>>")
 
   def copyto(self, event):
@@ -574,65 +536,31 @@ class TextViewerWidget(Text, mousebindingsmixin):
     self.insert_it(s)
 
   def insert_it(self, s):
-
-    #Make sure it's a string.
     if not isinstance(s, str):
       s = str(s)
 
-    #When pasting from the mouse we have to remove the current selection
-    #to prevent destroying it by the paste operation.
-
-    #Find out if there's a current selection.
+    # When pasting from the mouse we have to remove the current selection
+    # to prevent destroying it by the paste operation.
     select_indices = self.tag_ranges(SEL)
-
-    #If there's a selection.
     if select_indices:
-
-      #Remember that we have to reset it after pasting.
-      reset_selection = True
-
-      #Set two marks to remember the selection.
+      # Set two marks to remember the selection.
       self.mark_set('_sel_start', select_indices[0])
       self.mark_set('_sel_end', select_indices[1])
-
-      #Remove the selection.
       self.tag_remove(SEL, 1.0, END)
 
-    #If there's no selection we don't have to reset it
-    else:
-      reset_selection = False
-
-    #Insert the TOS string.
     self.insert(INSERT, s)
 
-    #If we have to reset the selection...
-    if reset_selection:
-
-      #Put the SEL tag back.
+    if select_indices:
       self.tag_add(SEL, '_sel_start', '_sel_end')
-
-      #Get rid of the marks we set.
       self.mark_unset('_sel_start')
       self.mark_unset('_sel_end')
 
-    #Key pasting should still work fine, allowing one to select a piece
-    #of text and paste to it, replacing the selection.
-
   def run_selection(self, event):
     '''Run the current selection if any on the stack.'''
-
-    #Get the selection.
     select_indices = self.tag_ranges(SEL)
-
-    #If there is a selection..
     if select_indices:
-
-      #Get the text of the selection.
       selection = self.get(select_indices[0], select_indices[1])
-
-      #Remove the SEL tag from the whole Text.
       self.tag_remove(SEL, 1.0, END)
-
       self.run_command(selection)
 
   def pastecut(self, event):
@@ -652,25 +580,14 @@ class TextViewerWidget(Text, mousebindingsmixin):
 
   def cancel(self, event):
     '''Cancel whatever we're doing.'''
-
     self.leave(None)
-
-    #Remove the SEL tag
     self.tag_remove(SEL, 1.0, END)
-
-    #Reset the selection anchor.
     self._sel_anchor = '0.0'
-
-    #I don't know if this helps, or even if it does anything. But what the heck.
     self.mark_unset(INSERT)
 
   def leave(self, event):
     '''Called when mouse leaves the Text window.'''
-
-    #Remove any old highlighting.
-    self.unset_command()
-
-    #Unset our command variable
+    self.unhighlight_command()
     self.command = ''
 
   def _get_index(self, index):
@@ -680,35 +597,27 @@ class TextViewerWidget(Text, mousebindingsmixin):
   def _paste(self, event):
     '''Paste the system selection to the current selection, replacing it.'''
 
-    #If we're "key" pasting, we have to move the insertion point
-    #to the selection so the pasted text gets inserted at the
-    #location of the deleted selection.
+    # If we're "key" pasting, we have to move the insertion point
+    # to the selection so the pasted text gets inserted at the
+    # location of the deleted selection.
 
-    #Get the current selection's indices if any.
     select_indices = self.tag_ranges(SEL)
-
-    #If the selection exists.
     if select_indices:
-
-      #Mark the location of the current insertion cursor 
+      # Mark the location of the current insertion cursor 
       self.mark_set('tmark', INSERT)
-
-      #Put the insertion cursor at the selection
+      # Put the insertion cursor at the selection
       self.mark_set(INSERT, select_indices[1])
 
-    #Paste to the current selection, or if none, to the insertion cursor.
+    # Paste to the current selection, or if none, to the insertion cursor.
     self.event_generate("<<Paste>>")
 
-    #If we mess with the insertion cursor above, fix it now.
+    # If we mess with the insertion cursor above, fix it now.
     if select_indices:
-
-      #Put the insertion cursor back where it was.
+      # Put the insertion cursor back where it was.
       self.mark_set(INSERT, 'tmark')
-
-      #And get rid of our unneeded mark.
+      # And get rid of our unneeded mark.
       self.mark_unset('tmark')
 
-    #Tell Tkinter that event handling for this event is over.
     return 'break'
 
   def popupTB(self, tb):
@@ -759,7 +668,7 @@ def isNumerical(s):
   return True
 
 
-def get_font(family='EB Garamond', size=18):
+def get_font(family='EB Garamond', size=14):
   if family not in families():
     family = 'Times'
   return Font(family=family, size=size)
