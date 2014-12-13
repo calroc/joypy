@@ -287,9 +287,18 @@ class Tracer(object):
   def __call__(self, expression, stack):
     self._start_call()
     try:
-      return self.joy(expression, stack)
+      return self.cycle(self.joy(expression, stack))
     finally:
       self._end_call()
+
+  def cycle(self, J, SE=None):
+    while True:
+      try:
+        stack, expression = SE = J.send(SE)
+        self.add_trace(stack, expression)
+      except StopIteration:
+        break
+    return SE[0]
 
   def add_trace(self, stack, expression):
     self.frame.append((stack, expression))
@@ -350,7 +359,9 @@ def joy(expression, stack):
   Evaluate the Joy expression on the stack.
   '''
   while expression:
-    if TRACE: joy.add_trace(stack, expression)
+
+    if TRACE:
+      stack, expression = yield stack, expression
 
     term, expression = expression
 
@@ -359,8 +370,7 @@ def joy(expression, stack):
     else:
       stack = term, stack
 
-  if TRACE: joy.add_trace(stack, expression)
-  return stack
+  yield stack, expression
 
 
 '''
