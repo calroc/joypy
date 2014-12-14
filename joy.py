@@ -295,7 +295,8 @@ class Tracer(object):
     while True:
       try:
         stack, expression = SE = J.send(SE)
-        self.add_trace(stack, expression)
+        if TRACE:
+          self.add_trace(stack, expression)
       except StopIteration:
         break
     return SE[0]
@@ -307,14 +308,14 @@ class Tracer(object):
     self.frame.append(message)
 
   def _start_call(self):
-    self.add_message('/-----\\')
+    self.add_message('frame start')
     self.stack.append(self.frame)
     self.frame = []
     self.stack[-1].append(self.frame)
 
   def _end_call(self):
     self.frame = self.stack.pop()
-    self.add_message('\\-----/')
+    self.add_message('frame end')
 
   def show_trace(self, f=None, indent=0):
     if f is None:
@@ -622,6 +623,11 @@ def note(f):
 
 
 def combinator(funcwrapper):
+  '''
+  Let combinators have special handling.
+
+  So far we just let them add messages to the trace.
+  '''
   _enter_message = funcwrapper.name
   _exit_message = funcwrapper.name + ' done.'
   f = funcwrapper.f
@@ -1322,8 +1328,6 @@ def repl(stack=()):
     print_words(None)
     while 'HALT' not in stack:
 
-      if TRACE: joy.reset()
-
       print()
       print('->', strstack(stack))
       print()
@@ -1332,6 +1336,8 @@ def repl(stack=()):
         text = input('joy? ')
       except (EOFError, KeyboardInterrupt):
         break
+
+      if TRACE: joy.reset()
 
       try:
         stack = run(text, stack)
