@@ -304,15 +304,17 @@ class Tracer(object):
     self.frame.append((stack, expression))
 
   def add_message(self, message):
-    self.frame.append('# ' + message)
+    self.frame.append(message)
 
   def _start_call(self):
+    self.add_message('/-----\\')
     self.stack.append(self.frame)
     self.frame = []
     self.stack[-1].append(self.frame)
 
   def _end_call(self):
     self.frame = self.stack.pop()
+    self.add_message('\\-----/')
 
   def show_trace(self, f=None, indent=0):
     if f is None:
@@ -323,7 +325,7 @@ class Tracer(object):
         print(' ' * indent, end=' ')
         self._print_trace(s, e)
       elif isinstance(n, str):
-        print('-' * (indent + 1) + n)
+        print('#', '.' * indent, n)
       else:
         self.show_trace(n, indent + 2)
 
