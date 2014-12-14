@@ -621,6 +621,20 @@ def note(f):
   return F
 
 
+def combinator(funcwrapper):
+  _enter_message = funcwrapper.name
+  _exit_message = funcwrapper.name + ' done.'
+  f = funcwrapper.f
+  @wraps(f)
+  def F(stack):
+    try:
+      return f(stack)
+    finally:
+      if TRACE: joy.add_message(_exit_message)
+  funcwrapper.f = F
+  return funcwrapper
+
+
 def is_function(term):
   '''
   Return a Boolean value indicating whether or not a term is a function.
@@ -892,6 +906,7 @@ def TRACE_(stack):
 '''
 
 
+@combinator
 @note
 def map_(S):
   '''
@@ -906,6 +921,7 @@ def map_(S):
   return results, stack
 
 
+@combinator
 @note
 def i(S):
   '''Execute the quoted program on TOS on the rest of the stack.'''
@@ -913,6 +929,7 @@ def i(S):
   return joy(quote, stack)
 
 
+@combinator
 @note
 def x(S):
   '''
@@ -923,6 +940,7 @@ def x(S):
   return joy(quote, (quote, stack))
 
 
+@combinator
 @note
 def infra(S):
   '''
@@ -933,6 +951,7 @@ def infra(S):
   return joy(quote, aggregate), stack
 
 
+@combinator
 @note
 def b(S):
   '''
@@ -943,6 +962,7 @@ def b(S):
   return joy(Q, joy(P, stack))
 
 
+@combinator
 @note
 def cleave(S):
   '''
@@ -958,6 +978,7 @@ def cleave(S):
   return q, (p, stack)
 
 
+@combinator
 @note
 def ifte(S):
   '''[if] [then] [else] ifte'''
@@ -970,6 +991,7 @@ def ifte(S):
   return result, stack
 
 
+@combinator
 @note
 def dip(S):
   '''
@@ -980,6 +1002,7 @@ def dip(S):
   return x, joy(quote, stack)
 
 
+@combinator
 @note
 def dipd(S):
   '''Like dip but expects two items.'''
@@ -987,6 +1010,7 @@ def dipd(S):
   return x, (y, joy(quote, stack))
 
 
+@combinator
 @note
 def dipdd(S):
   '''Like dip but expects three items.'''
@@ -994,6 +1018,7 @@ def dipdd(S):
   return x, (y, (z, joy(quote, stack)))
 
 
+@combinator
 @note
 def app1(S):
   '''
@@ -1006,6 +1031,7 @@ def app1(S):
   return result[0], stack
 
 
+@combinator
 @note
 def app2(S):
   '''Like app1 with two items.'''
@@ -1015,6 +1041,7 @@ def app2(S):
   return resultx, (resulty, stack)
 
 
+@combinator
 @note
 def app3(S):
   '''Like app1 with three items.'''
@@ -1025,6 +1052,7 @@ def app3(S):
   return resultx, (resulty, (resultz, stack))
 
 
+@combinator
 @note
 def step(S):
   '''
@@ -1038,6 +1066,7 @@ def step(S):
   return stack
 
 
+@combinator
 @note
 def while_(S):
   '''[if] [body] while'''
@@ -1047,6 +1076,7 @@ def while_(S):
   return stack
 
 
+@combinator
 @note
 def nullary(S):
   '''
@@ -1058,6 +1088,7 @@ def nullary(S):
   return result[0], stack
 
 
+@combinator
 @note
 def unary(S):
   (quote, stack) = S
@@ -1066,6 +1097,7 @@ def unary(S):
   return result[0], return_stack
 
 
+@combinator
 @note
 def binary(S):
   (quote, stack) = S
@@ -1074,6 +1106,7 @@ def binary(S):
   return result[0], return_stack
 
 
+@combinator
 @note
 def ternary(S):
   (quote, stack) = S
