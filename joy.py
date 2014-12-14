@@ -282,21 +282,20 @@ class Tracer(object):
 
   def reset(self):
     self.frame = []
-    self.stack = []
+    self.framestack = [self.frame]
 
   def __call__(self, expression, stack):
-    self._start_call()
+    if TRACE: self._start_call()
     try:
       return self.cycle(self.joy(expression, stack))
     finally:
-      self._end_call()
+      if TRACE: self._end_call()
 
   def cycle(self, J, SE=None):
     while True:
       try:
         stack, expression = SE = J.send(SE)
-        if TRACE:
-          self.add_trace(stack, expression)
+        if TRACE: self.add_trace(stack, expression)
       except StopIteration:
         break
     return SE[0]
@@ -309,12 +308,12 @@ class Tracer(object):
 
   def _start_call(self):
     self.add_message('frame start')
-    self.stack.append(self.frame)
+    self.framestack.append(self.frame)
     self.frame = []
-    self.stack[-1].append(self.frame)
+    self.framestack[-1].append(self.frame)
 
   def _end_call(self):
-    self.frame = self.stack.pop()
+    self.frame = self.framestack.pop()
     self.add_message('frame end')
 
   def show_trace(self, f=None, indent=0):
