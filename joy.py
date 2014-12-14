@@ -627,7 +627,6 @@ def combinator(funcwrapper):
 
   So far we just let them add messages to the trace.
   '''
-  _enter_message = funcwrapper.name
   _exit_message = funcwrapper.name + ' done.'
   f = funcwrapper.f
   @wraps(f)
