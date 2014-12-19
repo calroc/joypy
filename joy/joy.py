@@ -46,6 +46,7 @@ from parser import text_to_expression
 import tracer
 
 
+@tracer.Tracer
 def joy(expression, stack):
   '''
   Evaluate the Joy expression on the stack.
@@ -71,4 +72,3 @@ def run(text, stack):
   '''
   expression = text_to_expression(text)
   return joy(expression, stack)
-

@@ -11,6 +11,7 @@ from .joy import joy, run
 from library import print_words # Import loads library functions.
 from stack import strstack
 from initializer import initialize
+import combinators # Import loads combinators.
 import tracer
 
 
