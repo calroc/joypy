@@ -66,3 +66,12 @@ scanner = Scanner([
   ])
 
 
+def text_to_expression(text):
+  '''
+  Convert a text to a Joy expression.
+  '''
+  tokens = tokenize(text)
+  expression = parse(tokens)
+  return expression
+
+

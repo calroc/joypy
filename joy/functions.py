@@ -27,6 +27,33 @@ Definitions, functions defined by equations, refactoring and how
 important it is..
 '''
 
+
+FUNCTIONS = {}
+
+
+class FunctionWrapper(object):
+  '''
+  Allow functions to have a nice repr().
+  '''
+
+  def __init__(self, f):
+    self.f = f
+    self.name = f.__name__.rstrip('_')
+
+  def __call__(self, stack):
+    return self.f(stack)
+
+  def __repr__(self):
+    return self.name
+
+
+def note(f):
+  '''Decorator to enter functions into the function map.'''
+  F = wraps(f)(FunctionWrapper(f))
+  FUNCTIONS[F.name] = F
+  return F
+
+
 def convert(token):
   '''Look up symbols in the functions dict.'''
   try:
@@ -36,3 +63,11 @@ def convert(token):
     return token
 
 
+def is_function(term):
+  '''
+  Return a Boolean value indicating whether or not a term is a function.
+  '''
+  # In Python the tuple type is callable so we have to check for that.
+  # We could also just check isinstance(term, FunctionWrapper), but this
+  # way we can use any old callable as a function if we like.
+  return isinstance(term, collections.Callable) and not isinstance(term, tuple)
