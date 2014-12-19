@@ -667,3 +667,4 @@ def main():
   t = make_gui()
   sys.stdout = FileFaker(t)
   return t
+
