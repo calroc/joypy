@@ -225,3 +225,4 @@ def ternary(S):
   _, (_, (_, return_stack)) = stack
   result = joy(quote, stack)
   return result[0], return_stack
+

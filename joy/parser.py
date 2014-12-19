@@ -74,4 +74,3 @@ def text_to_expression(text):
   expression = parse(tokens)
   return expression
 
-

@@ -72,3 +72,4 @@ def run(text, stack):
   '''
   expression = text_to_expression(text)
   return joy(expression, stack)
+

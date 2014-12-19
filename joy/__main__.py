@@ -5,6 +5,7 @@ try:
 except NameError:
   pass
 
+from sys import argv
 from traceback import print_exc
 
 from .joy import joy, run
@@ -50,4 +51,14 @@ def repl(stack=()):
 
 
 initialize()
-stack = repl()
+
+
+if '--gui' in argv:
+  from gui import main
+  t = main()
+  print_words(None)
+  print()
+  print('<STACK')
+  t.mainloop()
+else:
+  stack = repl()

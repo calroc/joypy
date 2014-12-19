@@ -42,11 +42,16 @@ try:
 except ImportError:
   import Tkinter as tk
   from tkFont import families, Font
+
 from re import compile as regular_expression
 from traceback import format_exc
 from inspect import getdoc
 import os
-import joy
+
+from functions import FUNCTIONS
+from stack import strstack
+from .joy import joy, run
+import tracer
 
 
 class WorldWrapper:
@@ -56,7 +61,7 @@ class WorldWrapper:
     self.text_widget = text_widget
 
   def do_lookup(self, name):
-    word = joy.FUNCTIONS[name]
+    word = FUNCTIONS[name]
     self.stack = word, self.stack
     self.print_stack()
 
@@ -65,7 +70,7 @@ class WorldWrapper:
       print('The number', name)
     else:
       try:
-        word = joy.FUNCTIONS[name]
+        word = FUNCTIONS[name]
       except KeyError:
         print(repr(name), '???')
       else:
@@ -87,13 +92,13 @@ class WorldWrapper:
       return self.stack[0]
 
   def interpret(self, command):
-    if joy.TRACE: joy.joy.reset()
-    self.stack = joy.run(command, self.stack)
+    if tracer.TRACE: joy.reset()
+    self.stack = run(command, self.stack)
     self.print_stack()
-    if joy.TRACE: joy.joy.show_trace()
+    if tracer.TRACE: joy.show_trace()
 
   def has(self, name):
-    return name in joy.FUNCTIONS
+    return name in FUNCTIONS
 
   def save(self):
     pass
@@ -102,7 +107,7 @@ class WorldWrapper:
     stack_out_index = self.text_widget.search('<' 'STACK', 1.0)
     if stack_out_index:
       self.text_widget.see(stack_out_index)
-      s = joy.strstack(self.stack) + '\n'
+      s = strstack(self.stack) + '\n'
       self.text_widget.insert(stack_out_index, s)
 
 
@@ -657,12 +662,8 @@ def get_font(family='EB Garamond', size=14):
   return Font(family=family, size=size)
 
 
-if __name__ == "__main__":
+def main():
   import sys
   t = make_gui()
   sys.stdout = FileFaker(t)
-  joy.initialize()
-  joy.print_words(None)
-  print()
-  print('<STACK')
-  t.mainloop()
+  return t

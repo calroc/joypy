@@ -106,3 +106,4 @@ def add_definition(d):
   f.__doc__ = strbody
   f.__body__ = body
   return note(f)
+
