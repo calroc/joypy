@@ -58,4 +58,3 @@ def initialize(modules=(operator, math)):
   # Parse and enter the definitions.
   for definition in DEFINITIONS.split(';'):
     add_definition(definition.strip())
-
