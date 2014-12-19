@@ -1377,7 +1377,3 @@ http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/jo
 
 '''
 
-
-if __name__ == "__main__":
-  initialize()
-  stack = repl()
