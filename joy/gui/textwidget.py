@@ -45,10 +45,10 @@ except ImportError:
 from re import compile as regular_expression
 from traceback import format_exc
 import sys
-import os
 
 from .misc import FileFaker, is_numerical
 from .mousebindings import MouseBindingsMixin
+from .saver import SavingMixin
 from .world import World
 
 
@@ -84,76 +84,6 @@ text_bindings = {
   '<Shift-Insert>': lambda tv: tv._paste,
 
   }
-
-
-class SavingMixin:
-
-  def __init__(self, saver=None, filename=None, save_delay=2000):
-    self.saver = self._saver if saver is None else saver
-    self.filename = filename
-    self._save_delay = save_delay
-    self.tk.call(self._w, 'edit', 'modified', 0)
-    self.bind('<<Modified>>', self._beenModified)
-    self._resetting_modified_flag = False
-    self._save = None
-
-  def save(self):
-    '''
-    Call _saveFunc() after a certain amount of idle time.
-
-    Called by _beenModified().
-    '''
-    self._cancelSave()
-    if self.saver:
-      self._saveAfter(self._save_delay)
-
-  def _saveAfter(self, delay):
-    '''
-    Trigger a cancel-able call to _saveFunc() after delay milliseconds.
-    '''
-    self._save = self.after(delay, self._saveFunc)
-
-  def _saveFunc(self):
-    self._save = None
-    self.saver(self._get_contents())
-
-  def _saver(self, text):
-    if not self.filename:
-      return
-    with open(self.filename, 'w') as f:
-      f.write(text)
-      f.flush()
-      os.fsync(f.fileno())
-    self.world.save()
-
-  def _cancelSave(self):
-    if self._save is not None:
-      self.after_cancel(self._save)
-      self._save = None
-
-  def _get_contents(self):
-    self['state'] = tk.DISABLED
-    try:
-      return self.get('0.0', tk.END)[:-1]
-    finally:
-      self['state'] = tk.NORMAL
-
-  def _beenModified(self, event):
-    if self._resetting_modified_flag:
-      return
-    self._clearModifiedFlag()
-    self.save()
-
-  def _clearModifiedFlag(self):
-    self._resetting_modified_flag = True
-    try:
-      self.tk.call(self._w, 'edit', 'modified', 0)
-    finally:
-      self._resetting_modified_flag = False
-
-##        tags = self._saveTags()
-##        chunks = self.DUMP()
-##        print chunks
 
 
 class TextViewerWidget(tk.Text, MouseBindingsMixin, SavingMixin):
