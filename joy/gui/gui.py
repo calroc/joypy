@@ -48,10 +48,10 @@ from traceback import format_exc
 from inspect import getdoc
 import os
 
-from functions import FUNCTIONS
-from stack import strstack
-from .joy import joy, run
-import tracer
+from ..functions import FUNCTIONS
+from ..stack import strstack
+from ..joy import joy, run
+from .. import tracer
 
 
 class WorldWrapper:
