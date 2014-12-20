@@ -9,11 +9,11 @@ from sys import argv
 from traceback import print_exc
 
 from .joy import joy, run
-from library import print_words # Import loads library functions.
-from stack import strstack
-from initializer import initialize
-import combinators # Import loads combinators.
-import tracer
+from .library import print_words # Import loads library functions.
+from .stack import strstack
+from .initializer import initialize
+from . import tracer
+from . import combinators # Import loads combinators.
 
 
 def repl(stack=()):
