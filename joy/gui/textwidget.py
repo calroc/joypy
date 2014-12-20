@@ -86,7 +86,77 @@ text_bindings = {
   }
 
 
-class TextViewerWidget(tk.Text, MouseBindingsMixin):
+class SavingMixin:
+
+  def __init__(self, saver=None, filename=None, save_delay=2000):
+    self.saver = self._saver if saver is None else saver
+    self.filename = filename
+    self._save_delay = save_delay
+    self.tk.call(self._w, 'edit', 'modified', 0)
+    self.bind('<<Modified>>', self._beenModified)
+    self._resetting_modified_flag = False
+    self._save = None
+
+  def save(self):
+    '''
+    Call _saveFunc() after a certain amount of idle time.
+
+    Called by _beenModified().
+    '''
+    self._cancelSave()
+    if self.saver:
+      self._saveAfter(self._save_delay)
+
+  def _saveAfter(self, delay):
+    '''
+    Trigger a cancel-able call to _saveFunc() after delay milliseconds.
+    '''
+    self._save = self.after(delay, self._saveFunc)
+
+  def _saveFunc(self):
+    self._save = None
+    self.saver(self._get_contents())
+
+  def _saver(self, text):
+    if not self.filename:
+      return
+    with open(self.filename, 'w') as f:
+      f.write(text)
+      f.flush()
+      os.fsync(f.fileno())
+    self.world.save()
+
+  def _cancelSave(self):
+    if self._save is not None:
+      self.after_cancel(self._save)
+      self._save = None
+
+  def _get_contents(self):
+    self['state'] = tk.DISABLED
+    try:
+      return self.get('0.0', tk.END)[:-1]
+    finally:
+      self['state'] = tk.NORMAL
+
+  def _beenModified(self, event):
+    if self._resetting_modified_flag:
+      return
+    self._clearModifiedFlag()
+    self.save()
+
+  def _clearModifiedFlag(self):
+    self._resetting_modified_flag = True
+    try:
+      self.tk.call(self._w, 'edit', 'modified', 0)
+    finally:
+      self._resetting_modified_flag = False
+
+##        tags = self._saveTags()
+##        chunks = self.DUMP()
+##        print chunks
+
+
+class TextViewerWidget(tk.Text, MouseBindingsMixin, SavingMixin):
   """
   This class is a Tkinter Text with special mousebindings to make
   it act as a Xerblin Text Viewer.
@@ -105,9 +175,6 @@ class TextViewerWidget(tk.Text, MouseBindingsMixin):
 
   def __init__(self, world, master=None,  **kw):
 
-    # Get the filename associated with this widget's contents, if any.
-    self.filename = kw.pop('filename', False)
-
     self.world = world
     if self.world.text_widget is None:
       self.world.text_widget = self
@@ -125,6 +192,9 @@ class TextViewerWidget(tk.Text, MouseBindingsMixin):
     #Initialize our mouse mixin.
     MouseBindingsMixin.__init__(self)
 
+    #Initialize our saver mixin.
+    SavingMixin.__init__(self)
+
     #Add tag config for command highlighting.
     self.tag_config('command', **self.command_tags)
 
@@ -137,73 +207,7 @@ class TextViewerWidget(tk.Text, MouseBindingsMixin):
       callback = callback_finder(self)
       self.bind(event_sequence, callback)
 
-    self.tk.call(self._w, 'edit', 'modified', 0)
-    self.bind('<<Modified>>', self._beenModified)
-    self._resetting_modified_flag = False
-
 ##        T.protocol("WM_DELETE_WINDOW", self.on_close)
-
-  def _beenModified(self, event):
-    if self._resetting_modified_flag:
-      return
-    self._clearModifiedFlag()
-    self.save()
-
-  def _clearModifiedFlag(self):
-    self._resetting_modified_flag = True
-    try:
-      self.tk.call(self._w, 'edit', 'modified', 0)
-    finally:
-      self._resetting_modified_flag = False
-
-  _saveDelay = 2000
-
-  def save(self):
-    '''
-    Call _saveFunc() after a certain amount of idle time.
-
-    Called by _beenModified().
-    '''
-    self._cancelSave()
-    self._saveAfter(self._saveDelay)
-
-  def _saveFunc(self):
-    self._save = None
-    if not self.filename:
-      return
-    self['state'] = tk.DISABLED
-    try:
-      text = self.get_contents()
-      with open(self.filename, 'w') as f:
-        f.write(text)
-        f.flush()
-        os.fsync(f.fileno())
-      self.world.save()
-    finally:
-      self['state'] = tk.NORMAL
-
-##        tags = self._saveTags()
-##        chunks = self.DUMP()
-##        print chunks
-
-  def _saveAfter(self, delay):
-    '''
-    Trigger a cancel-able call to _saveFunc() after delay milliseconds.
-    '''
-    self._save = self.after(delay, self._saveFunc)
-
-  def _cancelSave(self):
-    try:
-      save = self._save
-    except AttributeError:
-      pass
-    else:
-      if save:
-        self.after_cancel(save)
-        save = None
-
-  def get_contents(self):
-    return self.get('0.0', tk.END)[:-1]
 
   def find_command_in_line(self, line, index):
     '''
