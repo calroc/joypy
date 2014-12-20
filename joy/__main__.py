@@ -54,7 +54,7 @@ initialize()
 
 
 if '--gui' in argv:
-  from gui.text_widget import main
+  from gui.textwidget import main
   t = main()
   print_words(None)
   print()
