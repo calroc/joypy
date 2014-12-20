@@ -29,7 +29,7 @@ class World(object):
         print(repr(name), '???')
       else:
         print(getdoc(word))
-    self.text_widget.see('END')
+    self.text_widget.see('end')
 
   def pop(self):
     if self.stack:

@@ -6,7 +6,7 @@ class FileFaker(object):
     self.T = T
 
   def write(self, text):
-    self.T.insert('END', text)
+    self.T.insert('end', text)
 
   def flush(self):
     pass
