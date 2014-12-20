@@ -45,72 +45,34 @@ except ImportError:
 
 from re import compile as regular_expression
 from traceback import format_exc
-from inspect import getdoc
+import sys
 import os
 
-from ..functions import FUNCTIONS
-from ..stack import strstack
-from ..joy import joy, run
-from .. import tracer
-
+from .misc import FileFaker, is_numerical
 from .mousebindings import MouseBindingsMixin
+from .world import World
 
 
-class WorldWrapper:
+def make_gui():
+  t = TextViewerWidget(World())
+  t['font'] = get_font()
+  t._root().title('Joy')
+  t.pack(expand=True, fill=tk.BOTH)
+  return t
 
-  def __init__(self, stack=(), text_widget=None):
-    self.stack = stack
-    self.text_widget = text_widget
 
-  def do_lookup(self, name):
-    word = FUNCTIONS[name]
-    self.stack = word, self.stack
-    self.print_stack()
+def get_font(family='EB Garamond', size=14):
+  if family not in families():
+    family = 'Times'
+  return Font(family=family, size=size)
 
-  def do_opendoc(self, name):
-    if isNumerical(name):
-      print('The number', name)
-    else:
-      try:
-        word = FUNCTIONS[name]
-      except KeyError:
-        print(repr(name), '???')
-      else:
-        print(getdoc(word))
-    self.text_widget.see(tk.END)
 
-  def pop(self):
-    if self.stack:
-      self.stack = self.stack[1]
-    self.print_stack()
+def main():
+  t = make_gui()
+  sys.stdout = FileFaker(t)
+  return t
 
-  def push(self, it):
-    it = it.encode('utf8')
-    self.stack = it, self.stack
-    self.print_stack()
 
-  def peek(self):
-    if self.stack:
-      return self.stack[0]
-
-  def interpret(self, command):
-    if tracer.TRACE: joy.reset()
-    self.stack = run(command, self.stack)
-    self.print_stack()
-    if tracer.TRACE: joy.show_trace()
-
-  def has(self, name):
-    return name in FUNCTIONS
-
-  def save(self):
-    pass
-
-  def print_stack(self):
-    stack_out_index = self.text_widget.search('<' 'STACK', 1.0)
-    if stack_out_index:
-      self.text_widget.see(stack_out_index)
-      s = strstack(self.stack) + '\n'
-      self.text_widget.insert(stack_out_index, s)
 #: Define mapping between Tkinter events and functions or methods. The
 #: keys are string Tk "event sequences" and the values are callables that
 #: get passed the TextViewer instance (so you can bind to methods) and
@@ -282,7 +244,7 @@ class TextViewerWidget(tk.Text, MouseBindingsMixin):
       return
 
     cmd, b, e = cmd
-    if self.world.has(cmd) or isNumerical(cmd):
+    if self.world.has(cmd) or is_numerical(cmd):
       self.command = cmd
       self.highlight_command(
         '%d.%d' % (row, b),
@@ -442,41 +404,3 @@ class TextViewerWidget(tk.Text, MouseBindingsMixin):
 
     T.pack(expand=1, fill=tk.BOTH)
     T.see(tk.END)
-
-
-def make_gui():
-  t = TextViewerWidget(WorldWrapper())
-  t['font'] = get_font()
-  t._root().title('Joy')
-  t.pack(expand=True, fill=tk.BOTH)
-  return t
-
-
-class FileFaker(object):
-  def __init__(self, T):
-    self.T = T
-  def write(self, text):
-    self.T.insert(tk.END, text)
-  def flush(self):
-    pass
-
-
-def isNumerical(s):
-  try:
-    float(s)
-  except ValueError:
-    return False
-  return True
-
-
-def get_font(family='EB Garamond', size=14):
-  if family not in families():
-    family = 'Times'
-  return Font(family=family, size=size)
-
-
-def main():
-  import sys
-  t = make_gui()
-  sys.stdout = FileFaker(t)
-  return t
