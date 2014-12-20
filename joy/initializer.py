@@ -13,7 +13,7 @@ It's a little rough around the edges but it works.
 '''
 import operator, math
 from inspect import getmembers, isbuiltin
-from functions import (
+from .functions import (
   ALIASES,
   FUNCTIONS,
   is_unary_math_op,
@@ -22,7 +22,7 @@ from functions import (
   joyful_2_arg_op,
   note,
   )
-from definitions import DEFINITIONS, add_definition
+from .definitions import DEFINITIONS, add_definition
 
 
 _non = [] # TODO: look through these later and see about adding them..

@@ -9,10 +9,11 @@
 
 '''
 from functools import wraps
+
 from .joy import joy
-from stack import list_to_stack, iter_stack
-from functions import note
-import tracer
+from .stack import list_to_stack, iter_stack
+from .functions import note
+from . import tracer
 
 
 def combinator(func):

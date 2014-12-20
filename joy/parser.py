@@ -11,8 +11,9 @@
 
 '''
 from re import Scanner
-from stack import list_to_stack
-from functions import convert
+
+from .stack import list_to_stack
+from .functions import convert
 
 
 def parse(tokens):

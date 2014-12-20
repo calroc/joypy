@@ -1,7 +1,8 @@
 from inspect import getdoc
+
 from .joy import run
-from stack import list_to_stack, iter_stack
-from functions import note, FUNCTIONS
+from .stack import list_to_stack, iter_stack
+from .functions import note, FUNCTIONS
 
 
 @note

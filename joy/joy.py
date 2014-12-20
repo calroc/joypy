@@ -41,9 +41,9 @@ Every Joy function is an unary mapping from stacks to stacks.  Even
 literals are considered to be functions that accept a stack and return a
 new stack with the literal value on top.
 '''
-from functions import is_function
-from parser import text_to_expression
-import tracer
+from .functions import is_function
+from .parser import text_to_expression
+from . import tracer
 
 
 @tracer.Tracer

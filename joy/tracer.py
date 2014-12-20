@@ -12,8 +12,9 @@ when that function is declared (immediately below.)
 '''
 # We run in Python 2 and Python 3
 from __future__ import print_function
-from stack import strstack, iter_stack, list_to_stack
-from functions import note
+
+from .stack import strstack, iter_stack, list_to_stack
+from .functions import note
 
 
 TRACE = False

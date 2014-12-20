@@ -7,10 +7,10 @@ Definitions
 
 '''
 from .joy import joy
-from parser import text_to_expression
-from stack import strstack
-from functions import note
-import tracer
+from .parser import text_to_expression
+from .stack import strstack
+from .functions import note
+from . import tracer
 
 
 DEFINITIONS = '''
