@@ -319,7 +319,7 @@ class TextViewerWidget(tk.Text, mousebindingsmixin):
   """
 
   #This is a regular expression for finding commands in the text.
-  command_re = regular_expression(r'[-a-zA-Z0-9_\\~/.:!@#$%&*?=+]+')
+  command_re = regular_expression(r'[-a-zA-Z0-9_\\~/.:!@#$%&*?=+<>]+')
 
   #These are the config tags for command text when it's highlighted.
   command_tags = dict(
