@@ -220,4 +220,3 @@ def help_(S):
   word = quote[0]
   print(getdoc(word))
   return stack
-

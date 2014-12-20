@@ -62,4 +62,3 @@ if '--gui' in argv:
   t.mainloop()
 else:
   stack = repl()
-
