@@ -1,3 +1,11 @@
+--------------------------------------------------
+   ____  ____      _    _____ _____
+  |  _ \|  _ \    / \  |  ___|_   _|
+  | | | | |_) |  / _ \ | |_    | |
+  | |_| |  _ <  / ___ \|  _|   | |
+  |____/|_| \_\/_/   \_\_|     |_|
+
+--------------------------------------------------
 
 
 A dialect of Joy in Python.
@@ -7,31 +15,31 @@ A dialect of Joy in Python.
 
 
 Joy is a programming language created by Manfred von Thun that is easy to
-use and understand and has many other nice properties.  This Python script
-is an interpreter for a dialect of Joy that attempts to stay very close
-to the spirit of Joy but does not precisely match the behaviour of the
-original version(s) written in C.  A Tkinter GUI is provided as well.
+use and understand and has many other nice properties.  This Python
+module implements an interpreter for a dialect of Joy that attempts to
+stay very close to the spirit of Joy but does not precisely match the
+behaviour of the original version(s) written in C.  A Tkinter GUI is
+provided as well.
 
 
 --------------------------------------------------
 
 
-    Copyright © 2014 Simon Forman
+Copyright © 2014, 2015 Simon Forman
 
-    This file is joy.py
+This file is part of joy.py
 
-    joy.py is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+joy.py is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
 
-    joy.py is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+joy.py is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with
+joy.py.  If not see <http://www.gnu.org/licenses/>.
 
 
 --------------------------------------------------
@@ -68,7 +76,7 @@ Table of Contents
     Functions
       stack → stack
       note() decorator
-      define several functions
+      define several function
 
     Combinators
       functions that call joy()
@@ -144,20 +152,19 @@ language to thinking in the language, and the development process feels
 more like deriving mathematical truths than like writing ad-hoc
 solitions.
 
-I hope that this script is useful in the sense that it provides an
-additional joy interpreter (the binary in the archive from La Trobe
-seems to run just fine on my modern Linux machine!)  But I also hope
-that you can read and understand the Python code if you want to and
-play with the implementation itself.
+I hope that this package is useful in the sense that it provides an
+additional joy interpreter (the binary in the archive from La Trobe seems
+to run just fine on my modern Linux machine!)  But I also hope that you
+can read and understand the Python code and play with the implementation
+itself.
 
 The best source (no pun intended) for learning about Joy is the
-information made available at the website of La Trobe University (see
-the references section at the end of this script for the URL) which
-contains source code for the original C interpreter, Joy language source
-code for various functions, and a great deal of fascinating material
-mostly written by Von Thun on Joy and its deeper facets as well as how
-to program in it and several interesting aspects.  It's quite a
-treasure trove.
+information made available at the website of La Trobe University (see the
+references section below for the URL) which contains source code for the
+original C interpreter, Joy language source code for various functions,
+and a great deal of fascinating material mostly written by Von Thun on
+Joy and its deeper facets as well as how to program in it and several
+interesting aspects.  It's quite a treasure trove.
 
 § Basics of Joy
 
@@ -225,12 +232,77 @@ programs".
 Part II - This Implementation
 
 
+   joy
+    |
+    |-- __main__.py
+    |-- combinators.py
+    |-- definitions.py
+    |-- functions.py
+    |-- initializer.py
+    |-- joy.py
+    |-- library.py
+    |-- parser.py
+    |-- stack.py
+    |-- tracer.py
+    |
+    `-- gui
+        |-- misc.py
+        |-- mousebindings.py
+        |-- saver.py
+        |-- textwidget.py
+        `-- world.py
+
+
+    joy()
+
+    Converting text to a joy expression.
+      parse()
+      tokenize()
+      convert()
+
+    Stack
+      list_to_stack()
+      iter_stack()
+      stack_to_string()
+
+    Functions
+      stack → stack
+      note() decorator
+      define several function
+
+    Combinators
+      functions that call joy()
+
+    Definitions
+      functions as equations
+
+    Initialize
+      add functions from Python operator module
+      add aliases
+      add definitions
+
+    REPL (Read, Eval, Print Loop)
+
+
+  - archive
+    |-- EBGaramond-0.016.zip
+    |-- Joy-Programming.zip
+    `-- README
+
+
 --------------------------------------------------
 
 
 Part III - The GUI
 
   See gui.py.
+
+    History
+    Structure
+    Commands
+      Mouse Chords
+      Keyboard
+    Output from Joy
 
 
 --------------------------------------------------
