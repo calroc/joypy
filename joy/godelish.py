@@ -43,7 +43,6 @@ def x(stack, continuation, dictionary):
 
   ... [Q] x = ... [Q] dup i
   ... [Q] x = ... [Q] [Q] i
-  ... [Q] x = ... [Q] [Q] i
   ... [Q] x = ... [Q]  Q
 
   '''
