@@ -22,8 +22,6 @@
 
 § Combinators
 
-  functions that call joy()
-
 
 '''
 from .joy import joy

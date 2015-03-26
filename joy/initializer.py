@@ -17,10 +17,39 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 #
+import operator
 from .btree import fill_tree
-from .functions import FunctionWrapper, SimpleFunctionWrapper
+from .functions import (
+  add_aliases,
+  BinaryBuiltinWrapper,
+  FunctionWrapper,
+  SimpleFunctionWrapper,
+  )
 from . import combinators as comb
 from . import library as lib
+
+
+builtins = (
+  BinaryBuiltinWrapper(operator.add),
+  BinaryBuiltinWrapper(operator.and_),
+  BinaryBuiltinWrapper(operator.div),
+  BinaryBuiltinWrapper(operator.eq),
+  BinaryBuiltinWrapper(operator.floordiv),
+  BinaryBuiltinWrapper(operator.ge),
+  BinaryBuiltinWrapper(operator.gt),
+  BinaryBuiltinWrapper(operator.le),
+  BinaryBuiltinWrapper(operator.lshift),
+  BinaryBuiltinWrapper(operator.lt),
+  BinaryBuiltinWrapper(operator.mod),
+  BinaryBuiltinWrapper(operator.mul),
+  BinaryBuiltinWrapper(operator.ne),
+  BinaryBuiltinWrapper(operator.or_),
+  BinaryBuiltinWrapper(operator.pow),
+  BinaryBuiltinWrapper(operator.rshift),
+  BinaryBuiltinWrapper(operator.sub),
+  BinaryBuiltinWrapper(operator.truediv),
+  BinaryBuiltinWrapper(operator.xor),
+  )
 
 
 combinators = (
@@ -52,11 +81,35 @@ primitives = (
   SimpleFunctionWrapper(lib.truthy),
   SimpleFunctionWrapper(lib.getitem),
   SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.clear),
+  SimpleFunctionWrapper(lib.concat),
+  SimpleFunctionWrapper(lib.cons),
+  SimpleFunctionWrapper(lib.dup),
+  SimpleFunctionWrapper(lib.dupd),
+  SimpleFunctionWrapper(lib.id_),
+  SimpleFunctionWrapper(lib.min_),
+  SimpleFunctionWrapper(lib.pop),
+  SimpleFunctionWrapper(lib.popd),
+  SimpleFunctionWrapper(lib.popop),
+  SimpleFunctionWrapper(lib.pred),
+  SimpleFunctionWrapper(lib.remove),
+  SimpleFunctionWrapper(lib.reverse),
+  SimpleFunctionWrapper(lib.rolldown),
+  SimpleFunctionWrapper(lib.rollup),
+  SimpleFunctionWrapper(lib.stack_),
+  SimpleFunctionWrapper(lib.succ),
+  SimpleFunctionWrapper(lib.sum_),
+  SimpleFunctionWrapper(lib.swap),
+  SimpleFunctionWrapper(lib.uncons),
+  SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.zip_),
   )
 
 
 def initialize(dictionary=()):
+  B = [(F.name, F) for F in builtins]
   C = [(F.name, F) for F in combinators]
   P = [(F.name, F) for F in primitives]
-  dictionary = fill_tree(dictionary, C + P)
+  D = add_aliases(B + C + P)
+  dictionary = fill_tree(dictionary, D)
   return dictionary

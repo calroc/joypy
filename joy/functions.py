@@ -73,6 +73,18 @@ ALIASES = (
   )
 
 
+def add_aliases(items, A=ALIASES):
+  D = dict(items)
+  for name, aliases in A:
+    try:
+      F = D[name]
+    except KeyError:
+      continue
+    for alias in aliases:
+      D[alias] = F
+  return D.items()
+
+
 class FunctionWrapper(object):
   '''
   Allow functions to have a nice repr().
@@ -92,8 +104,16 @@ class FunctionWrapper(object):
 
 class SimpleFunctionWrapper(FunctionWrapper):
 
-  def __call__(self, stack, continuation, dictionary):
-    return self.f(stack), continuation, dictionary
+  def __call__(self, stack, expression, dictionary):
+    return self.f(stack), expression, dictionary
+
+
+class BinaryBuiltinWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    (a, (b, stack)) = stack
+    result = self.f(b, a)
+    return (result, stack), expression, dictionary
 
 
 def convert(token, dictionary):
