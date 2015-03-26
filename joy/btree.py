@@ -60,17 +60,17 @@ def insert(node, key, value):
   Return a tree with value stored under key. Replaces old value if any.
   '''
   if not node:
-    return key, value, (), ()
+    return key, (value, ((), ((), ())))
 
-  node_key, node_value, lower, higher = node
+  node_key, (node_value, (lower, (higher, _))) = node
 
   if key < node_key:
-    return node_key, node_value, insert(lower, key, value), higher
+    return node_key, (node_value, (insert(lower, key, value), (higher, ())))
 
   if key > node_key:
-    return node_key, node_value, lower, insert(higher, key, value)
+    return node_key, (node_value, (lower, (insert(higher, key, value), ())))
 
-  return key, value, lower, higher
+  return key, (value, (lower, (higher, ())))
 
 
 def get(node, key):
@@ -80,7 +80,7 @@ def get(node, key):
   if not node:
     raise KeyError, key
 
-  node_key, value, lower, higher = node
+  node_key, (value, (lower, (higher, _))) = node
 
   if key == node_key:
     return value
@@ -96,13 +96,13 @@ def delete(node, key):
   if not node:
     raise KeyError, key
 
-  node_key, value, lower, higher = node
+  node_key, (value, (lower, (higher, _))) = node
 
   if key < node_key:
-    return node_key, value, delete(lower, key), higher
+    return node_key, (value, (delete(lower, key), (higher, ())))
 
   if key > node_key:
-    return node_key, value, lower, delete(higher, key)
+    return node_key, (value, (lower, (delete(higher, key), ())))
 
   # So, key == node_key, delete this node itself.
 
@@ -122,11 +122,11 @@ def delete(node, key):
   # two symmetrical options. Over a lot of deletions this might make
   # the tree more unbalanced.  Oh well.)
   node = lower
-  while node[3]:
-    node = node[3]
-  key, value = node[:2]
+  while node[1][1][1][0]:
+    node = node[1][1][1][0]
+  key, value = node[0], node[1][0]
 
-  return key, value, delete(lower, key), higher
+  return key, (value, (delete(lower, key), (higher, ())))
 
 
 # The above functions are the "core" functionality for dealing with this
@@ -141,7 +141,7 @@ def items(node):
   if not node:
     return
 
-  key, value, lower, higher = node
+  key, (value, (lower, (higher, _))) = node
 
   for kv in items(lower):
     yield kv
