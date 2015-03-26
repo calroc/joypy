@@ -41,6 +41,7 @@ Every Joy function is an unary mapping from stacks to stacks.  Even
 literals are considered to be functions that accept a stack and return a
 new stack with the literal value on top.
 '''
+from __future__ import print_function
 from .parser import text_to_expression
 from .stack import strstack, iter_stack, list_to_stack
 
@@ -70,5 +71,5 @@ def run(text, stack, dictionary):
   '''
   Return the stack resulting from running the Joy code text on the stack.
   '''
-  expression = text_to_expression(text)
+  expression = text_to_expression(text, dictionary)
   return joy(expression, stack, dictionary)

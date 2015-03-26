@@ -46,8 +46,6 @@ important it is..
 '''
 from __future__ import print_function
 from sys import stderr
-from functools import wraps
-from collections import Callable
 from .btree import get
 
 
@@ -99,7 +97,7 @@ class SimpleFunctionWrapper(FunctionWrapper):
 
 
 def convert(token, dictionary):
-  '''Look up symbols in the functions dict.'''
+  '''Look up symbols in the functions dictionary.'''
   try:
     return get(dictionary, token)
   except KeyError:
