@@ -30,6 +30,56 @@ from .joy import joy
 from .stack import list_to_stack, iter_stack
 
 
+def dip(stack, continuation, dictionary):
+  (quote, (x, stack)) = stack
+  continuation = i, (x, continuation)
+  return (quote, stack), continuation, dictionary
+
+
+def i(stack, continuation, dictionary):
+  (quote, stack) = stack
+  accumulator = list(iter_stack(quote))
+  continuation = list_to_stack(accumulator, continuation)
+  return stack, continuation, dictionary
+
+
+def x(stack, continuation, dictionary):
+  '''
+  x == dup i
+
+  ... [Q] x = ... [Q] dup i
+  ... [Q] x = ... [Q] [Q] i
+  ... [Q] x = ... [Q]  Q
+
+  '''
+  quote = stack[0]
+  accumulator = list(iter_stack(quote))
+  continuation = list_to_stack(accumulator, continuation)
+  return stack, continuation, dictionary
+
+
+def b(stack, continuation, dictionary):
+  (q, (p, (stack))) = stack
+  continuation = (p, (i, (q, (i, continuation))))
+  return stack, continuation, dictionary
+
+
+def infra(stack, continuation, dictionary):
+  '''
+  Accept a quoted program and a list on the stack and run the program
+  with the list as its stack.
+  '''
+  (quote, (aggregate, stack)) = stack
+  Q = (i, (stack, (swaack, continuation)))
+  return (quote, aggregate), Q, dictionary
+
+
+def swaack(stack, continuation, dictionary):
+  old_stack, stack = stack
+  stack = stack, old_stack
+  return stack, continuation, dictionary
+
+
 def map_(S):
   '''
   Run the quoted program on TOS on the items in the list under it, push a
@@ -43,37 +93,37 @@ def map_(S):
   return results, stack
 
 
-def i(S):
-  '''Execute the quoted program on TOS on the rest of the stack.'''
-  (quote, stack) = S
-  return joy(quote, stack)
+##def i(S):
+##  '''Execute the quoted program on TOS on the rest of the stack.'''
+##  (quote, stack) = S
+##  return joy(quote, stack)
 
 
-def x(S):
-  '''
-  Like i but don't remove the program first.  In other words the
-  program gets itself as its first arg.
-  '''
-  (quote, stack) = S
-  return joy(quote, (quote, stack))
+##def x(S):
+##  '''
+##  Like i but don't remove the program first.  In other words the
+##  program gets itself as its first arg.
+##  '''
+##  (quote, stack) = S
+##  return joy(quote, (quote, stack))
 
 
-def infra(S):
-  '''
-  Accept a quoted program and a list on the stack and run the program
-  with the list as its stack.
-  '''
-  (quote, (aggregate, stack)) = S
-  return joy(quote, aggregate), stack
+##def infra(S):
+##  '''
+##  Accept a quoted program and a list on the stack and run the program
+##  with the list as its stack.
+##  '''
+##  (quote, (aggregate, stack)) = S
+##  return joy(quote, aggregate), stack
 
 
-def b(S):
-  '''
-  Given two quoted programs on the stack run the second one then the one
-  on TOS.
-  '''
-  (Q, (P, stack)) = S
-  return joy(Q, joy(P, stack))
+##def b(S):
+##  '''
+##  Given two quoted programs on the stack run the second one then the one
+##  on TOS.
+##  '''
+##  (Q, (P, stack)) = S
+##  return joy(Q, joy(P, stack))
 
 
 def cleave(S):
@@ -90,24 +140,33 @@ def cleave(S):
   return q, (p, stack)
 
 
-def ifte(S):
-  '''[if] [then] [else] ifte'''
-  (else_, (then, (if_, stack))) = S
-  if_res = joy(if_, stack)[0]
-  if if_res:
-    result = joy(then, stack)[0]
-  else:
-    result = joy(else_, stack)[0]
-  return result, stack
+def ifte(stack, continuation, dictionary):
+  (else_, (then, (if_, stack))) = stack
+  ii = (( (stack, (else_, (infra, ()))) , (
+      (stack, (then,  (infra, ()))) , ())), ())
+  stack = (if_, (stack, ii))
+  continuation = (infra, (first, (truthy, (getitem, (i, (unstack, ()))))))
+  return stack, continuation, dictionary
 
 
-def dip(S):
-  '''
-  dip expects a program [P] and below that another item X. It pops both,
-  saves X, executes P and then restores X.
-  '''
-  (quote, (x, stack)) = S
-  return x, joy(quote, stack)
+##def ifte(S):
+##  '''[if] [then] [else] ifte'''
+##  (else_, (then, (if_, stack))) = S
+##  if_res = joy(if_, stack)[0]
+##  if if_res:
+##    result = joy(then, stack)[0]
+##  else:
+##    result = joy(else_, stack)[0]
+##  return result, stack
+
+
+##def dip(S):
+##  '''
+##  dip expects a program [P] and below that another item X. It pops both,
+##  saves X, executes P and then restores X.
+##  '''
+##  (quote, (x, stack)) = S
+##  return x, joy(quote, stack)
 
 
 def dipd(S):

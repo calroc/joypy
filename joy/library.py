@@ -20,8 +20,24 @@
 from inspect import getdoc
 
 from .joy import run
-from .stack import list_to_stack, iter_stack
+from .stack import list_to_stack, iter_stack, pick
 from .functions import note, FUNCTIONS
+
+
+def first(stack):
+  Q, stack = stack
+  stack = Q[0], stack
+  return stack
+
+
+def truthy(stack):
+  n, stack = stack
+  return bool(n), stack
+
+
+def getitem(stack):
+  n, (Q, stack) = stack
+  return pick(Q, n), stack
 
 
 @note

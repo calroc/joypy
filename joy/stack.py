@@ -107,3 +107,20 @@ def strstack(stack):
   if not stack: # shortcut
     return ''
   return ' '.join(map(stack_to_string, iter_stack(stack)))
+
+
+def pick(s, n):
+  '''
+  Find the nth item on the stack. (Pick with zero is the same as "dup".)
+  '''
+  if n < 0:
+    raise ValueError
+  while True:
+    try:
+      item, s = s
+    except ValueError:
+      raise IndexError
+    n -= 1
+    if n < 0:
+      break
+  return item
