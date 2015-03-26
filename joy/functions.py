@@ -85,19 +85,18 @@ class FunctionWrapper(object):
   def __init__(self, f):
     self.f = f
     self.name = f.__name__.rstrip('_')
+    self.__doc__ = f.__doc__ or str(f)
 
-  def __call__(self, stack):
-    return self.f(stack)
+  def __call__(self, stack, expression, dictionary):
+    return self.f(stack, expression, dictionary)
 
   def __repr__(self):
     return self.name
 
 
-def note(f):
-  '''Decorator to enter functions into the function map.'''
-  F = wraps(f)(FunctionWrapper(f))
-  FUNCTIONS[F.name] = F
-  return F
+class SimpleFunctionWrapper(FunctionWrapper):
+  def __call__(self, stack, continuation, dictionary):
+    return self.f(stack), continuation, dictionary
 
 
 def convert(token):

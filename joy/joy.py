@@ -1,22 +1,4 @@
 # -*- coding: utf-8 -*-
-#
-#    Copyright © 2014, 2015 Simon Forman
-#
-#    This file is part of joy.py
-#
-#    joy.py is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    joy.py is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
-#
 '''
 
 
@@ -32,20 +14,20 @@ original version(s) written in C.  A Tkinter GUI is provided as well.
 
     Copyright © 2014 Simon Forman
 
-    This file is joy.py
+    This file is part of Joypy.
 
-    joy.py is free software: you can redistribute it and/or modify
+    Joypy is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    joy.py is distributed in the hope that it will be useful,
+    Joypy is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
+    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 
 
 § joy()
@@ -59,34 +41,34 @@ Every Joy function is an unary mapping from stacks to stacks.  Even
 literals are considered to be functions that accept a stack and return a
 new stack with the literal value on top.
 '''
-from .functions import is_function
 from .parser import text_to_expression
-from . import tracer
+from .stack import strstack, iter_stack, list_to_stack
 
 
-@tracer.Tracer
-def joy(expression, stack):
+def print_trace(stack, expression):
+  stack = list(iter_stack(stack))
+  stack.reverse()
+  print(strstack(list_to_stack(stack)), '.', strstack(expression))
+
+
+def joy(stack, expression, dictionary, viewer=print_trace):
   '''
   Evaluate the Joy expression on the stack.
   '''
   while expression:
-
-    if tracer.TRACE:
-      stack, expression = yield stack, expression
-
+    viewer(stack, expression)
     term, expression = expression
-
-    if is_function(term):
-      stack = term(stack)
+    if callable(term):
+      stack, expression, dictionary = term(stack, expression, dictionary)
     else:
       stack = term, stack
+  viewer(stack, expression)
+  return stack, expression, dictionary
 
-  yield stack, expression
 
-
-def run(text, stack):
+def run(text, stack, dictionary):
   '''
   Return the stack resulting from running the Joy code text on the stack.
   '''
   expression = text_to_expression(text)
-  return joy(expression, stack)
+  return joy(expression, stack, dictionary)

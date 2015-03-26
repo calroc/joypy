@@ -2,20 +2,20 @@
 #
 #    Copyright © 2014, 2015 Simon Forman
 #
-#    This file is part of joy.py
+#    This file is part of Joypy.
 #
-#    joy.py is free software: you can redistribute it and/or modify
+#    Joypy is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
-#    joy.py is distributed in the hope that it will be useful,
+#    Joypy is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
+#    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 #
 '''
 
@@ -42,6 +42,32 @@ from .functions import (
   note,
   )
 from .definitions import DEFINITIONS, add_definition
+from . import combinators as comb
+
+
+combinators = {
+  'app1': FunctionWrapper(comb.app1),
+  'app2': FunctionWrapper(comb.app2),
+  'app3': FunctionWrapper(comb.app3),
+  'b': FunctionWrapper(comb.b),
+  'binary': FunctionWrapper(comb.binary),
+  'cleave': FunctionWrapper(comb.cleave),
+  'dip': FunctionWrapper(comb.dip),
+  'dipd': FunctionWrapper(comb.dipd),
+  'dipdd': FunctionWrapper(comb.dipdd),
+  'i': FunctionWrapper(comb.i),
+  'ifte': FunctionWrapper(comb.ifte),
+  'infra': FunctionWrapper(comb.infra),
+  'map': FunctionWrapper(comb.map_),
+  'nullary': FunctionWrapper(comb.nullary),
+  'step': FunctionWrapper(comb.step),
+  'ternary': FunctionWrapper(comb.ternary),
+  'unary': FunctionWrapper(comb.unary),
+  'while': FunctionWrapper(comb.while_),
+  'x': FunctionWrapper(comb.x),
+  })
+
+
 
 
 _non = [] # TODO: look through these later and see about adding them..
