@@ -33,10 +33,20 @@ anything that isn't a number or enclosed in double-quote marks) will be
 looked up in the dictionary, a warning will be printed to stdout for any
 unfound symbols.
 '''
+from __future__ import print_function
+from sys import stderr
 from re import Scanner
-
+from .btree import get
 from .stack import list_to_stack
-from .functions import convert
+
+
+def convert(token, dictionary):
+  '''Look up symbols in the functions dictionary.'''
+  try:
+    return get(dictionary, token)
+  except KeyError:
+    print('unknown word', token, file=stderr)
+    return token
 
 
 def text_to_expression(text, dictionary):
@@ -51,8 +61,8 @@ def text_to_expression(text, dictionary):
 def _tokenize(text, dictionary):
   '''
   Convert a text into a stream of tokens, look up command symbols using
-  joy.functions.convert().  Raise ValueError (with some of the failing
-  text) if the scan fails.
+  convert().  Raise ValueError (with some of the failing text) if the
+  scan fails.
   '''
   _scanner.dictionary = dictionary
   tokens, rest = _scanner.scan(text)

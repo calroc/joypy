@@ -18,9 +18,10 @@
 #    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 #
 import operator
-from .btree import fill_tree
+from .btree import fill_tree, items
 from .functions import (
   add_aliases,
+  generate_definitions,
   BinaryBuiltinWrapper,
   FunctionWrapper,
   SimpleFunctionWrapper,
@@ -112,4 +113,7 @@ def initialize(dictionary=()):
   P = [(F.name, F) for F in primitives]
   D = add_aliases(B + C + P)
   dictionary = fill_tree(dictionary, D)
+  dictionary = generate_definitions(lib.definitions, dictionary)
+  # Re-balance the dictionary.
+  dictionary = fill_tree((), items(dictionary))
   return dictionary

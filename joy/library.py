@@ -23,6 +23,46 @@ from .joy import run
 from .stack import list_to_stack, iter_stack, pick
 
 
+definitions = '''\
+rest == uncons popd
+first == uncons pop
+second == rest first
+third == rest rest first
+sum == 0 swap [+] step
+product == 1 swap [*] step
+swons == swap cons
+swoncat == swap concat
+shunt == [swons] step
+reverse == [] swap shunt
+flatten == [] swap [concat] step
+unit == [] cons
+quoted == [unit] dip
+unquoted == [i] dip
+enstacken == stack [clear] dip
+disenstacken == [truthy] [uncons] while pop
+pam == [i] map
+run == [] swap infra
+sqr == dup mul
+size == 0 swap [pop ++] step
+average == [sum 1.0 *] [size] cleave /
+gcd == [0 >] [dup rollup modulus] while pop
+least_fraction == dup [gcd] infra [div] concat map
+divisor == popop 2 *
+minusb == pop neg
+radical == swap dup * rollup * 4 * - sqrt
+root1 == + swap /
+root2 == - swap /
+q0 == [divisor] [minusb] [radical]
+q1 == [root1] [root2]
+quadratic == [[q0] pam] ternary i [[q1] pam] ternary
+*fraction == [uncons] dip uncons [swap] dip concat [*] infra [*] dip cons
+*fraction0 == concat [[swap] dip * [*] dip] infra
+down_to_zero == [0 >] [dup --] while
+range_to_zero == unit [down_to_zero] infra
+times == [-- dip] cons [swap] infra [0 >] swap while pop
+'''
+
+
 def first(stack):
   Q, stack = stack
   stack = Q[0], stack

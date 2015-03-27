@@ -44,9 +44,9 @@ as simple tuple unpacking and repacking.
 Definitions, functions defined by equations, refactoring and how
 important it is..
 '''
-from __future__ import print_function
-from sys import stderr
-from .btree import get
+from .btree import get, insert
+from .parser import text_to_expression
+from .stack import list_to_stack, iter_stack
 
 
 ALIASES = (
@@ -116,10 +116,40 @@ class BinaryBuiltinWrapper(FunctionWrapper):
     return (result, stack), expression, dictionary
 
 
-def convert(token, dictionary):
-  '''Look up symbols in the functions dictionary.'''
-  try:
-    return get(dictionary, token)
-  except KeyError:
-    print('unknown word', token, file=stderr)
-    return token
+class DefinitionWrapper(FunctionWrapper):
+  '''
+  Allow functions to have a nice repr().
+  '''
+
+  def __init__(self, name, body_text, dictionary, doc=None):
+    self.name = self.__name__ = name
+    self.body = text_to_expression(body_text, dictionary)
+    self._body = tuple(iter_stack(self.body))
+    self.__doc__ = doc or body_text
+
+  def __call__(self, stack, expression, dictionary):
+    expression = list_to_stack(self._body, expression)
+##    i = get(dictionary, 'i')
+##    expression = self.body, (i, expression)
+    return stack, expression, dictionary
+
+  @classmethod
+  def parse_definition(class_, defi, dictionary):
+    '''
+    Given some text describing a Joy function definition parse it and
+    return a DefinitionWrapper.
+    '''
+    name, proper, body_text = (n.strip() for n in defi.partition('=='))
+    if not proper:
+      raise ValueError('Definition %r failed' % (defi,))
+    return class_(name, body_text, dictionary)
+
+
+def generate_definitions(defs, dictionary):
+  for definition in defs.splitlines():
+    definition = definition.strip()
+    if not definition or definition.isspace():
+      continue
+    F = DefinitionWrapper.parse_definition(definition, dictionary)
+    dictionary = insert(dictionary, F.name, F)
+  return dictionary
