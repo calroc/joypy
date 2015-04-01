@@ -116,6 +116,14 @@ class BinaryBuiltinWrapper(FunctionWrapper):
     return (result, stack), expression, dictionary
 
 
+class UnaryBuiltinWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    (a, stack) = stack
+    result = self.f(a)
+    return (result, stack), expression, dictionary
+
+
 class DefinitionWrapper(FunctionWrapper):
   '''
   Allow functions to have a nice repr().

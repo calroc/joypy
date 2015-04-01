@@ -242,6 +242,15 @@ def id_(stack):
   return stack
 
 
+def void(stack):
+  form, stack = stack
+  return _void(form), stack
+
+
+def _void(form):
+  return any(not _void(i) for i in iter_stack(form))
+
+
 ##
 ##def first(((head, tail), stack)):
 ##  return head, stack

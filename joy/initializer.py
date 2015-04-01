@@ -17,7 +17,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 #
-import operator
+import operator, math
 from .btree import fill_tree, items
 from .functions import (
   add_aliases,
@@ -25,6 +25,7 @@ from .functions import (
   BinaryBuiltinWrapper,
   FunctionWrapper,
   SimpleFunctionWrapper,
+  UnaryBuiltinWrapper,
   )
 from . import combinators as comb
 from . import library as lib
@@ -50,6 +51,10 @@ builtins = (
   BinaryBuiltinWrapper(operator.sub),
   BinaryBuiltinWrapper(operator.truediv),
   BinaryBuiltinWrapper(operator.xor),
+
+  UnaryBuiltinWrapper(operator.neg),
+  UnaryBuiltinWrapper(operator.not_),
+  UnaryBuiltinWrapper(math.sqrt),
   )
 
 
@@ -103,6 +108,7 @@ primitives = (
   SimpleFunctionWrapper(lib.swap),
   SimpleFunctionWrapper(lib.uncons),
   SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.void),
   SimpleFunctionWrapper(lib.zip_),
   )
 
