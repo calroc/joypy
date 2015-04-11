@@ -20,11 +20,85 @@
 from inspect import getdoc
 
 from .joy import run
-from .stack import list_to_stack, iter_stack
-from .functions import note, FUNCTIONS
+from .stack import list_to_stack, iter_stack, pick
 
 
-@note
+definitions = '''\
+rest == uncons popd
+first == uncons pop
+second == rest first
+third == rest rest first
+sum == 0 swap [+] step
+product == 1 swap [*] step
+swons == swap cons
+swoncat == swap concat
+shunt == [swons] step
+reverse == [] swap shunt
+flatten == [] swap [concat] step
+unit == [] cons
+quoted == [unit] dip
+unquoted == [i] dip
+enstacken == stack [clear] dip
+disenstacken == [truthy] [uncons] while pop
+pam == [i] map
+run == [] swap infra
+sqr == dup mul
+size == 0 swap [pop ++] step
+average == [sum 1.0 *] [size] cleave /
+gcd == [0 >] [dup rollup modulus] while pop
+least_fraction == dup [gcd] infra [div] concat map
+divisor == popop 2 *
+minusb == pop neg
+radical == swap dup * rollup * 4 * - sqrt
+root1 == + swap /
+root2 == - swap /
+q0 == [divisor] [minusb] [radical]
+q1 == [root1] [root2]
+quadratic == [[q0] pam] ternary i [[q1] pam] ternary
+*fraction == [uncons] dip uncons [swap] dip concat [*] infra [*] dip cons
+*fraction0 == concat [[swap] dip * [*] dip] infra
+down_to_zero == [0 >] [dup --] while
+range_to_zero == unit [down_to_zero] infra
+times == [-- dip] cons [swap] infra [0 >] swap while pop
+'''
+
+
+def first(stack):
+  Q, stack = stack
+  stack = Q[0], stack
+  return stack
+
+
+def truthy(stack):
+  n, stack = stack
+  return bool(n), stack
+
+
+def getitem(stack):
+  n, (Q, stack) = stack
+  return pick(Q, n), stack
+
+
+def min_(S):
+  '''
+  Given a list find the minimum.
+  '''
+  tos, stack = S
+  return min(iter_stack(tos)), stack
+
+
+def sum_(S):
+  tos, stack = S
+  return sum(iter_stack(tos)), stack
+
+
+def remove(S):
+  (tos, (second, stack)) = S
+  l = list(iter_stack(second))
+  l.remove(tos)
+  return list_to_stack(l), stack
+
+
 def cons(S):
   '''
   The cons operator expects a list on top of the stack and the potential
@@ -35,7 +109,6 @@ def cons(S):
   return (second, tos), stack
 
 
-@note
 def uncons(S):
   '''
   Inverse of cons, removes an item from the top of the list on the stack
@@ -46,27 +119,23 @@ def uncons(S):
   return tos, (item, stack)
 
 
-@note
 def clear(stack):
   '''Clear everything from the stack.'''
   return ()
 
 
-@note
 def dup(S):
   '''Duplicate the top item on the stack.'''
   (tos, stack) = S
   return tos, (tos, stack)
 
 
-@note
 def swap(S):
   '''Swap the top two items on stack.'''
   (tos, (second, stack)) = S
   return second, (tos, stack)
 
 
-@note
 def stack_(stack):
   '''
   The stack operator pushes onto the stack a list containing all the
@@ -75,7 +144,6 @@ def stack_(stack):
   return stack, stack
 
 
-@note
 def unstack(S):
   '''
   The unstack operator expects a list on top of the stack and makes that
@@ -85,35 +153,30 @@ def unstack(S):
   return tos
 
 
-@note
 def pop(S):
   '''Pop and discard the top item from the stack.'''
   (tos, stack) = S
   return stack
 
 
-@note
 def popd(S):
   '''Pop and discard the second item from the stack.'''
   (tos, (second, stack)) = S
   return tos, stack
 
 
-@note
 def popop(S):
   '''Pop and discard the first and second items from the stack.'''
   (tos, (second, stack)) = S
   return stack
 
 
-@note
 def dupd(S):
   '''Duplicate the second item on the stack.'''
   (tos, (second, stack)) = S
   return tos, (second, (second, stack))
 
 
-@note
 def reverse(S):
   '''Reverse the list on the top of the stack.'''
   (tos, stack) = S
@@ -123,7 +186,6 @@ def reverse(S):
   return res, stack
 
 
-@note
 def concat(S):
   '''Concatinate the two lists on the top of the stack.'''
   (tos, (second, stack)) = S
@@ -132,7 +194,6 @@ def concat(S):
   return tos, stack
 
 
-@note
 def zip_(S):
   '''
   Replace the two lists on the top of the stack with a list of the pairs
@@ -146,35 +207,30 @@ def zip_(S):
   return list_to_stack(accumulator), stack
 
 
-@note
 def succ(S):
   '''Increment TOS.'''
   (tos, stack) = S
   return tos + 1, stack
 
 
-@note
 def pred(S):
   '''Decrement TOS.'''
   (tos, stack) = S
   return tos - 1, stack
 
 
-@note
 def rollup(S):
   '''a b c -> b c a'''
   (a, (b, (c, stack))) = S
   return b, (c, (a, stack))
 
 
-@note
 def rolldown(S):
   '''a b c -> c a b'''
   (a, (b, (c, stack))) = S
   return c, (a, (b, stack))
 
 
-@note
 def execute(S):
   (text, stack) = S
   if isinstance(text, str):
@@ -182,17 +238,25 @@ def execute(S):
   return stack
 
 
-@note
 def id_(stack):
   return stack
 
 
-##@note
+def void(stack):
+  form, stack = stack
+  return _void(form), stack
+
+
+def _void(form):
+  return any(not _void(i) for i in iter_stack(form))
+
+
+##
 ##def first(((head, tail), stack)):
 ##  return head, stack
 
 
-##@note
+##
 ##def rest(((head, tail), stack)):
 ##  return tail, stack
 
@@ -206,14 +270,12 @@ def id_(stack):
 ##  take
 
 
-@note
 def print_words(stack):
   '''Print all the words in alphabetical order.'''
   print(' '.join(sorted(FUNCTIONS)))
   return stack
 
 
-@note
 def simple_manual(stack):
   '''
   Print words and help for each word.
@@ -233,7 +295,6 @@ def simple_manual(stack):
   return stack
 
 
-@note
 def help_(S):
   '''Accepts a quoted word on the top of the stack and prints its docs.'''
   (quote, stack) = S

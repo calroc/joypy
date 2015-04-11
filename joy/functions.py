@@ -44,13 +44,9 @@ as simple tuple unpacking and repacking.
 Definitions, functions defined by equations, refactoring and how
 important it is..
 '''
-from __future__ import print_function
-from sys import stderr
-from functools import wraps
-from collections import Callable
-
-
-FUNCTIONS = {}
+from .btree import get, insert
+from .parser import text_to_expression
+from .stack import list_to_stack, iter_stack
 
 
 ALIASES = (
@@ -77,6 +73,18 @@ ALIASES = (
   )
 
 
+def add_aliases(items, A=ALIASES):
+  D = dict(items)
+  for name, aliases in A:
+    try:
+      F = D[name]
+    except KeyError:
+      continue
+    for alias in aliases:
+      D[alias] = F
+  return D.items()
+
+
 class FunctionWrapper(object):
   '''
   Allow functions to have a nice repr().
@@ -85,72 +93,71 @@ class FunctionWrapper(object):
   def __init__(self, f):
     self.f = f
     self.name = f.__name__.rstrip('_')
+    self.__doc__ = f.__doc__ or str(f)
 
-  def __call__(self, stack):
-    return self.f(stack)
+  def __call__(self, stack, expression, dictionary):
+    return self.f(stack, expression, dictionary)
 
   def __repr__(self):
     return self.name
 
 
-def note(f):
-  '''Decorator to enter functions into the function map.'''
-  F = wraps(f)(FunctionWrapper(f))
-  FUNCTIONS[F.name] = F
-  return F
+class SimpleFunctionWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    return self.f(stack), expression, dictionary
 
 
-def convert(token):
-  '''Look up symbols in the functions dict.'''
-  try:
-    return FUNCTIONS[token]
-  except KeyError:
-    print('unknown word', token, file=stderr)
-    return token
+class BinaryBuiltinWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    (a, (b, stack)) = stack
+    result = self.f(b, a)
+    return (result, stack), expression, dictionary
 
 
-def is_function(term):
+class UnaryBuiltinWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    (a, stack) = stack
+    result = self.f(a)
+    return (result, stack), expression, dictionary
+
+
+class DefinitionWrapper(FunctionWrapper):
   '''
-  Return a Boolean value indicating whether or not a term is a function.
+  Allow functions to have a nice repr().
   '''
-  # In Python the tuple type is callable so we have to check for that.
-  # We could also just check isinstance(term, FunctionWrapper), but this
-  # way we can use any old callable as a function if we like.
-  return isinstance(term, Callable) and not isinstance(term, tuple)
+
+  def __init__(self, name, body_text, dictionary, doc=None):
+    self.name = self.__name__ = name
+    self.body = text_to_expression(body_text, dictionary)
+    self._body = tuple(iter_stack(self.body))
+    self.__doc__ = doc or body_text
+
+  def __call__(self, stack, expression, dictionary):
+    expression = list_to_stack(self._body, expression)
+##    i = get(dictionary, 'i')
+##    expression = self.body, (i, expression)
+    return stack, expression, dictionary
+
+  @classmethod
+  def parse_definition(class_, defi, dictionary):
+    '''
+    Given some text describing a Joy function definition parse it and
+    return a DefinitionWrapper.
+    '''
+    name, proper, body_text = (n.strip() for n in defi.partition('=='))
+    if not proper:
+      raise ValueError('Definition %r failed' % (defi,))
+    return class_(name, body_text, dictionary)
 
 
-# Helper functions tp auto-generate Joy functions from Python builtins.
-
-
-def joyful_1_arg_op(f):
-  '''
-  Return a Joy function that pops the top argument from the stack and
-  pushes f(tos) back.
-  '''
-# return wraps(f)(lambda ((tos, stack)): (f(tos), stack))
-  return wraps(f)(lambda tos_stack: (f(tos_stack[0]), tos_stack[1]))
-
-
-def joyful_2_arg_op(f):
-  '''
-  Return a Joy function that pops the top two arguments from the stack
-  and pushes f(second, tos) back.
-  '''
-# return wraps(f)(lambda ((tos, (second, stack))): (f(second, tos), stack))
-  return wraps(f)(lambda tos_second_stack: (f(tos_second_stack[1][0], tos_second_stack[0]), tos_second_stack[1][1]))
-
-
-def is_unary_math_op(op):
-  try:
-    op(1)
-  except:
-    return False
-  return True
-
-
-def is_binary_math_op(op):
-  try:
-    op(1, 1)
-  except:
-    return False
-  return True
+def generate_definitions(defs, dictionary):
+  for definition in defs.splitlines():
+    definition = definition.strip()
+    if not definition or definition.isspace():
+      continue
+    F = DefinitionWrapper.parse_definition(definition, dictionary)
+    dictionary = insert(dictionary, F.name, F)
+  return dictionary

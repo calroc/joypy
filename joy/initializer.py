@@ -2,78 +2,124 @@
 #
 #    Copyright © 2014, 2015 Simon Forman
 #
-#    This file is part of joy.py
+#    This file is part of Joypy.
 #
-#    joy.py is free software: you can redistribute it and/or modify
+#    Joypy is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
-#    joy.py is distributed in the hope that it will be useful,
+#    Joypy is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
+#    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 #
-'''
-
-
-Initialize additional functions.
-
-This is a bit of functionality to load up some additional names and
-functions in the FUNCTIONS dict.  We grab some mathematical functions
-from the math and operator modules, then we add in aliases and definitions.
-
-It's a little rough around the edges but it works.
-
-
-'''
 import operator, math
-from inspect import getmembers, isbuiltin
+from .btree import fill_tree, items
 from .functions import (
-  ALIASES,
-  FUNCTIONS,
-  is_unary_math_op,
-  is_binary_math_op,
-  joyful_1_arg_op,
-  joyful_2_arg_op,
-  note,
+  add_aliases,
+  generate_definitions,
+  BinaryBuiltinWrapper,
+  FunctionWrapper,
+  SimpleFunctionWrapper,
+  UnaryBuiltinWrapper,
   )
-from .definitions import DEFINITIONS, add_definition
+from . import combinators as comb
+from . import library as lib
 
 
-_non = [] # TODO: look through these later and see about adding them..
+builtins = (
+  BinaryBuiltinWrapper(operator.add),
+  BinaryBuiltinWrapper(operator.and_),
+  BinaryBuiltinWrapper(operator.div),
+  BinaryBuiltinWrapper(operator.eq),
+  BinaryBuiltinWrapper(operator.floordiv),
+  BinaryBuiltinWrapper(operator.ge),
+  BinaryBuiltinWrapper(operator.gt),
+  BinaryBuiltinWrapper(operator.le),
+  BinaryBuiltinWrapper(operator.lshift),
+  BinaryBuiltinWrapper(operator.lt),
+  BinaryBuiltinWrapper(operator.mod),
+  BinaryBuiltinWrapper(operator.mul),
+  BinaryBuiltinWrapper(operator.ne),
+  BinaryBuiltinWrapper(operator.or_),
+  BinaryBuiltinWrapper(operator.pow),
+  BinaryBuiltinWrapper(operator.rshift),
+  BinaryBuiltinWrapper(operator.sub),
+  BinaryBuiltinWrapper(operator.truediv),
+  BinaryBuiltinWrapper(operator.xor),
+
+  UnaryBuiltinWrapper(operator.neg),
+  UnaryBuiltinWrapper(operator.not_),
+  UnaryBuiltinWrapper(math.sqrt),
+  )
 
 
-def initialize(modules=(operator, math)):
-  '''
-  Initialize additional functions (from Python modules and DEFINITIONS)
-  and enter ALIASES into FUNCTIONS.
-  '''
+combinators = (
+  FunctionWrapper(comb.app1),
+  FunctionWrapper(comb.app2),
+  FunctionWrapper(comb.app3),
+  FunctionWrapper(comb.b),
+  FunctionWrapper(comb.binary),
+  FunctionWrapper(comb.cleave),
+  FunctionWrapper(comb.dip),
+  FunctionWrapper(comb.dipd),
+  FunctionWrapper(comb.dipdd),
+  FunctionWrapper(comb.i),
+  FunctionWrapper(comb.ifte),
+  FunctionWrapper(comb.infra),
+  FunctionWrapper(comb.map_),
+  FunctionWrapper(comb.nullary),
+  FunctionWrapper(comb.step),
+  FunctionWrapper(comb.swaack),
+  FunctionWrapper(comb.ternary),
+  FunctionWrapper(comb.unary),
+  FunctionWrapper(comb.while_),
+  FunctionWrapper(comb.x),
+  )
 
-  # Note that the operator module defines a bunch of "in-place" versions of
-  # functions that all start with 'i' and that we don't want.
-  # Fortunately, the math module only defines two functions that start with
-  # 'i' and we don't want either of them either, so the exclusion of names
-  # that start with 'i' below is okay for these two modules.  Eventually if
-  # we pull Joy functions from more Python modules we should add something
-  # to let us properly specify the names of the functions to wrap.
 
-  # Add functions from Python modules.
-  for module in modules:
-    for name, function in getmembers(module, isbuiltin):
-      if name.startswith('_') or name.startswith('i'): continue
-      if is_unary_math_op(function): note(joyful_1_arg_op(function))
-      elif is_binary_math_op(function): note(joyful_2_arg_op(function))
-      else: _non.append(function)
+primitives = (
+  SimpleFunctionWrapper(lib.first),
+  SimpleFunctionWrapper(lib.truthy),
+  SimpleFunctionWrapper(lib.getitem),
+  SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.clear),
+  SimpleFunctionWrapper(lib.concat),
+  SimpleFunctionWrapper(lib.cons),
+  SimpleFunctionWrapper(lib.dup),
+  SimpleFunctionWrapper(lib.dupd),
+  SimpleFunctionWrapper(lib.id_),
+  SimpleFunctionWrapper(lib.min_),
+  SimpleFunctionWrapper(lib.pop),
+  SimpleFunctionWrapper(lib.popd),
+  SimpleFunctionWrapper(lib.popop),
+  SimpleFunctionWrapper(lib.pred),
+  SimpleFunctionWrapper(lib.remove),
+  SimpleFunctionWrapper(lib.reverse),
+  SimpleFunctionWrapper(lib.rolldown),
+  SimpleFunctionWrapper(lib.rollup),
+  SimpleFunctionWrapper(lib.stack_),
+  SimpleFunctionWrapper(lib.succ),
+  SimpleFunctionWrapper(lib.sum_),
+  SimpleFunctionWrapper(lib.swap),
+  SimpleFunctionWrapper(lib.uncons),
+  SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.void),
+  SimpleFunctionWrapper(lib.zip_),
+  )
 
-  # Now that all the functions are in the dict, add the aliases.
-  for name, aliases in ALIASES:
-    for alias in aliases:
-      FUNCTIONS[alias] = FUNCTIONS[name]
 
-  # Parse and enter the definitions.
-  for definition in DEFINITIONS.split(';'):
-    add_definition(definition.strip())
+def initialize(dictionary=()):
+  B = [(F.name, F) for F in builtins]
+  C = [(F.name, F) for F in combinators]
+  P = [(F.name, F) for F in primitives]
+  D = add_aliases(B + C + P)
+  dictionary = fill_tree(dictionary, D)
+  dictionary = generate_definitions(lib.definitions, dictionary)
+  # Re-balance the dictionary.
+  dictionary = fill_tree((), items(dictionary))
+  return dictionary

@@ -2,49 +2,69 @@
 #
 #    Copyright © 2014, 2015 Simon Forman
 #
-#    This file is part of joy.py
+#    This file is part of Joypy.
 #
-#    joy.py is free software: you can redistribute it and/or modify
+#    Joypy is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
-#    joy.py is distributed in the hope that it will be useful,
+#    Joypy is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
+#    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 #
 '''
 
 
 § Converting text to a joy expression.
 
+This module exports a single function:
 
+  text_to_expression(text, dictionary)
+
+When supplied with a string text and a dictionary BTree (see btree.py)
+this function will return a Python datastructure that represents the Joy
+datastructure described by the text expression.  Any symbols (pretty much
+anything that isn't a number or enclosed in double-quote marks) will be
+looked up in the dictionary, a warning will be printed to stdout for any
+unfound symbols.
 '''
+from __future__ import print_function
+from sys import stderr
 from re import Scanner
-
+from .btree import get
 from .stack import list_to_stack
-from .functions import convert
 
 
-def text_to_expression(text):
+def convert(token, dictionary):
+  '''Look up symbols in the functions dictionary.'''
+  try:
+    return get(dictionary, token)
+  except KeyError:
+    print('unknown word', token, file=stderr)
+    return token
+
+
+def text_to_expression(text, dictionary):
   '''
   Convert a text to a Joy expression.
   '''
-  tokens = _tokenize(text)
+  tokens = _tokenize(text, dictionary)
   expression = _parse(tokens)
   return expression
 
 
-def _tokenize(text):
+def _tokenize(text, dictionary):
   '''
   Convert a text into a stream of tokens, look up command symbols using
-  joy.functions.convert().  Raise ValueError (with some of the failing
-  text) if the scan fails.
+  convert().  Raise ValueError (with some of the failing text) if the
+  scan fails.
   '''
+  _scanner.dictionary = dictionary
   tokens, rest = _scanner.scan(text)
   if rest:
     raise ValueError(
@@ -73,7 +93,7 @@ def _parse(tokens):
   return list_to_stack(frame)
 
 
-def _scan_identifier(scanner, token): return convert(token)
+def _scan_identifier(scanner, token): return convert(token, scanner.dictionary)
 def _scan_bracket(scanner, token): return token
 def _scan_float(scanner, token): return float(token)
 def _scan_int(scanner, token): return int(token)
