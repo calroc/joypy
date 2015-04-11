@@ -143,7 +143,7 @@ def linrec(S):
   Otherwise it executes the else1-part, then it recurses with all four
   parts, and finally it executes the else2-part.
 
-  ... [0 =] [1] [dup --] [*] linrec
+  ... [0 =] [++ 1] [dup --] [*] linrec
 
   '''
   else2, (else1, (then, (if_, stack))) = S
