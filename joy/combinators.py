@@ -135,6 +135,28 @@ def ifte(S):
 
 
 @combinator
+def linrec(S):
+  '''
+  The linrec combinator for linear recursion expects an if-part, a then-
+  part, an else1-part and on top an else2-part. Like the ifte combinator it
+  executes the if-part, and if that yields true it executes the then-part.
+  Otherwise it executes the else1-part, then it recurses with all four
+  parts, and finally it executes the else2-part.
+
+  ... [0 =] [1] [dup --] [*] linrec
+
+  '''
+  else2, (else1, (then, (if_, stack))) = S
+  n = joy(if_, stack)[0]
+  if n:
+    stack = joy(then, stack)
+  else:
+    stack = joy(else1, stack)
+    stack = linrec((else2, (else1, (then, (if_, stack)))))
+  return joy(else2, stack)
+
+
+@combinator
 def dip(S):
   '''
   dip expects a program [P] and below that another item X. It pops both,
