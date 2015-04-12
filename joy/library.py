@@ -19,6 +19,7 @@
 #
 from inspect import getdoc
 
+from .btree import items
 from .joy import run
 from .stack import list_to_stack, iter_stack, pick
 
@@ -270,10 +271,10 @@ def _void(form):
 ##  take
 
 
-def print_words(stack):
+def print_words(stack, expression, dictionary):
   '''Print all the words in alphabetical order.'''
-  print(' '.join(sorted(FUNCTIONS)))
-  return stack
+  print(' '.join(name for name, f in items(dictionary)))
+  return stack, expression, dictionary
 
 
 def simple_manual(stack):

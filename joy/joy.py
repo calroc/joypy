@@ -42,6 +42,11 @@ literals are considered to be functions that accept a stack and return a
 new stack with the literal value on top.
 '''
 from __future__ import print_function
+try:
+  input = raw_input
+except NameError:
+  pass
+from traceback import print_exc
 from .parser import text_to_expression
 from .stack import strstack, iter_stack, list_to_stack
 
@@ -72,4 +77,29 @@ def run(text, stack, dictionary):
   Return the stack resulting from running the Joy code text on the stack.
   '''
   expression = text_to_expression(text, dictionary)
-  return joy(expression, stack, dictionary)
+  return joy(stack, expression, dictionary)
+
+
+def repl(stack=(), dictionary=()):
+  '''
+  Read-Evaluate-Print Loop
+
+  Accept input and run it on the stack, loop.
+  '''
+  try:
+    while True:
+      print()
+      print('->', strstack(stack))
+      print()
+      try:
+        text = input('joy? ')
+      except (EOFError, KeyboardInterrupt):
+        break
+      try:
+        stack, _, dictionary = run(text, stack, dictionary)
+      except:
+        print_exc()
+  except:
+    print_exc()
+  print()
+  return stack

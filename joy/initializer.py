@@ -79,6 +79,7 @@ combinators = (
   FunctionWrapper(comb.unary),
   FunctionWrapper(comb.while_),
   FunctionWrapper(comb.x),
+  FunctionWrapper(lib.print_words),
   )
 
 
