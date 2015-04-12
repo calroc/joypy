@@ -19,22 +19,22 @@
 #
 from inspect import getdoc
 
-from ..functions import FUNCTIONS
+from ..btree import items, get
+from ..joy import run
 from ..stack import strstack
-from ..joy import joy, run
-from .. import tracer
 
 from .misc import is_numerical
 
 
 class World(object):
 
-  def __init__(self, stack=(), text_widget=None):
+  def __init__(self, stack=(), dictionary=(), text_widget=None):
     self.stack = stack
+    self.dictionary = dictionary
     self.text_widget = text_widget
 
   def do_lookup(self, name):
-    word = FUNCTIONS[name]
+    word = get(self.dictionary, name)
     self.stack = word, self.stack
     self.print_stack()
 
@@ -43,7 +43,7 @@ class World(object):
       print('The number', name)
     else:
       try:
-        word = FUNCTIONS[name]
+        word = get(self.dictionary, name)
       except KeyError:
         print(repr(name), '???')
       else:
@@ -65,13 +65,21 @@ class World(object):
       return self.stack[0]
 
   def interpret(self, command):
-    if tracer.TRACE: joy.reset()
-    self.stack = run(command, self.stack)
+    self.stack, _, self.dictionary = run(
+      command,
+      self.stack,
+      self.dictionary,
+      )
     self.print_stack()
-    if tracer.TRACE: joy.show_trace()
 
   def has(self, name):
-    return name in FUNCTIONS
+    try:
+      get(self.dictionary, name)
+    except KeyError:
+      res = False
+    else:
+      res = True
+    return res
 
   def save(self):
     pass

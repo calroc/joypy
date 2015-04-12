@@ -6,7 +6,7 @@ from .initializer import initialize
 
 if '--gui' in argv:
   from .gui.textwidget import main
-  t = main()
+  t = main(dictionary=initialize())
   print()
   print('<STACK')
   t.mainloop()

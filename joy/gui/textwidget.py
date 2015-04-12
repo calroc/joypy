@@ -52,8 +52,8 @@ from .saver import SavingMixin
 from .world import World
 
 
-def make_gui():
-  t = TextViewerWidget(World())
+def make_gui(dictionary):
+  t = TextViewerWidget(World(dictionary=dictionary))
   t['font'] = get_font()
   t._root().title('Joy')
   t.pack(expand=True, fill=tk.BOTH)
@@ -66,8 +66,8 @@ def get_font(family='EB Garamond', size=14):
   return Font(family=family, size=size)
 
 
-def main():
-  t = make_gui()
+def main(dictionary):
+  t = make_gui(dictionary)
   sys.stdout = FileFaker(t)
   return t
 
