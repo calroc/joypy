@@ -45,13 +45,20 @@ def x(stack, expression, dictionary):
   ... [Q] x = ... [Q]  Q
 
   '''
+  i = get(dictionary, 'i')
   quote = stack[0]
-  accumulator = list(iter_stack(quote))
-  expression = list_to_stack(accumulator, expression)
+  expression = (i, (quote, expression))
   return stack, expression, dictionary
 
 
 def b(stack, expression, dictionary):
+  '''
+  b == [i] dip i
+
+  ... [P] [Q] b == ... [P] i [Q] i
+  ... [P] [Q] b == ... P Q
+
+  '''
   i = get(dictionary, 'i')
   (q, (p, (stack))) = stack
   expression = (p, (i, (q, (i, expression))))
@@ -89,39 +96,6 @@ def map_(S, expression, dictionary):
   return (results, stack), expression, dictionary
 
 
-##def i(S):
-##  '''Execute the quoted program on TOS on the rest of the stack.'''
-##  (quote, stack) = S
-##  return joy(quote, stack)
-
-
-##def x(S):
-##  '''
-##  Like i but don't remove the program first.  In other words the
-##  program gets itself as its first arg.
-##  '''
-##  (quote, stack) = S
-##  return joy(quote, (quote, stack))
-
-
-##def infra(S):
-##  '''
-##  Accept a quoted program and a list on the stack and run the program
-##  with the list as its stack.
-##  '''
-##  (quote, (aggregate, stack)) = S
-##  return joy(quote, aggregate), stack
-
-
-##def b(S):
-##  '''
-##  Given two quoted programs on the stack run the second one then the one
-##  on TOS.
-##  '''
-##  (Q, (P, stack)) = S
-##  return joy(Q, joy(P, stack))
-
-
 def cleave(S, expression, dictionary):
   '''
   The cleave combinator expects two quotations, and below that an item X.
@@ -151,32 +125,12 @@ def ifte(stack, expression, dictionary):
   return stack, expression, dictionary
 
 
-##def ifte(S):
-##  '''[if] [then] [else] ifte'''
-##  (else_, (then, (if_, stack))) = S
-##  if_res = joy(if_, stack)[0]
-##  if if_res:
-##    result = joy(then, stack)[0]
-##  else:
-##    result = joy(else_, stack)[0]
-##  return result, stack
-
-
 def dip(stack, expression, dictionary):
   i = get(dictionary, 'i')
-  x = get(dictionary, 'x')
   (quote, (x, stack)) = stack
+  stack = (quote, stack)
   expression = i, (x, expression)
-  return (quote, stack), expression, dictionary
-
-
-##def dip(S):
-##  '''
-##  dip expects a program [P] and below that another item X. It pops both,
-##  saves X, executes P and then restores X.
-##  '''
-##  (quote, (x, stack)) = S
-##  return x, joy(quote, stack)
+  return stack, expression, dictionary
 
 
 def dipd(S, expression, dictionary):
