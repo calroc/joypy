@@ -32,11 +32,11 @@ lower and higher branches of the tree.
 
 This module defines the following functions:
 
-  insert(node, key, value)
+    insert(node, key, value)
 
-  get(node, key)
+    get(node, key)
 
-  delete(node, key)
+    delete(node, key)
 
 Both insert() and delete() return a new tuple that is the result of
 applying the operation to the existing node.  (And both get() and delete()
@@ -52,13 +52,12 @@ raise a RuntimeError if the maximum recursion depth is exceeded.  This
 should only be a problem if used with very large trees.  To avoid this
 issue you can use sys.setrecursionlimit(), but I think I might just
 rewrite these to not use recursion.
+
+## insert()
+
+Return a tree with value stored under key. Replaces old value if any.
 '''
-
-
 def insert(node, key, value):
-  '''
-  Return a tree with value stored under key. Replaces old value if any.
-  '''
   if not node:
     return key, (value, ((), ((), ())))
 
@@ -73,10 +72,12 @@ def insert(node, key, value):
   return key, (value, (lower, (higher, ())))
 
 
+'''
+## get()
+
+Return the value stored under key or raise KeyError if not found.
+'''
 def get(node, key):
-  '''
-  Return the value stored under key or raise KeyError if not found.
-  '''
   if not node:
     raise KeyError, key
 
@@ -88,11 +89,13 @@ def get(node, key):
   return get(lower if key < node_key else higher, key)
 
 
+'''
+## delete()
+
+Return a tree with the value (and key) removed or raise KeyError if
+not found.
+'''
 def delete(node, key):
-  '''
-  Return a tree with the value (and key) removed or raise KeyError if
-  not found.
-  '''
   if not node:
     raise KeyError, key
 
@@ -129,15 +132,17 @@ def delete(node, key):
   return key, (value, (delete(lower, key), (higher, ())))
 
 
-# The above functions are the "core" functionality for dealing with this
-# tuple-based persistant BTree datastructure.  The rest of this module is
-# just helper functions.
+'''
 
+The above functions are the "core" functionality for dealing with this
+tuple-based persistant BTree datastructure.  The rest of this module is
+just helper functions.
 
+## items()
+
+Iterate in order over the (key, value) pairs in a tree.
+'''
 def items(node):
-  '''
-  Iterate in order over the (key, value) pairs in a tree.
-  '''
   if not node:
     return
 
@@ -152,44 +157,54 @@ def items(node):
     yield kv
 
 
+'''
+### yield_balanced()
+
+Recursive generator function to yield the items in a sorted sequence
+in such a way as to fill a btree in a balanced fashion.
+'''
 def _yield_balanced(sorted_items):
   '''
-  Recursive generator function to yield the items in a sorted sequence
-  in such a way as to fill a btree in a balanced fashion.
+  For empty sequences do nothing.
   '''
-  # For empty sequences do nothing.
   if not sorted_items:
     return
-
-  # Find the index of the middle item (rounding down for even-length
-  # sequences due to integer division.)
+  '''
+  Find the index of the middle item (rounding down for even-length
+  sequences due to integer division.)
+  '''
   i = len(sorted_items) / 2
-
-  # Yield the middle item.
+  '''
+  Yield the middle item.
+  '''
   yield sorted_items[i]
-
-  # Shortcut in case len(sorted_items) == 1
+  '''
+  Shortcut in case the length of `sorted_items` is one.
+  '''
   if not i:
     return 
-
-  # Now recurse on lower and higher halves of the sequence.
+  '''
+  Now recurse on lower and higher halves of the sequence.
+  '''
   for low in _yield_balanced(sorted_items[:i]):
     yield low
   for high in _yield_balanced(sorted_items[i+1:]):
     yield high
 
 
-def fill_tree(node, items):
-  '''
-  Add the (key, value) pairs in items to a btree in a balanced way.
+'''
+## fill_tree()
 
-  You can balance a tree like so:
+Add the (key, value) pairs in items to a btree in a balanced way.
+
+You can balance a tree like so:
 
     tree = fill_tree((), items(tree))
 
-  This iterates through the tree and returns a new, balanced tree from
-  its contents.
-  '''
+This iterates through the tree and returns a new, balanced tree from
+its contents.
+'''
+def fill_tree(node, items):
   for key, value in _yield_balanced(sorted(items)):
     node = insert(node, key, value)
   return node
