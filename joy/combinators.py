@@ -116,12 +116,18 @@ def ifte(stack, expression, dictionary):
   first = get(dictionary, 'first')
   truthy = get(dictionary, 'truthy')
   getitem = get(dictionary, 'getitem')
-  unstack = get(dictionary, 'unstack')
+#  unstack = get(dictionary, 'unstack')
   (else_, (then, (if_, stack))) = stack
-  ii = (( (stack, (else_, (infra, ()))) , (
-      (stack, (then,  (infra, ()))) , ())), ())
-  stack = (if_, (stack, ii))
-  expression = (infra, (first, (truthy, (getitem, (i, (unstack, ()))))))
+
+  expression = (
+    (else_, (then, ())),
+    (stack, (if_,
+             (infra, (first, (truthy, (getitem, (i, expression))))))))
+
+##  ii = (( (stack, (else_, (infra, ()))) , (
+##      (stack, (then,  (infra, ()))) , ())), ())
+##  stack = (if_, (stack, ii))
+##  expression = (infra, (first, (truthy, (getitem, (i, (unstack, ()))))))
   return stack, expression, dictionary
 
 
