@@ -20,7 +20,7 @@
 '''
 
 
-§ Stack
+# § Stack
 
 
 When talking about Joy we use the terms "stack", "list", "sequence" and
@@ -32,11 +32,11 @@ We use the venerable two-tuple recursive form of sequences where the
 empty tuple () is the empty stack and (head, rest) gives the recursive
 form of a stack with one or more items on it.
 
-  ()
-  (1, ())
-  (1, (2, ()))
-  (1, (2, (3, ())))
-  ...
+    ()
+    (1, ())
+    (1, (2, ()))
+    (1, (2, (3, ())))
+    ...
 
 And so on.
 
@@ -46,13 +46,13 @@ iterable and also to iterate through a stack and yield its items
 one-by-one in order, and two functions to generate string representations
 of stacks:
 
-  list_to_stack()
+    list_to_stack()
 
-  iter_stack()
+    iter_stack()
 
-  stack_to_string()
+    stack_to_string()
 
-  strstack()
+    strstack()
 
 
 
@@ -63,9 +63,9 @@ means we can directly "unpack" the expected arguments to a Joy function.
 
 For example:
 
-  def dup(stack):
-    head, tail = stack
-    return head, (head, tail)
+    def dup(stack):
+      head, tail = stack
+      return head, (head, tail)
 
 We replace the argument "stack" by the expected structure of the stack,
 in this case "(head, tail)", and Python takes care of de-structuring the

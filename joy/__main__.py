@@ -17,6 +17,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
 #
+'''
+# Running Joy from the Command Line
+'''
 from __future__ import print_function
 from sys import argv
 from .joy import repl

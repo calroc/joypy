@@ -106,24 +106,27 @@ def delete(node, key):
 
   if key > node_key:
     return node_key, (value, (lower, (delete(higher, key), ())))
+  '''
+  So, key == node_key, delete this node itself.
 
-  # So, key == node_key, delete this node itself.
-
-  # If we only have one non-empty child node return it.  If both child
-  # nodes are empty return an empty node (one of the children.)
+  If we only have one non-empty child node return it.  If both child
+  nodes are empty return an empty node (one of the children.)
+  '''
   if not lower:
     return higher
   if not higher:
     return lower
+  '''
+  If both child nodes are non-empty, we find the highest node in our
+  lower sub-tree, take its key and value to replace (delete) our own,
+  then get rid of it by recursively calling delete() on our lower
+  sub-node with our new key.
 
-  # If both child nodes are non-empty, we find the highest node in our
-  # lower sub-tree, take its key and value to replace (delete) our own,
-  # then get rid of it by recursively calling delete() on our lower
-  # sub-node with our new key.
-  # (We could also find the lowest node in our higher sub-tree and take
-  # its key and value and delete it. I only implemented one of these
-  # two symmetrical options. Over a lot of deletions this might make
-  # the tree more unbalanced.  Oh well.)
+  (We could also find the lowest node in our higher sub-tree and take
+  its key and value and delete it. I only implemented one of these
+  two symmetrical options. Over a lot of deletions this might make
+  the tree more unbalanced.  Oh well.)
+  '''
   node = lower
   while node[1][1][1][0]:
     node = node[1][1][1][0]

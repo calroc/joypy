@@ -170,18 +170,9 @@ def cleave(S, expression, dictionary):
 '''
 ## ifte
 
-    [if] [then] [else] ifte
-
     ... [if] [then] [else] . ifte
 
-    [
-      [[...] [else] infra]
-      [[...] [then] infra]
-    ]
-    [...] [if] infra
-    first truthy getitem
-    i
-    unstack
+    ... [[else] [then]] [...] [if] . infra first truthy getitem i
 
 '''
 def ifte(stack, expression, dictionary):
@@ -190,18 +181,9 @@ def ifte(stack, expression, dictionary):
   first = get(dictionary, 'first')
   truthy = get(dictionary, 'truthy')
   getitem = get(dictionary, 'getitem')
-#  unstack = get(dictionary, 'unstack')
   (else_, (then, (if_, stack))) = stack
-
-  expression = (
-    (else_, (then, ())),
-    (stack, (if_,
-             (infra, (first, (truthy, (getitem, (i, expression))))))))
-
-##  ii = (( (stack, (else_, (infra, ()))) , (
-##      (stack, (then,  (infra, ()))) , ())), ())
-##  stack = (if_, (stack, ii))
-##  expression = (infra, (first, (truthy, (getitem, (i, (unstack, ()))))))
+  stack = (if_, (stack, ((else_, (then, ())), stack)))
+  expression = (infra, (first, (truthy, (getitem, (i, expression)))))
   return stack, expression, dictionary
 
 
@@ -364,55 +346,3 @@ def ternary(S, expression, dictionary):
   _, (_, (_, return_stack)) = stack
   result = joy(stack, quote, dictionary)[0]
   return (result[0], return_stack), expression, dictionary
-
-
-'''
-### Miscellaneous Commented-out Code
-'''
-##def dip(S):
-##  (quote, (x, stack)) = S
-##  return x, joy(quote, stack)
-
-
-##def ifte(S):
-##  '''[if] [then] [else] ifte'''
-##  (else_, (then, (if_, stack))) = S
-##  if_res = joy(if_, stack)[0]
-##  if if_res:
-##    result = joy(then, stack)[0]
-##  else:
-##    result = joy(else_, stack)[0]
-##  return result, stack
-
-
-##def i(S):
-##  '''Execute the quoted program on TOS on the rest of the stack.'''
-##  (quote, stack) = S
-##  return joy(quote, stack)
-
-
-##def x(S):
-##  '''
-##  Like i but don't remove the program first.  In other words the
-##  program gets itself as its first arg.
-##  '''
-##  (quote, stack) = S
-##  return joy(quote, (quote, stack))
-
-
-##def infra(S):
-##  '''
-##  Accept a quoted program and a list on the stack and run the program
-##  with the list as its stack.
-##  '''
-##  (quote, (aggregate, stack)) = S
-##  return joy(quote, aggregate), stack
-
-
-##def b(S):
-##  '''
-##  Given two quoted programs on the stack run the second one then the one
-##  on TOS.
-##  '''
-##  (Q, (P, stack)) = S
-##  return joy(Q, joy(P, stack))

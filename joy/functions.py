@@ -19,7 +19,7 @@
 #
 '''
 
-§ Functions
+# Functions
 
   stack → stack
   note() decorator
@@ -47,8 +47,12 @@ important it is..
 from .btree import get, insert
 from .parser import text_to_expression
 from .stack import list_to_stack, iter_stack
+'''
 
+## ALIASES
 
+We allow for having alternate names for functions by this mapping.
+'''
 ALIASES = (
   ('add', ['+']),
   ('mul', ['*']),
@@ -69,7 +73,6 @@ ALIASES = (
   ('rolldown', ['roll<']),
   ('rollup', ['roll>']),
   ('id', ['•']),
-#  ('', ['']),
   )
 
 
@@ -85,11 +88,12 @@ def add_aliases(items, A=ALIASES):
   return D.items()
 
 
-class FunctionWrapper(object):
-  '''
-  Allow functions to have a nice repr().
-  '''
+'''
+## FunctionWrapper
 
+Right now, this just allows functions to have a nice repr().
+'''
+class FunctionWrapper(object):
   def __init__(self, f):
     self.f = f
     self.name = f.__name__.rstrip('_')
@@ -125,9 +129,6 @@ class UnaryBuiltinWrapper(FunctionWrapper):
 
 
 class DefinitionWrapper(FunctionWrapper):
-  '''
-  Allow functions to have a nice repr().
-  '''
 
   def __init__(self, name, body_text, dictionary, doc=None):
     self.name = self.__name__ = name
@@ -137,22 +138,22 @@ class DefinitionWrapper(FunctionWrapper):
 
   def __call__(self, stack, expression, dictionary):
     expression = list_to_stack(self._body, expression)
-##    i = get(dictionary, 'i')
-##    expression = self.body, (i, expression)
     return stack, expression, dictionary
 
+  '''
+  Given some text describing a Joy function definition parse it and
+  return a DefinitionWrapper.
+  '''
   @classmethod
   def parse_definition(class_, defi, dictionary):
-    '''
-    Given some text describing a Joy function definition parse it and
-    return a DefinitionWrapper.
-    '''
     name, proper, body_text = (n.strip() for n in defi.partition('=='))
     if not proper:
       raise ValueError('Definition %r failed' % (defi,))
     return class_(name, body_text, dictionary)
 
-
+'''
+## generate_definitions()
+'''
 def generate_definitions(defs, dictionary):
   for definition in defs.splitlines():
     definition = definition.strip()

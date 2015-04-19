@@ -17,6 +17,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
 #
+'''
+# Library
+'''
 from inspect import getdoc
 
 from .btree import items
@@ -24,7 +27,7 @@ from .joy import run
 from .stack import list_to_stack, iter_stack, pick
 
 
-definitions = '''\
+definitions = """\
 rest == uncons popd
 first == uncons pop
 second == rest first
@@ -61,7 +64,7 @@ quadratic == [[q0] pam] ternary i [[q1] pam] ternary
 down_to_zero == [0 >] [dup --] while
 range_to_zero == unit [down_to_zero] infra
 times == [-- dip] cons [swap] infra [0 >] swap while pop
-'''
+"""
 
 
 def first(stack):

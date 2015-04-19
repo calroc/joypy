@@ -17,6 +17,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Joypy.  If not see <http://www.gnu.org/licenses/>.
 #
+'''
+# initializer
+'''
 import operator, math
 from .btree import fill_tree, items
 from .functions import (
