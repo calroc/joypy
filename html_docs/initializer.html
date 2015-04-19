@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<h1 id="initializer">initializer</h1>
+<table class="sourceCode python numberLines" startFrom="23"><tr class="sourceCode"><td class="lineNumbers"><pre>23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">import</span> operator, math
+<span class="ch">from</span> .btree <span class="ch">import</span> fill_tree, items
+<span class="ch">from</span> .functions <span class="ch">import</span> (
+  add_aliases,
+  generate_definitions,
+  BinaryBuiltinWrapper,
+  FunctionWrapper,
+  SimpleFunctionWrapper,
+  UnaryBuiltinWrapper,
+  )
+<span class="ch">from</span> . <span class="ch">import</span> combinators <span class="ch">as</span> comb
+<span class="ch">from</span> . <span class="ch">import</span> library <span class="ch">as</span> lib
+
+
+builtins = (
+  BinaryBuiltinWrapper(operator.add),
+  BinaryBuiltinWrapper(operator.and_),
+  BinaryBuiltinWrapper(operator.div),
+  BinaryBuiltinWrapper(operator.eq),
+  BinaryBuiltinWrapper(operator.floordiv),
+  BinaryBuiltinWrapper(operator.ge),
+  BinaryBuiltinWrapper(operator.gt),
+  BinaryBuiltinWrapper(operator.le),
+  BinaryBuiltinWrapper(operator.lshift),
+  BinaryBuiltinWrapper(operator.lt),
+  BinaryBuiltinWrapper(operator.mod),
+  BinaryBuiltinWrapper(operator.mul),
+  BinaryBuiltinWrapper(operator.ne),
+  BinaryBuiltinWrapper(operator.or_),
+  BinaryBuiltinWrapper(operator.<span class="dt">pow</span>),
+  BinaryBuiltinWrapper(operator.rshift),
+  BinaryBuiltinWrapper(operator.sub),
+  BinaryBuiltinWrapper(operator.truediv),
+  BinaryBuiltinWrapper(operator.xor),
+
+  UnaryBuiltinWrapper(operator.neg),
+  UnaryBuiltinWrapper(operator.not_),
+  UnaryBuiltinWrapper(math.sqrt),
+  )
+
+
+combinators = (
+  FunctionWrapper(comb.app1),
+  FunctionWrapper(comb.app2),
+  FunctionWrapper(comb.app3),
+  FunctionWrapper(comb.b),
+  FunctionWrapper(comb.binary),
+  FunctionWrapper(comb.cleave),
+  FunctionWrapper(comb.dip),
+  FunctionWrapper(comb.dipd),
+  FunctionWrapper(comb.dipdd),
+  FunctionWrapper(comb.i),
+  FunctionWrapper(comb.ifte),
+  FunctionWrapper(comb.infra),
+  FunctionWrapper(comb.map_),
+  FunctionWrapper(comb.nullary),
+  FunctionWrapper(comb.step),
+  FunctionWrapper(comb.swaack),
+  FunctionWrapper(comb.ternary),
+  FunctionWrapper(comb.unary),
+  FunctionWrapper(comb.while_),
+  FunctionWrapper(comb.x),
+  FunctionWrapper(lib.print_words),
+  )
+
+
+primitives = (
+  SimpleFunctionWrapper(lib.first),
+  SimpleFunctionWrapper(lib.truthy),
+  SimpleFunctionWrapper(lib.getitem),
+  SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.clear),
+  SimpleFunctionWrapper(lib.concat),
+  SimpleFunctionWrapper(lib.cons),
+  SimpleFunctionWrapper(lib.dup),
+  SimpleFunctionWrapper(lib.dupd),
+  SimpleFunctionWrapper(lib.id_),
+  SimpleFunctionWrapper(lib.min_),
+  SimpleFunctionWrapper(lib.pop),
+  SimpleFunctionWrapper(lib.popd),
+  SimpleFunctionWrapper(lib.popop),
+  SimpleFunctionWrapper(lib.pred),
+  SimpleFunctionWrapper(lib.remove),
+  SimpleFunctionWrapper(lib.reverse),
+  SimpleFunctionWrapper(lib.rolldown),
+  SimpleFunctionWrapper(lib.rollup),
+  SimpleFunctionWrapper(lib.stack_),
+  SimpleFunctionWrapper(lib.succ),
+  SimpleFunctionWrapper(lib.sum_),
+  SimpleFunctionWrapper(lib.swap),
+  SimpleFunctionWrapper(lib.uncons),
+  SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.void),
+  SimpleFunctionWrapper(lib.zip_),
+  )
+
+
+<span class="kw">def</span> initialize(dictionary=()):
+  B = [(F.name, F) <span class="kw">for</span> F in builtins]
+  C = [(F.name, F) <span class="kw">for</span> F in combinators]
+  P = [(F.name, F) <span class="kw">for</span> F in primitives]
+  D = add_aliases(B + C + P)
+  dictionary = fill_tree(dictionary, D)
+  dictionary = generate_definitions(lib.definitions, dictionary)
+  <span class="co"># Re-balance the dictionary.</span>
+  dictionary = fill_tree((), items(dictionary))
+  <span class="kw">return</span> dictionary</code></pre></td></tr></table>
+</body>
+</html>

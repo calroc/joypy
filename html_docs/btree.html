@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<h1 id="btree">BTree</h1>
+<p>This is a simple Binary Tree implementation that uses tuples in such a way as to permit &quot;persistant&quot; usage, i.e. all previous versions of the btree datastructures are retained and available (provided you don't throw them away yourself.)</p>
+<p>The empty tree is represented as an empty tuple. Nodes are a tuple consisting of a key, a value, and two (possible empty) sub-nodes for the lower and higher branches of the tree.</p>
+<p>This module defines the following functions:</p>
+<pre><code>insert(node, key, value)
+
+get(node, key)
+
+delete(node, key)</code></pre>
+<p>Both insert() and delete() return a new tuple that is the result of applying the operation to the existing node. (And both get() and delete() will raise KeyErrors if the key is not in the tree.)</p>
+<p>Because of the way that insert() and delete() are written, only as much of the tree is changed as necessary and the rest of it is reused. This provides persistance without using up memory for each version of the tree.</p>
+<p>These functions are implemented recursively so they have the potential to raise a RuntimeError if the maximum recursion depth is exceeded. This should only be a problem if used with very large trees. To avoid this issue you can use sys.setrecursionlimit(), but I think I might just rewrite these to not use recursion.</p>
+<h2 id="insert">insert()</h2>
+<p>Return a tree with value stored under key. Replaces old value if any.</p>
+<table class="sourceCode python numberLines" startFrom="60"><tr class="sourceCode"><td class="lineNumbers"><pre>60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> insert(node, key, value):
+  <span class="kw">if</span> not node:
+    <span class="kw">return</span> key, (value, ((), ((), ())))
+
+  node_key, (node_value, (lower, (higher, _))) = node
+
+  <span class="kw">if</span> key &lt; node_key:
+    <span class="kw">return</span> node_key, (node_value, (insert(lower, key, value), (higher, ())))
+
+  <span class="kw">if</span> key &gt; node_key:
+    <span class="kw">return</span> node_key, (node_value, (lower, (insert(higher, key, value), ())))
+
+  <span class="kw">return</span> key, (value, (lower, (higher, ())))</code></pre></td></tr></table>
+<h2 id="get">get()</h2>
+<p>Return the value stored under key or raise KeyError if not found.</p>
+<table class="sourceCode python numberLines" startFrom="80"><tr class="sourceCode"><td class="lineNumbers"><pre>80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> get(node, key):
+  <span class="kw">if</span> not node:
+    <span class="kw">raise</span> <span class="ot">KeyError</span>, key
+
+  node_key, (value, (lower, (higher, _))) = node
+
+  <span class="kw">if</span> key == node_key:
+    <span class="kw">return</span> value
+
+  <span class="kw">return</span> get(lower <span class="kw">if</span> key &lt; node_key <span class="kw">else</span> higher, key)</code></pre></td></tr></table>
+<h2 id="delete">delete()</h2>
+<p>Return a tree with the value (and key) removed or raise KeyError if not found.</p>
+<table class="sourceCode python numberLines" startFrom="98"><tr class="sourceCode"><td class="lineNumbers"><pre>98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> delete(node, key):
+  <span class="kw">if</span> not node:
+    <span class="kw">raise</span> <span class="ot">KeyError</span>, key
+
+  node_key, (value, (lower, (higher, _))) = node
+
+  <span class="kw">if</span> key &lt; node_key:
+    <span class="kw">return</span> node_key, (value, (delete(lower, key), (higher, ())))
+
+  <span class="kw">if</span> key &gt; node_key:
+    <span class="kw">return</span> node_key, (value, (lower, (delete(higher, key), ())))</code></pre></td></tr></table>
+<p>So, key == node_key, delete this node itself.</p>
+<p>If we only have one non-empty child node return it. If both child nodes are empty return an empty node (one of the children.)</p>
+<table class="sourceCode python numberLines" startFrom="115"><tr class="sourceCode"><td class="lineNumbers"><pre>115
+116
+117
+118
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not lower:
+    <span class="kw">return</span> higher
+  <span class="kw">if</span> not higher:
+    <span class="kw">return</span> lower</code></pre></td></tr></table>
+<p>If both child nodes are non-empty, we find the highest node in our lower sub-tree, take its key and value to replace (delete) our own, then get rid of it by recursively calling delete() on our lower sub-node with our new key.</p>
+<p>(We could also find the lowest node in our higher sub-tree and take its key and value and delete it. I only implemented one of these two symmetrical options. Over a lot of deletions this might make the tree more unbalanced. Oh well.)</p>
+<table class="sourceCode python numberLines" startFrom="130"><tr class="sourceCode"><td class="lineNumbers"><pre>130
+131
+132
+133
+134
+135
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  node = lower
+  <span class="kw">while</span> node[<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">0</span>]:
+    node = node[<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">0</span>]
+  key, value = node[<span class="dv">0</span>], node[<span class="dv">1</span>][<span class="dv">0</span>]
+
+  <span class="kw">return</span> key, (value, (delete(lower, key), (higher, ())))</code></pre></td></tr></table>
+<p>The above functions are the &quot;core&quot; functionality for dealing with this tuple-based persistant BTree datastructure. The rest of this module is just helper functions.</p>
+<h2 id="items">items()</h2>
+<p>Iterate in order over the (key, value) pairs in a tree.</p>
+<table class="sourceCode python numberLines" startFrom="148"><tr class="sourceCode"><td class="lineNumbers"><pre>148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> items(node):
+  <span class="kw">if</span> not node:
+    <span class="kw">return</span>
+
+  key, (value, (lower, (higher, _))) = node
+
+  <span class="kw">for</span> kv in items(lower):
+    <span class="kw">yield</span> kv
+
+  <span class="kw">yield</span> key, value
+
+  <span class="kw">for</span> kv in items(higher):
+    <span class="kw">yield</span> kv</code></pre></td></tr></table>
+<h3 id="yield_balanced">yield_balanced()</h3>
+<p>Recursive generator function to yield the items in a sorted sequence in such a way as to fill a btree in a balanced fashion.</p>
+<table class="sourceCode python numberLines" startFrom="169"><tr class="sourceCode"><td class="lineNumbers"><pre>169
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> _yield_balanced(sorted_items):</code></pre></td></tr></table>
+<p>For empty sequences do nothing.</p>
+<table class="sourceCode python numberLines" startFrom="173"><tr class="sourceCode"><td class="lineNumbers"><pre>173
+174
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not sorted_items:
+    <span class="kw">return</span></code></pre></td></tr></table>
+<p>Find the index of the middle item (rounding down for even-length sequences due to integer division.)</p>
+<table class="sourceCode python numberLines" startFrom="179"><tr class="sourceCode"><td class="lineNumbers"><pre>179
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  i = <span class="dt">len</span>(sorted_items) / <span class="dv">2</span></code></pre></td></tr></table>
+<p>Yield the middle item.</p>
+<table class="sourceCode python numberLines" startFrom="183"><tr class="sourceCode"><td class="lineNumbers"><pre>183
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">yield</span> sorted_items[i]</code></pre></td></tr></table>
+<p>Shortcut in case the length of <code>sorted_items</code> is one.</p>
+<table class="sourceCode python numberLines" startFrom="187"><tr class="sourceCode"><td class="lineNumbers"><pre>187
+188
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not i:
+    <span class="kw">return</span></code></pre></td></tr></table>
+<p>Now recurse on lower and higher halves of the sequence.</p>
+<table class="sourceCode python numberLines" startFrom="192"><tr class="sourceCode"><td class="lineNumbers"><pre>192
+193
+194
+195
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">for</span> low in _yield_balanced(sorted_items[:i]):
+    <span class="kw">yield</span> low
+  <span class="kw">for</span> high in _yield_balanced(sorted_items[i<span class="dv">+1</span>:]):
+    <span class="kw">yield</span> high</code></pre></td></tr></table>
+<h2 id="fill_tree">fill_tree()</h2>
+<p>Add the (key, value) pairs in items to a btree in a balanced way.</p>
+<p>You can balance a tree like so:</p>
+<pre><code>tree = fill_tree((), items(tree))</code></pre>
+<p>This iterates through the tree and returns a new, balanced tree from its contents.</p>
+<table class="sourceCode python numberLines" startFrom="210"><tr class="sourceCode"><td class="lineNumbers"><pre>210
+211
+212
+213
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> fill_tree(node, items):
+  <span class="kw">for</span> key, value in _yield_balanced(<span class="dt">sorted</span>(items)):
+    node = insert(node, key, value)
+  <span class="kw">return</span> node</code></pre></td></tr></table>
+</body>
+</html>

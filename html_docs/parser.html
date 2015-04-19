@@ -1,0 +1,166 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<p>§ Converting text to a joy expression.</p>
+<p>This module exports a single function:</p>
+<p>text_to_expression(text, dictionary)</p>
+<p>When supplied with a string text and a dictionary BTree (see btree.py) this function will return a Python datastructure that represents the Joy datastructure described by the text expression. Any symbols (pretty much anything that isn't a number or enclosed in double-quote marks) will be looked up in the dictionary, a warning will be printed to stdout for any unfound symbols.</p>
+<table class="sourceCode python numberLines" startFrom="36"><tr class="sourceCode"><td class="lineNumbers"><pre>36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> <span class="dt">__future__</span> <span class="ch">import</span> print_function
+<span class="ch">from</span> sys <span class="ch">import</span> stderr
+<span class="ch">from</span> re <span class="ch">import</span> Scanner
+<span class="ch">from</span> .btree <span class="ch">import</span> get
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack
+
+
+<span class="kw">def</span> convert(token, dictionary):
+  <span class="co">&#39;&#39;&#39;Look up symbols in the functions dictionary.&#39;&#39;&#39;</span>
+  <span class="kw">try</span>:
+    <span class="kw">return</span> get(dictionary, token)
+  <span class="kw">except</span> <span class="ot">KeyError</span>:
+    <span class="kw">print</span>(<span class="st">&#39;unknown word&#39;</span>, token, <span class="dt">file</span>=stderr)
+    <span class="kw">return</span> token
+
+
+<span class="kw">def</span> text_to_expression(text, dictionary):</code></pre></td></tr></table>
+<p>Convert a text to a Joy expression.</p>
+<table class="sourceCode python numberLines" startFrom="56"><tr class="sourceCode"><td class="lineNumbers"><pre>56
+57
+58
+59
+60
+61
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  tokens = _tokenize(text, dictionary)
+  expression = _parse(tokens)
+  <span class="kw">return</span> expression
+
+
+<span class="kw">def</span> _tokenize(text, dictionary):</code></pre></td></tr></table>
+<p>Convert a text into a stream of tokens, look up command symbols using convert(). Raise ValueError (with some of the failing text) if the scan fails.</p>
+<table class="sourceCode python numberLines" startFrom="67"><tr class="sourceCode"><td class="lineNumbers"><pre>67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  _scanner.dictionary = dictionary
+  tokens, rest = _scanner.scan(text)
+  <span class="kw">if</span> rest:
+    <span class="kw">raise</span> <span class="ot">ValueError</span>(
+      <span class="st">&#39;Scan failed at position </span><span class="ot">%i</span><span class="st">, </span><span class="ot">%r</span><span class="st">&#39;</span>
+      % (<span class="dt">len</span>(text) - <span class="dt">len</span>(rest), rest[:<span class="dv">10</span>])
+      )
+  <span class="kw">return</span> tokens
+
+
+<span class="kw">def</span> _parse(tokens):</code></pre></td></tr></table>
+<p>Return a stack/list expression of the tokens.</p>
+<table class="sourceCode python numberLines" startFrom="81"><tr class="sourceCode"><td class="lineNumbers"><pre>81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  frame = []
+  stack = []
+  <span class="kw">for</span> tok in tokens:
+    <span class="kw">if</span> tok == <span class="st">&#39;[&#39;</span>:
+      stack.append(frame)
+      frame = []
+      stack[-<span class="dv">1</span>].append(frame)
+    <span class="kw">elif</span> tok == <span class="st">&#39;]&#39;</span>:
+      frame = stack.pop()
+      frame[-<span class="dv">1</span>] = list_to_stack(frame[-<span class="dv">1</span>])
+    <span class="kw">else</span>:
+      frame.append(tok)
+  <span class="kw">return</span> list_to_stack(frame)
+
+
+<span class="kw">def</span> _scan_identifier(scanner, token): <span class="kw">return</span> convert(token, scanner.dictionary)
+<span class="kw">def</span> _scan_bracket(scanner, token): <span class="kw">return</span> token
+<span class="kw">def</span> _scan_float(scanner, token): <span class="kw">return</span> <span class="dt">float</span>(token)
+<span class="kw">def</span> _scan_int(scanner, token): <span class="kw">return</span> <span class="dt">int</span>(token)
+<span class="kw">def</span> _scan_str(scanner, token): <span class="kw">return</span> token[<span class="dv">1</span>:-<span class="dv">1</span>].replace(<span class="st">&#39;</span><span class="ch">\\</span><span class="st">&quot;&#39;</span>, <span class="st">&#39;&quot;&#39;</span>)
+
+
+_scanner = Scanner([
+  (<span class="st">r&#39;-?\d+\.\d*&#39;</span>, _scan_float),
+  (<span class="st">r&#39;-?\d+&#39;</span>, _scan_int),
+  (<span class="st">r&#39;[•\w!@$%^&amp;*()_+&lt;&gt;?|\/;:`~,.=-]+&#39;</span>, _scan_identifier),
+  (<span class="st">r&#39;\[|\]&#39;</span>, _scan_bracket),
+  (<span class="st">r&#39;&quot;(?:[^&quot;\\]|\\.)*&quot;&#39;</span>, _scan_str),
+  (<span class="st">r&#39;\s+&#39;</span>, <span class="ot">None</span>),
+  ])</code></pre></td></tr></table>
+</body>
+</html>

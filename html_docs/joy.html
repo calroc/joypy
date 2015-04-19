@@ -1,0 +1,158 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<p>A dialect of Joy in Python.</p>
+<p>Joy is a programming language created by Manfred von Thun that is easy to use and understand and has many other nice properties. This Python script is an interpreter for a dialect of Joy that attempts to stay very close to the spirit of Joy but does not precisely match the behaviour of the original version(s) written in C. A Tkinter GUI is provided as well.</p>
+<pre><code>Copyright © 2014 Simon Forman
+
+This file is part of Joypy.
+
+Joypy is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Joypy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Joypy.  If not see &lt;http://www.gnu.org/licenses/&gt;.</code></pre>
+<p>§ joy()</p>
+<p>The basic joy() function is quite straightforward. It iterates through a sequence of terms which are either literals (strings, numbers, sequences) or functions. Literals are put onto the stack and functions are executed.</p>
+<p>Every Joy function is an unary mapping from stacks to stacks. Even literals are considered to be functions that accept a stack and return a new stack with the literal value on top.</p>
+<table class="sourceCode python numberLines" startFrom="44"><tr class="sourceCode"><td class="lineNumbers"><pre>44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> <span class="dt">__future__</span> <span class="ch">import</span> print_function
+<span class="kw">try</span>:
+  <span class="dt">input</span> = <span class="dt">raw_input</span>
+<span class="kw">except</span> <span class="ot">NameError</span>:
+  <span class="kw">pass</span>
+<span class="ch">from</span> traceback <span class="ch">import</span> print_exc
+<span class="ch">from</span> .parser <span class="ch">import</span> text_to_expression
+<span class="ch">from</span> .stack <span class="ch">import</span> strstack, iter_stack, list_to_stack
+
+
+<span class="kw">def</span> print_trace(stack, expression):
+  stack = <span class="dt">list</span>(iter_stack(stack))
+  stack.reverse()
+  <span class="kw">print</span>(strstack(list_to_stack(stack)), <span class="st">&#39;.&#39;</span>, strstack(expression))
+
+
+<span class="kw">def</span> joy(stack, expression, dictionary, viewer=print_trace):</code></pre></td></tr></table>
+<p>Evaluate the Joy expression on the stack.</p>
+<table class="sourceCode python numberLines" startFrom="64"><tr class="sourceCode"><td class="lineNumbers"><pre>64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">while</span> expression:
+    viewer(stack, expression)
+    term, expression = expression
+    <span class="kw">if</span> <span class="dt">callable</span>(term):
+      stack, expression, dictionary = term(stack, expression, dictionary)
+    <span class="kw">else</span>:
+      stack = term, stack
+  viewer(stack, expression)
+  <span class="kw">return</span> stack, expression, dictionary
+
+
+<span class="kw">def</span> run(text, stack, dictionary):</code></pre></td></tr></table>
+<p>Return the stack resulting from running the Joy code text on the stack.</p>
+<table class="sourceCode python numberLines" startFrom="79"><tr class="sourceCode"><td class="lineNumbers"><pre>79
+80
+81
+82
+83
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  expression = text_to_expression(text, dictionary)
+  <span class="kw">return</span> joy(stack, expression, dictionary)
+
+
+<span class="kw">def</span> repl(stack=(), dictionary=()):</code></pre></td></tr></table>
+<p>Read-Evaluate-Print Loop</p>
+<p>Accept input and run it on the stack, loop.</p>
+<table class="sourceCode python numberLines" startFrom="89"><tr class="sourceCode"><td class="lineNumbers"><pre>89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">try</span>:
+    <span class="kw">while</span> <span class="ot">True</span>:
+      <span class="kw">print</span>()
+      <span class="kw">print</span>(<span class="st">&#39;-&gt;&#39;</span>, strstack(stack))
+      <span class="kw">print</span>()
+      <span class="kw">try</span>:
+        text = <span class="dt">input</span>(<span class="st">&#39;joy? &#39;</span>)
+      <span class="kw">except</span> (<span class="ot">EOFError</span>, <span class="ot">KeyboardInterrupt</span>):
+        <span class="kw">break</span>
+      <span class="kw">try</span>:
+        stack, _, dictionary = run(text, stack, dictionary)
+      <span class="kw">except</span>:
+        print_exc()
+  <span class="kw">except</span>:
+    print_exc()
+  <span class="kw">print</span>()
+  <span class="kw">return</span> stack</code></pre></td></tr></table>
+</body>
+</html>

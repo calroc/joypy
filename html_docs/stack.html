@@ -1,0 +1,142 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<h1 id="stack">§ Stack</h1>
+<p>When talking about Joy we use the terms &quot;stack&quot;, &quot;list&quot;, &quot;sequence&quot; and &quot;aggregate&quot; to mean the same thing: a simple datatype that permits certain operations such as iterating and pushing and popping values from (at least) one end.</p>
+<p>We use the venerable two-tuple recursive form of sequences where the empty tuple () is the empty stack and (head, rest) gives the recursive form of a stack with one or more items on it.</p>
+<pre><code>()
+(1, ())
+(1, (2, ()))
+(1, (2, (3, ())))
+...</code></pre>
+<p>And so on.</p>
+<p>We have two very simple functions to build up a stack from a Python iterable and also to iterate through a stack and yield its items one-by-one in order, and two functions to generate string representations of stacks:</p>
+<pre><code>list_to_stack()
+
+iter_stack()
+
+stack_to_string()
+
+strstack()</code></pre>
+<p>A word about the stack data structure.</p>
+<p>Python has very nice &quot;tuple packing and unpacking&quot; in its syntax which means we can directly &quot;unpack&quot; the expected arguments to a Joy function.</p>
+<p>For example:</p>
+<pre><code>def dup(stack):
+  head, tail = stack
+  return head, (head, tail)</code></pre>
+<p>We replace the argument &quot;stack&quot; by the expected structure of the stack, in this case &quot;(head, tail)&quot;, and Python takes care of de-structuring the incoming argument and assigning values to the names. Note that Python syntax doesn't require parentheses around tuples used in expressions where they would be redundant.</p>
+<table class="sourceCode python numberLines" startFrom="76"><tr class="sourceCode"><td class="lineNumbers"><pre>76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">
+
+<span class="kw">def</span> list_to_stack(el, stack=()):
+  <span class="co">&#39;&#39;&#39;Convert a list (or other sequence) to a stack.&#39;&#39;&#39;</span>
+  <span class="kw">for</span> item in <span class="dt">reversed</span>(el):
+    stack = item, stack
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> iter_stack(stack):
+  <span class="co">&#39;&#39;&#39;Iterate through the items on the stack.&#39;&#39;&#39;</span>
+  <span class="kw">while</span> stack:
+    item, stack = stack
+    <span class="kw">yield</span> item
+
+
+<span class="kw">def</span> stack_to_string(expression):</code></pre></td></tr></table>
+<p>Return a &quot;pretty print&quot; string for a stack.</p>
+<p>Ideally the output of this should result in the same expression if passed through tokenize() and parse(), but not yet.</p>
+<table class="sourceCode python numberLines" startFrom="99"><tr class="sourceCode"><td class="lineNumbers"><pre>99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not <span class="dt">isinstance</span>(expression, <span class="dt">tuple</span>):
+    <span class="kw">return</span> <span class="dt">repr</span>(expression)
+  <span class="kw">return</span> <span class="st">&#39;[</span><span class="ot">%s</span><span class="st">]&#39;</span> % strstack(expression)
+
+
+<span class="kw">def</span> strstack(stack):
+  <span class="kw">if</span> not <span class="dt">isinstance</span>(stack, <span class="dt">tuple</span>):
+    <span class="kw">return</span> <span class="dt">repr</span>(stack)
+  <span class="kw">if</span> not stack: <span class="co"># shortcut</span>
+    <span class="kw">return</span> <span class="st">&#39;&#39;</span>
+  <span class="kw">return</span> <span class="st">&#39; &#39;</span>.join(<span class="dt">map</span>(stack_to_string, iter_stack(stack)))
+
+
+<span class="kw">def</span> pick(s, n):</code></pre></td></tr></table>
+<p>Find the nth item on the stack. (Pick with zero is the same as &quot;dup&quot;.)</p>
+<table class="sourceCode python numberLines" startFrom="116"><tr class="sourceCode"><td class="lineNumbers"><pre>116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> n &lt; <span class="dv">0</span>:
+    <span class="kw">raise</span> <span class="ot">ValueError</span>
+  <span class="kw">while</span> <span class="ot">True</span>:
+    <span class="kw">try</span>:
+      item, s = s
+    <span class="kw">except</span> <span class="ot">ValueError</span>:
+      <span class="kw">raise</span> <span class="ot">IndexError</span>
+    n -= <span class="dv">1</span>
+    <span class="kw">if</span> n &lt; <span class="dv">0</span>:
+      <span class="kw">break</span>
+  <span class="kw">return</span> item</code></pre></td></tr></table>
+</body>
+</html>

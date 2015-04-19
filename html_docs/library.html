@@ -1,0 +1,555 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<h1 id="library">Library</h1>
+<table class="sourceCode python numberLines" startFrom="23"><tr class="sourceCode"><td class="lineNumbers"><pre>23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> inspect <span class="ch">import</span> getdoc
+
+<span class="ch">from</span> .btree <span class="ch">import</span> items
+<span class="ch">from</span> .joy <span class="ch">import</span> run
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack, iter_stack, pick
+
+
+definitions = <span class="st">&quot;&quot;&quot;\</span>
+<span class="st">rest == uncons popd</span>
+<span class="st">first == uncons pop</span>
+<span class="st">second == rest first</span>
+<span class="st">third == rest rest first</span>
+<span class="st">sum == 0 swap [+] step</span>
+<span class="st">product == 1 swap [*] step</span>
+<span class="st">swons == swap cons</span>
+<span class="st">swoncat == swap concat</span>
+<span class="st">shunt == [swons] step</span>
+<span class="st">reverse == [] swap shunt</span>
+<span class="st">flatten == [] swap [concat] step</span>
+<span class="st">unit == [] cons</span>
+<span class="st">quoted == [unit] dip</span>
+<span class="st">unquoted == [i] dip</span>
+<span class="st">enstacken == stack [clear] dip</span>
+<span class="st">disenstacken == [truthy] [uncons] while pop</span>
+<span class="st">pam == [i] map</span>
+<span class="st">run == [] swap infra</span>
+<span class="st">sqr == dup mul</span>
+<span class="st">size == 0 swap [pop ++] step</span>
+<span class="st">average == [sum 1.0 *] [size] cleave /</span>
+<span class="st">gcd == [0 &gt;] [dup rollup modulus] while pop</span>
+<span class="st">least_fraction == dup [gcd] infra [div] concat map</span>
+<span class="st">divisor == popop 2 *</span>
+<span class="st">minusb == pop neg</span>
+<span class="st">radical == swap dup * rollup * 4 * - sqrt</span>
+<span class="st">root1 == + swap /</span>
+<span class="st">root2 == - swap /</span>
+<span class="st">q0 == [divisor] [minusb] [radical]</span>
+<span class="st">q1 == [root1] [root2]</span>
+<span class="st">quadratic == [[q0] pam] ternary i [[q1] pam] ternary</span>
+<span class="st">*fraction == [uncons] dip uncons [swap] dip concat [*] infra [*] dip cons</span>
+<span class="st">*fraction0 == concat [[swap] dip * [*] dip] infra</span>
+<span class="st">down_to_zero == [0 &gt;] [dup --] while</span>
+<span class="st">range_to_zero == unit [down_to_zero] infra</span>
+<span class="st">times == [-- dip] cons [swap] infra [0 &gt;] swap while pop</span>
+<span class="st">&quot;&quot;&quot;</span>
+
+
+<span class="kw">def</span> first(stack):
+  Q, stack = stack
+  stack = Q[<span class="dv">0</span>], stack
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> truthy(stack):
+  n, stack = stack
+  <span class="kw">return</span> <span class="dt">bool</span>(n), stack
+
+
+<span class="kw">def</span> getitem(stack):
+  n, (Q, stack) = stack
+  <span class="kw">return</span> pick(Q, n), stack
+
+
+<span class="kw">def</span> min_(S):</code></pre></td></tr></table>
+<p>Given a list find the minimum.</p>
+<table class="sourceCode python numberLines" startFrom="90"><tr class="sourceCode"><td class="lineNumbers"><pre>90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  tos, stack = S
+  <span class="kw">return</span> <span class="dt">min</span>(iter_stack(tos)), stack
+
+
+<span class="kw">def</span> sum_(S):
+  tos, stack = S
+  <span class="kw">return</span> <span class="dt">sum</span>(iter_stack(tos)), stack
+
+
+<span class="kw">def</span> remove(S):
+  (tos, (second, stack)) = S
+  l = <span class="dt">list</span>(iter_stack(second))
+  l.remove(tos)
+  <span class="kw">return</span> list_to_stack(l), stack
+
+
+<span class="kw">def</span> cons(S):</code></pre></td></tr></table>
+<p>The cons operator expects a list on top of the stack and the potential member below. The effect is to add the potential member into the aggregate.</p>
+<table class="sourceCode python numberLines" startFrom="112"><tr class="sourceCode"><td class="lineNumbers"><pre>112
+113
+114
+115
+116
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, (second, stack)) = S
+  <span class="kw">return</span> (second, tos), stack
+
+
+<span class="kw">def</span> uncons(S):</code></pre></td></tr></table>
+<p>Inverse of cons, removes an item from the top of the list on the stack and places it under the remaining list.</p>
+<table class="sourceCode python numberLines" startFrom="121"><tr class="sourceCode"><td class="lineNumbers"><pre>121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, stack) = S
+  item, tos = tos
+  <span class="kw">return</span> tos, (item, stack)
+
+
+<span class="kw">def</span> clear(stack):
+  <span class="co">&#39;&#39;&#39;Clear everything from the stack.&#39;&#39;&#39;</span>
+  <span class="kw">return</span> ()
+
+
+<span class="kw">def</span> dup(S):
+  <span class="co">&#39;&#39;&#39;Duplicate the top item on the stack.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> tos, (tos, stack)
+
+
+<span class="kw">def</span> swap(S):
+  <span class="co">&#39;&#39;&#39;Swap the top two items on stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> second, (tos, stack)
+
+
+<span class="kw">def</span> stack_(stack):</code></pre></td></tr></table>
+<p>The stack operator pushes onto the stack a list containing all the elements of the stack.</p>
+<table class="sourceCode python numberLines" startFrom="148"><tr class="sourceCode"><td class="lineNumbers"><pre>148
+149
+150
+151
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">return</span> stack, stack
+
+
+<span class="kw">def</span> unstack(S):</code></pre></td></tr></table>
+<p>The unstack operator expects a list on top of the stack and makes that the stack discarding the rest of the stack.</p>
+<table class="sourceCode python numberLines" startFrom="156"><tr class="sourceCode"><td class="lineNumbers"><pre>156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, stack) = S
+  <span class="kw">return</span> tos
+
+
+<span class="kw">def</span> pop(S):
+  <span class="co">&#39;&#39;&#39;Pop and discard the top item from the stack.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> popd(S):
+  <span class="co">&#39;&#39;&#39;Pop and discard the second item from the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> tos, stack
+
+
+<span class="kw">def</span> popop(S):
+  <span class="co">&#39;&#39;&#39;Pop and discard the first and second items from the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> dupd(S):
+  <span class="co">&#39;&#39;&#39;Duplicate the second item on the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> tos, (second, (second, stack))
+
+
+<span class="kw">def</span> reverse(S):
+  <span class="co">&#39;&#39;&#39;Reverse the list on the top of the stack.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  res = ()
+  <span class="kw">for</span> term in iter_stack(tos):
+    res = term, res
+  <span class="kw">return</span> res, stack
+
+
+<span class="kw">def</span> concat(S):
+  <span class="co">&#39;&#39;&#39;Concatinate the two lists on the top of the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">for</span> term in <span class="dt">reversed</span>(<span class="dt">list</span>(iter_stack(second))):
+    tos = term, tos
+  <span class="kw">return</span> tos, stack
+
+
+<span class="kw">def</span> zip_(S):</code></pre></td></tr></table>
+<p>Replace the two lists on the top of the stack with a list of the pairs from each list. The smallest list sets the length of the result list.</p>
+<table class="sourceCode python numberLines" startFrom="206"><tr class="sourceCode"><td class="lineNumbers"><pre>206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, (second, stack)) = S
+  accumulator = [
+    (a, (b, ()))
+    <span class="kw">for</span> a, b in <span class="dt">zip</span>(iter_stack(tos), iter_stack(second))
+    ]
+  <span class="kw">return</span> list_to_stack(accumulator), stack
+
+
+<span class="kw">def</span> succ(S):
+  <span class="co">&#39;&#39;&#39;Increment TOS.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> tos + <span class="dv">1</span>, stack
+
+
+<span class="kw">def</span> pred(S):
+  <span class="co">&#39;&#39;&#39;Decrement TOS.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> tos - <span class="dv">1</span>, stack
+
+
+<span class="kw">def</span> rollup(S):
+  <span class="co">&#39;&#39;&#39;a b c -&gt; b c a&#39;&#39;&#39;</span>
+  (a, (b, (c, stack))) = S
+  <span class="kw">return</span> b, (c, (a, stack))
+
+
+<span class="kw">def</span> rolldown(S):
+  <span class="co">&#39;&#39;&#39;a b c -&gt; c a b&#39;&#39;&#39;</span>
+  (a, (b, (c, stack))) = S
+  <span class="kw">return</span> c, (a, (b, stack))
+
+
+<span class="kw">def</span> execute(S):
+  (text, stack) = S
+  <span class="kw">if</span> <span class="dt">isinstance</span>(text, <span class="dt">str</span>):
+    <span class="kw">return</span> run(text, stack)
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> id_(stack):
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> void(stack):
+  form, stack = stack
+  <span class="kw">return</span> _void(form), stack
+
+
+<span class="kw">def</span> _void(form):
+  <span class="kw">return</span> <span class="dt">any</span>(not _void(i) <span class="kw">for</span> i in iter_stack(form))
+
+
+<span class="co">##</span>
+<span class="co">##def first(((head, tail), stack)):</span>
+<span class="co">##  return head, stack</span>
+
+
+<span class="co">##</span>
+<span class="co">##def rest(((head, tail), stack)):</span>
+<span class="co">##  return tail, stack</span>
+
+
+<span class="co">##  flatten</span>
+<span class="co">##  transpose</span>
+<span class="co">##  sign</span>
+<span class="co">##  at</span>
+<span class="co">##  of</span>
+<span class="co">##  drop</span>
+<span class="co">##  take</span>
+
+
+<span class="kw">def</span> print_words(stack, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Print all the words in alphabetical order.&#39;&#39;&#39;</span>
+  <span class="kw">print</span>(<span class="st">&#39; &#39;</span>.join(name <span class="kw">for</span> name, f in items(dictionary)))
+  <span class="kw">return</span> stack, expression, dictionary
+
+
+<span class="kw">def</span> simple_manual(stack):</code></pre></td></tr></table>
+<p>Print words and help for each word.</p>
+<table class="sourceCode python numberLines" startFrom="287"><tr class="sourceCode"><td class="lineNumbers"><pre>287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">for</span> name, f in <span class="dt">sorted</span>(FUNCTIONS.items()):
+    d = getdoc(f)
+    boxline = <span class="st">&#39;+</span><span class="ot">%s</span><span class="st">+&#39;</span> % (<span class="st">&#39;-&#39;</span> * (<span class="dt">len</span>(name) + <span class="dv">2</span>))
+    <span class="kw">print</span>(<span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>.join((
+      boxline,
+      <span class="st">&#39;| </span><span class="ot">%s</span><span class="st"> |&#39;</span> % (name,),
+      boxline,
+      d <span class="kw">if</span> d <span class="kw">else</span> <span class="st">&#39;   ...&#39;</span>,
+      <span class="st">&#39;&#39;</span>,
+      <span class="st">&#39;--&#39;</span> * <span class="dv">40</span>,
+      <span class="st">&#39;&#39;</span>,
+      )))
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> help_(S):
+  <span class="co">&#39;&#39;&#39;Accepts a quoted word on the top of the stack and prints its docs.&#39;&#39;&#39;</span>
+  (quote, stack) = S
+  word = quote[<span class="dv">0</span>]
+  <span class="kw">print</span>(getdoc(word))
+  <span class="kw">return</span> stack</code></pre></td></tr></table>
+</body>
+</html>

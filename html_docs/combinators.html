@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; background-color: #f8f8f8; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code { background-color: #f8f8f8; }
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<p>§ Combinators</p>
+<p>TODO: Brief description of combinators (as contrasted with &quot;normal&quot; functions.)</p>
+<p>Note: the combinators that have calls to joy() in them haven't been rewritten to be in Continuation-Passing Style yet.</p>
+<table class="sourceCode python numberLines" startFrom="30"><tr class="sourceCode"><td class="lineNumbers"><pre>30
+31
+32
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> .joy <span class="ch">import</span> joy
+<span class="ch">from</span> .btree <span class="ch">import</span> get
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack, iter_stack</code></pre></td></tr></table>
+<h2 id="i">i</h2>
+<p>The most straightforward combinator is called &quot;i&quot;. It just executes the quoted program on the stack.</p>
+<p>In the Continuation-Passing Style (CSP) it works by transferring the terms from the quoted list on TOS into the pending expression before returning back to the main joy() loop.</p>
+<table class="sourceCode python numberLines" startFrom="44"><tr class="sourceCode"><td class="lineNumbers"><pre>44
+45
+46
+47
+48
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> i(stack, expression, dictionary):
+  (quote, stack) = stack
+  accumulator = <span class="dt">list</span>(iter_stack(quote))
+  expression = list_to_stack(accumulator, expression)
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="x">x</h2>
+<p>Given a quoted program on the stack, the &quot;x&quot; combinator duplicates it and then runs it.</p>
+<pre><code>... [Q] x = ... [Q] Q</code></pre>
+<p>It could be defined like so:</p>
+<pre><code>x == dup i
+
+... [Q] x = ... [Q] dup i
+... [Q] x = ... [Q] [Q] i
+... [Q] x = ... [Q]  Q</code></pre>
+<p>But rather than implement &quot;x&quot; as a definition, we write a Python function that is almost exactly like the &quot;i&quot; combinator.</p>
+<table class="sourceCode python numberLines" startFrom="70"><tr class="sourceCode"><td class="lineNumbers"><pre>70
+71
+72
+73
+74
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> x(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  quote = stack[<span class="dv">0</span>]
+  expression = (i, (quote, expression))
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="b">b</h2>
+<p>The &quot;b&quot; combinator...</p>
+<pre><code>... [P] [Q] b = ... P Q</code></pre>
+<p>This combinator is slightly more involved than the &quot;x&quot; combinator, so we look up the current &quot;i&quot; combinator and use it to make things simpler. The &quot;i&quot; combinator is interleaved with the [P] and [Q] quoted programs:</p>
+<pre><code>b == [i] dip i
+
+... [P] [Q] b = ... [P] [Q] [i] dip i
+... [P] [Q] b = ... [P] i [Q] i
+... [P] [Q] b = ... P [Q] i
+... [P] [Q] b = ... P Q</code></pre>
+<p>The implementation is straightforward:</p>
+<table class="sourceCode python numberLines" startFrom="97"><tr class="sourceCode"><td class="lineNumbers"><pre>97
+98
+99
+100
+101
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> b(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  (q, (p, (stack))) = stack
+  expression = (p, (i, (q, (i, expression))))
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="infra">infra</h2>
+<p>Accept a quoted program and a list on the stack and run the program with the list as its stack.</p>
+<table class="sourceCode python numberLines" startFrom="110"><tr class="sourceCode"><td class="lineNumbers"><pre>110
+111
+112
+113
+114
+115
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> infra(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  swaack = get(dictionary, <span class="st">&#39;swaack&#39;</span>)
+  (quote, (aggregate, stack)) = stack
+  Q = (i, (stack, (swaack, expression)))
+  <span class="kw">return</span> (quote, aggregate), Q, dictionary</code></pre></td></tr></table>
+<h2 id="swaack">swaack</h2>
+<p>The name comes from &quot;SWAp stACK&quot;. I am considering dropping the extra a.</p>
+<p>This is a weird combinator that takes a quoted literal and swaps the existing stack contents with the contents of the quoted literal:</p>
+<pre><code>c b a [x y z] swaack = z y x [a b c]</code></pre>
+<p>It is very useful (you can write a function much like call/cc with it for example.)</p>
+<p>The Python implementation is delightful:</p>
+<table class="sourceCode python numberLines" startFrom="133"><tr class="sourceCode"><td class="lineNumbers"><pre>133
+134
+135
+136
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> swaack(stack, expression, dictionary):
+  old_stack, stack = stack
+  stack = stack, old_stack
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="map">map</h2>
+<p>Run the quoted program on TOS on the items in the list under it, push a new list with the results (in place of the program and original list.</p>
+<table class="sourceCode python numberLines" startFrom="145"><tr class="sourceCode"><td class="lineNumbers"><pre>145
+146
+147
+148
+149
+150
+151
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> map_(S, expression, dictionary):
+  (quote, (aggregate, stack)) = S
+  results = list_to_stack([
+    joy((term, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+    <span class="kw">for</span> term in iter_stack(aggregate)
+    ])
+  <span class="kw">return</span> (results, stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="cleave">cleave</h2>
+<p>The cleave combinator expects two quotations, and below that an item X. It first executes [P], with X on top, and saves the top result element. Then it executes [Q], again with X, and saves the top result. Finally it restores the stack to what it was below X and pushes the two results P(X) and Q(X).</p>
+<table class="sourceCode python numberLines" startFrom="163"><tr class="sourceCode"><td class="lineNumbers"><pre>163
+164
+165
+166
+167
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> cleave(S, expression, dictionary):
+  (Q, (P, (x, stack))) = S
+  p = joy((x, stack), P, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  q = joy((x, stack), Q, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  <span class="kw">return</span> (q, (p, stack)), expression, dictionary</code></pre></td></tr></table>
+<h2 id="ifte">ifte</h2>
+<pre><code>... [if] [then] [else] . ifte
+
+... [[else] [then]] [...] [if] . infra first truthy getitem i</code></pre>
+<table class="sourceCode python numberLines" startFrom="178"><tr class="sourceCode"><td class="lineNumbers"><pre>178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> ifte(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  infra = get(dictionary, <span class="st">&#39;infra&#39;</span>)
+  first = get(dictionary, <span class="st">&#39;first&#39;</span>)
+  truthy = get(dictionary, <span class="st">&#39;truthy&#39;</span>)
+  getitem = get(dictionary, <span class="st">&#39;getitem&#39;</span>)
+  (else_, (then, (if_, stack))) = stack
+  stack = (if_, (stack, ((else_, (then, ())), stack)))
+  expression = (infra, (first, (truthy, (getitem, (i, expression)))))
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="dip">dip</h2>
+<p>The dip combinator expects a program [P] and below that another item X. It pops both, saves X, executes P and then restores X.</p>
+<table class="sourceCode python numberLines" startFrom="196"><tr class="sourceCode"><td class="lineNumbers"><pre>196
+197
+198
+199
+200
+201
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> dip(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  (quote, (x, stack)) = stack
+  stack = (quote, stack)
+  expression = i, (x, expression)
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="dipd">dipd</h2>
+<p>Like dip but expects two items.</p>
+<table class="sourceCode python numberLines" startFrom="209"><tr class="sourceCode"><td class="lineNumbers"><pre>209
+210
+211
+212
+213
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> dipd(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like dip but expects two items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, stack))) = S
+  stack = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (x, (y, stack)), expression, dictionary</code></pre></td></tr></table>
+<h2 id="dipdd">dipdd</h2>
+<p>Like dip but expects three items.</p>
+<table class="sourceCode python numberLines" startFrom="221"><tr class="sourceCode"><td class="lineNumbers"><pre>221
+222
+223
+224
+225
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> dipdd(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like dip but expects three items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, (z, stack)))) = S
+  stack = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (x, (y, (z, stack))), expression, dictionary</code></pre></td></tr></table>
+<h2 id="app1">app1</h2>
+<p>Given a quoted program on TOS and anything as the second stack item run the program and replace the two args with the first result of the program.</p>
+<table class="sourceCode python numberLines" startFrom="235"><tr class="sourceCode"><td class="lineNumbers"><pre>235
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> app1(S, expression, dictionary):</code></pre></td></tr></table>
+<p>Given a quoted program on TOS and anything as the second stack item run the program and replace the two args with the first result of the program.</p>
+<table class="sourceCode python numberLines" startFrom="241"><tr class="sourceCode"><td class="lineNumbers"><pre>241
+242
+243
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (quote, (x, stack)) = S
+  result = joy((x, stack), quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="app2">app2</h2>
+<p>Like app1 with two items.</p>
+<table class="sourceCode python numberLines" startFrom="251"><tr class="sourceCode"><td class="lineNumbers"><pre>251
+252
+253
+254
+255
+256
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> app2(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like app1 with two items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, stack))) = S
+  resultx = joy((x, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  resulty = joy((y, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  <span class="kw">return</span> (resultx, (resulty, stack)), expression, dictionary</code></pre></td></tr></table>
+<h2 id="app3">app3</h2>
+<p>Like app1 with three items.</p>
+<table class="sourceCode python numberLines" startFrom="264"><tr class="sourceCode"><td class="lineNumbers"><pre>264
+265
+266
+267
+268
+269
+270
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> app3(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like app1 with three items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, (z, stack)))) = S
+  resultx = joy((x, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  resulty = joy((y, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  resultz = joy((z, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  <span class="kw">return</span> (resultx, (resulty, (resultz, stack))), expression, dictionary</code></pre></td></tr></table>
+<h2 id="step">step</h2>
+<p>The step combinator removes the aggregate and the quotation, and then repeatedly puts the members of the aggregate on top of the remaining stack and executes the quotation.</p>
+<table class="sourceCode python numberLines" startFrom="280"><tr class="sourceCode"><td class="lineNumbers"><pre>280
+281
+282
+283
+284
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> step(S, expression, dictionary):
+  (quote, (aggregate, stack)) = S
+  <span class="kw">for</span> term in iter_stack(aggregate):
+    stack = joy((term, stack), quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="while">while</h2>
+<pre><code>[if] [body] while</code></pre>
+<table class="sourceCode python numberLines" startFrom="293"><tr class="sourceCode"><td class="lineNumbers"><pre>293
+294
+295
+296
+297
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> while_(S, expression, dictionary):
+  (body, (if_, stack)) = S
+  <span class="kw">while</span> joy(stack, if_, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]:
+    stack = joy(stack, body, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="nullary">nullary</h2>
+<p>Run the program on TOS and return its first result without consuming any of the stack (except the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="306"><tr class="sourceCode"><td class="lineNumbers"><pre>306
+307
+308
+309
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> nullary(S, expression, dictionary):
+  (quote, stack) = S
+  result = joy(stack, quote, dictionary)
+  <span class="kw">return</span> (result[<span class="dv">0</span>][<span class="dv">0</span>], stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="unary">unary</h2>
+<p>Run the program on TOS and return its first result, consuming exactly one item from the stack (in addition to the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="318"><tr class="sourceCode"><td class="lineNumbers"><pre>318
+319
+320
+321
+322
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> unary(S, expression, dictionary):
+  (quote, stack) = S
+  _, return_stack = stack
+  result = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], return_stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="binary">binary</h2>
+<p>Run the program on TOS and return its first result, consuming exactly two items from the stack (in addition to the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="331"><tr class="sourceCode"><td class="lineNumbers"><pre>331
+332
+333
+334
+335
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> binary(S, expression, dictionary):
+  (quote, stack) = S
+  _, (_, return_stack) = stack
+  result = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], return_stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="ternary">ternary</h2>
+<p>Run the program on TOS and return its first result, consuming exactly three items from the stack (in addition to the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="344"><tr class="sourceCode"><td class="lineNumbers"><pre>344
+345
+346
+347
+348
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> ternary(S, expression, dictionary):
+  (quote, stack) = S
+  _, (_, (_, return_stack)) = stack
+  result = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], return_stack), expression, dictionary</code></pre></td></tr></table>
+</body>
+</html>
