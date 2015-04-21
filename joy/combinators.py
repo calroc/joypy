@@ -167,6 +167,60 @@ def cleave(S, expression, dictionary):
   return (q, (p, stack)), expression, dictionary
 
 
+def linrec(S, expression, dictionary):
+  '''
+  The linrec combinator for linear recursion expects an if-part, a then-
+  part, an else1-part and on top an else2-part. Like the ifte combinator it
+  executes the if-part, and if that yields true it executes the then-part.
+  Otherwise it executes the else1-part, then it recurses with all four
+  parts, and finally it executes the else2-part.
+  '''
+##  else2, (else1, (then, (if_, stack))) = S
+##  n = joy(stack, if_, dictionary)[0][0]
+##  if n:
+##    stack, _, d = joy(stack, then, dictionary)
+##  else:
+##    stack, _, d = joy(stack, else1, dictionary)
+##    stk = (else2, (else1, (then, (if_, stack))))
+##    stack, _, d = linrec(stk, (), d)
+##  stack, _, d = joy(stack, else2, d)
+##  return stack, expression, d
+
+  '''
+  [
+    [[else1] i [if] [then] [else1] [else2] linrec]
+    [then]
+  ]
+  [stackk] [if]
+  infra first truthy getitem
+  i [else2] i
+
+  '''
+  i = get(dictionary, 'i')
+  infra = get(dictionary, 'infra')
+  first = get(dictionary, 'first')
+  truthy = get(dictionary, 'truthy')
+  getitem = get(dictionary, 'getitem')
+  linrec = get(dictionary, 'linrec')
+  else2, (else1, (then, (if_, stack))) = S
+
+  expression = (
+    ((else1, (i, (if_, (then, (else1, (else2, (linrec, ()))))))),
+     (then, ())),
+    (stack,
+     (if_,
+      (infra,
+       (first,
+        (truthy,
+         (getitem,
+          (i,
+           (else2,
+            (i,
+             expression))))))))))
+  return stack, expression, dictionary
+
+
+
 '''
 ## ifte
 

@@ -74,6 +74,7 @@ combinators = (
   FunctionWrapper(comb.i),
   FunctionWrapper(comb.ifte),
   FunctionWrapper(comb.infra),
+  FunctionWrapper(comb.linrec),
   FunctionWrapper(comb.map_),
   FunctionWrapper(comb.nullary),
   FunctionWrapper(comb.step),
@@ -83,6 +84,7 @@ combinators = (
   FunctionWrapper(comb.while_),
   FunctionWrapper(comb.x),
   FunctionWrapper(lib.print_words),
+  FunctionWrapper(comb.linrec),
   )
 
 
