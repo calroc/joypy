@@ -111,8 +111,8 @@ The Python implementation is delightful:
 
 ~~~~ {.python .numberLines startFrom="133"}
 def swaack(stack, expression, dictionary):
-  old_stack, stack = stack
-  stack = stack, old_stack
+  new_stack, stack = stack
+  stack = stack, new_stack
   return stack, expression, dictionary
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -145,6 +145,61 @@ def cleave(S, expression, dictionary):
   p = joy((x, stack), P, dictionary)[0][0]
   q = joy((x, stack), Q, dictionary)[0][0]
   return (q, (p, stack)), expression, dictionary
+
+
+def linrec(S, expression, dictionary):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The linrec combinator for linear recursion expects an if-part, a then-
+  part, an else1-part and on top an else2-part. Like the ifte combinator it
+  executes the if-part, and if that yields true it executes the then-part.
+  Otherwise it executes the else1-part, then it recurses with all four
+  parts, and finally it executes the else2-part.
+
+~~~~ {.python .numberLines startFrom="178"}
+##  else2, (else1, (then, (if_, stack))) = S
+##  n = joy(stack, if_, dictionary)[0][0]
+##  if n:
+##    stack, _, d = joy(stack, then, dictionary)
+##  else:
+##    stack, _, d = joy(stack, else1, dictionary)
+##    stk = (else2, (else1, (then, (if_, stack))))
+##    stack, _, d = linrec(stk, (), d)
+##  stack, _, d = joy(stack, else2, d)
+##  return stack, expression, d
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+[
+    [[else1] i [if] [then] [else1] [else2] linrec]
+    [then]
+  ]
+  [stackk] [if]
+  infra first truthy getitem
+  i [else2] i
+
+~~~~ {.python .numberLines startFrom="199"}
+  i = get(dictionary, 'i')
+  infra = get(dictionary, 'infra')
+  first = get(dictionary, 'first')
+  truthy = get(dictionary, 'truthy')
+  getitem = get(dictionary, 'getitem')
+  linrec = get(dictionary, 'linrec')
+  else2, (else1, (then, (if_, stack))) = S
+
+  expression = (
+    ((else1, (i, (if_, (then, (else1, (else2, (linrec, ()))))))),
+     (then, ())),
+    (stack,
+     (if_,
+      (infra,
+       (first,
+        (truthy,
+         (getitem,
+          (i,
+           (else2,
+            (i,
+             expression))))))))))
+  return stack, expression, dictionary
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## ifte
@@ -153,7 +208,7 @@ def cleave(S, expression, dictionary):
 
     ... [[else] [then]] [...] [if] . infra first truthy getitem i
 
-~~~~ {.python .numberLines startFrom="178"}
+~~~~ {.python .numberLines startFrom="232"}
 def ifte(stack, expression, dictionary):
   i = get(dictionary, 'i')
   infra = get(dictionary, 'infra')
@@ -171,7 +226,7 @@ def ifte(stack, expression, dictionary):
 The dip combinator expects a program [P] and below that another item X. It pops both,
 saves X, executes P and then restores X.
 
-~~~~ {.python .numberLines startFrom="196"}
+~~~~ {.python .numberLines startFrom="250"}
 def dip(stack, expression, dictionary):
   i = get(dictionary, 'i')
   (quote, (x, stack)) = stack
@@ -184,7 +239,7 @@ def dip(stack, expression, dictionary):
  
 Like dip but expects two items.
 
-~~~~ {.python .numberLines startFrom="209"}
+~~~~ {.python .numberLines startFrom="263"}
 def dipd(S, expression, dictionary):
   '''Like dip but expects two items.'''
   (quote, (x, (y, stack))) = S
@@ -196,7 +251,7 @@ def dipd(S, expression, dictionary):
 
 Like dip but expects three items.
 
-~~~~ {.python .numberLines startFrom="221"}
+~~~~ {.python .numberLines startFrom="275"}
 def dipdd(S, expression, dictionary):
   '''Like dip but expects three items.'''
   (quote, (x, (y, (z, stack)))) = S
@@ -210,7 +265,7 @@ Given a quoted program on TOS and anything as the second stack item run
 the program and replace the two args with the first result of the
 program.
 
-~~~~ {.python .numberLines startFrom="235"}
+~~~~ {.python .numberLines startFrom="289"}
 def app1(S, expression, dictionary):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -218,7 +273,7 @@ Given a quoted program on TOS and anything as the second stack item run
   the program and replace the two args with the first result of the
   program.
 
-~~~~ {.python .numberLines startFrom="241"}
+~~~~ {.python .numberLines startFrom="295"}
   (quote, (x, stack)) = S
   result = joy((x, stack), quote, dictionary)[0]
   return (result[0], stack), expression, dictionary
@@ -228,7 +283,7 @@ Given a quoted program on TOS and anything as the second stack item run
 
 Like app1 with two items.
 
-~~~~ {.python .numberLines startFrom="251"}
+~~~~ {.python .numberLines startFrom="305"}
 def app2(S, expression, dictionary):
   '''Like app1 with two items.'''
   (quote, (x, (y, stack))) = S
@@ -241,7 +296,7 @@ def app2(S, expression, dictionary):
 
 Like app1 with three items.
 
-~~~~ {.python .numberLines startFrom="264"}
+~~~~ {.python .numberLines startFrom="318"}
 def app3(S, expression, dictionary):
   '''Like app1 with three items.'''
   (quote, (x, (y, (z, stack)))) = S
@@ -257,7 +312,7 @@ The step combinator removes the aggregate and the quotation, and then
 repeatedly puts the members of the aggregate on top of the remaining
 stack and executes the quotation.
 
-~~~~ {.python .numberLines startFrom="280"}
+~~~~ {.python .numberLines startFrom="334"}
 def step(S, expression, dictionary):
   (quote, (aggregate, stack)) = S
   for term in iter_stack(aggregate):
@@ -269,7 +324,7 @@ def step(S, expression, dictionary):
 
     [if] [body] while
 
-~~~~ {.python .numberLines startFrom="293"}
+~~~~ {.python .numberLines startFrom="347"}
 def while_(S, expression, dictionary):
   (body, (if_, stack)) = S
   while joy(stack, if_, dictionary)[0][0]:
@@ -282,7 +337,7 @@ def while_(S, expression, dictionary):
 Run the program on TOS and return its first result without consuming
 any of the stack (except the program on TOS.)
 
-~~~~ {.python .numberLines startFrom="306"}
+~~~~ {.python .numberLines startFrom="360"}
 def nullary(S, expression, dictionary):
   (quote, stack) = S
   result = joy(stack, quote, dictionary)
@@ -294,7 +349,7 @@ def nullary(S, expression, dictionary):
 Run the program on TOS and return its first result, consuming exactly one
 item from the stack (in addition to the program on TOS.)
 
-~~~~ {.python .numberLines startFrom="318"}
+~~~~ {.python .numberLines startFrom="372"}
 def unary(S, expression, dictionary):
   (quote, stack) = S
   _, return_stack = stack
@@ -307,7 +362,7 @@ def unary(S, expression, dictionary):
 Run the program on TOS and return its first result, consuming exactly two
 items from the stack (in addition to the program on TOS.)
 
-~~~~ {.python .numberLines startFrom="331"}
+~~~~ {.python .numberLines startFrom="385"}
 def binary(S, expression, dictionary):
   (quote, stack) = S
   _, (_, return_stack) = stack
@@ -320,7 +375,7 @@ def binary(S, expression, dictionary):
 Run the program on TOS and return its first result, consuming exactly
 three items from the stack (in addition to the program on TOS.)
 
-~~~~ {.python .numberLines startFrom="344"}
+~~~~ {.python .numberLines startFrom="398"}
 def ternary(S, expression, dictionary):
   (quote, stack) = S
   _, (_, (_, return_stack)) = stack

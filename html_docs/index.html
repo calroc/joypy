@@ -1,0 +1,1916 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <title></title>
+  <style type="text/css">
+@import url(http://fonts.googleapis.com/css?family=EB+Garamond|Inconsolata|Cutive);
+
+h1, h2, h3 {
+  font-family: Cutive, sans-serif;
+}
+
+body {
+  padding: 1em;
+  background: SeaShell;
+  color: #000;
+  font-family: 'EB Garamond', serif;
+}
+
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode {
+  width: 68%;
+  margin-left: 16%;
+  background-color: #f8f8f8;
+}
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+pre, code {
+  background-color: #f8f8f8;
+}
+code > span.kw { color: #204a87; font-weight: bold; }
+code > span.dt { color: #204a87; }
+code > span.dv { color: #0000cf; }
+code > span.bn { color: #0000cf; }
+code > span.fl { color: #0000cf; }
+code > span.ch { color: #4e9a06; }
+code > span.st { color: #4e9a06; }
+code > span.co { color: #8f5902; font-style: italic; }
+code > span.ot { color: #8f5902; }
+code > span.al { color: #ef2929; }
+code > span.fu { color: #000000; }
+code > span.er { font-weight: bold; }
+  </style>
+</head>
+<body>
+<h1 id="joypy">Joypy</h1>
+<h2 id="a-dialect-of-joy-in-python.">A dialect of Joy in Python.</h2>
+<p>Joy is a programming language created by Manfred von Thun that is easy to use and understand and has many other nice properties. This Python script is an interpreter for a dialect of Joy that attempts to stay very close to the spirit of Joy but does not precisely match the behaviour of the original version(s) written in C. A Tkinter GUI is provided as well.</p>
+<table class="sourceCode python numberLines" startFrom="33"><tr class="sourceCode"><td class="lineNumbers"><pre>33
+34
+35
+36
+37
+38
+39
+40
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> <span class="dt">__future__</span> <span class="ch">import</span> print_function
+<span class="kw">try</span>:
+  <span class="dt">input</span> = <span class="dt">raw_input</span>
+<span class="kw">except</span> <span class="ot">NameError</span>:
+  <span class="kw">pass</span>
+<span class="ch">from</span> traceback <span class="ch">import</span> print_exc
+<span class="ch">from</span> .parser <span class="ch">import</span> text_to_expression
+<span class="ch">from</span> .stack <span class="ch">import</span> strstack, iter_stack, list_to_stack</code></pre></td></tr></table>
+<h2 id="print_trace">print_trace()</h2>
+<p>Write out a string representation of the stack and expression to stdout.</p>
+<table class="sourceCode python numberLines" startFrom="47"><tr class="sourceCode"><td class="lineNumbers"><pre>47
+48
+49
+50
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> print_trace(stack, expression):
+  stack = <span class="dt">list</span>(iter_stack(stack))
+  stack.reverse()
+  <span class="kw">print</span>(strstack(list_to_stack(stack)), <span class="st">&#39;.&#39;</span>, strstack(expression))</code></pre></td></tr></table>
+<h2 id="joy">§ joy()</h2>
+<p>The basic joy() function is quite straightforward. It iterates through a sequence of terms which are either literals (strings, numbers, sequences) or functions. Literals are put onto the stack and functions are executed.</p>
+<p>Every Joy function is an unary mapping from stacks to stacks. Even literals are considered to be functions that accept a stack and return a new stack with the literal value on top.</p>
+<table class="sourceCode python numberLines" startFrom="66"><tr class="sourceCode"><td class="lineNumbers"><pre>66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> joy(stack, expression, dictionary, viewer=print_trace):
+  <span class="kw">while</span> expression:
+    viewer(stack, expression)
+    term, expression = expression
+    <span class="kw">if</span> <span class="dt">callable</span>(term):
+      stack, expression, dictionary = term(stack, expression, dictionary)
+    <span class="kw">else</span>:
+      stack = term, stack
+  viewer(stack, expression)
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="run">run()</h2>
+<p>Return the stack resulting from running the Joy code text on the stack.</p>
+<table class="sourceCode python numberLines" startFrom="83"><tr class="sourceCode"><td class="lineNumbers"><pre>83
+84
+85
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> run(text, stack, dictionary):
+  expression = text_to_expression(text, dictionary)
+  <span class="kw">return</span> joy(stack, expression, dictionary)</code></pre></td></tr></table>
+<h2 id="repl">repl()</h2>
+<h3 id="read-evaluate-print-loop">Read-Evaluate-Print Loop</h3>
+<p>Accept input and run it on the stack, loop.</p>
+<table class="sourceCode python numberLines" startFrom="95"><tr class="sourceCode"><td class="lineNumbers"><pre>95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> repl(stack=(), dictionary=()):
+  <span class="kw">try</span>:
+    <span class="kw">while</span> <span class="ot">True</span>:
+      <span class="kw">print</span>()
+      <span class="kw">print</span>(<span class="st">&#39;-&gt;&#39;</span>, strstack(stack))
+      <span class="kw">print</span>()
+      <span class="kw">try</span>:
+        text = <span class="dt">input</span>(<span class="st">&#39;joy? &#39;</span>)
+      <span class="kw">except</span> (<span class="ot">EOFError</span>, <span class="ot">KeyboardInterrupt</span>):
+        <span class="kw">break</span>
+      <span class="kw">try</span>:
+        stack, _, dictionary = run(text, stack, dictionary)
+      <span class="kw">except</span>:
+        print_exc()
+  <span class="kw">except</span>:
+    print_exc()
+  <span class="kw">print</span>()
+  <span class="kw">return</span> stack</code></pre></td></tr></table>
+<h1 id="functions">Functions</h1>
+<p>stack → stack</p>
+<p>We can catagorize functions into those that rearrange things on the stack but don't otherwise process them, those that perform some process on them, and those that call back into the joy() function to execute one or more quoted programs themselves. And, of course, there are commands that do more than one or all three.</p>
+<p>Commands that execute quoted programs are called &quot;Combinators&quot; and they are the key to Joy's expressiveness and power. The joy() function by itself wouldn't accomplish much but with the availability of several combinators it becomes a powerhouse.</p>
+<p>Commands that just rearrange things on the stack can be written in python as simple tuple unpacking and repacking.</p>
+<p>Definitions, functions defined by equations, refactoring and how important it is..</p>
+<table class="sourceCode python numberLines" startFrom="43"><tr class="sourceCode"><td class="lineNumbers"><pre>43
+44
+45
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> .btree <span class="ch">import</span> get, insert
+<span class="ch">from</span> .parser <span class="ch">import</span> text_to_expression
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack, iter_stack</code></pre></td></tr></table>
+<h2 id="aliases">ALIASES</h2>
+<p>We allow for having alternate names for functions by this mapping.</p>
+<table class="sourceCode python numberLines" startFrom="52"><tr class="sourceCode"><td class="lineNumbers"><pre>52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">ALIASES = (
+  (<span class="st">&#39;add&#39;</span>, [<span class="st">&#39;+&#39;</span>]),
+  (<span class="st">&#39;mul&#39;</span>, [<span class="st">&#39;*&#39;</span>]),
+  (<span class="st">&#39;truediv&#39;</span>, [<span class="st">&#39;/&#39;</span>]),
+  (<span class="st">&#39;mod&#39;</span>, [<span class="st">&#39;%&#39;</span>, <span class="st">&#39;rem&#39;</span>, <span class="st">&#39;remainder&#39;</span>, <span class="st">&#39;modulus&#39;</span>]),
+  (<span class="st">&#39;eq&#39;</span>, [<span class="st">&#39;=&#39;</span>]),
+  (<span class="st">&#39;ge&#39;</span>, [<span class="st">&#39;&gt;=&#39;</span>]),
+  (<span class="st">&#39;gt&#39;</span>, [<span class="st">&#39;&gt;&#39;</span>]),
+  (<span class="st">&#39;le&#39;</span>, [<span class="st">&#39;&lt;=&#39;</span>]),
+  (<span class="st">&#39;lshift&#39;</span>, [<span class="st">&#39;&lt;&lt;&#39;</span>]),
+  (<span class="st">&#39;lt&#39;</span>, [<span class="st">&#39;&lt;&#39;</span>]),
+  (<span class="st">&#39;ne&#39;</span>, [<span class="st">&#39;&lt;&gt;&#39;</span>, <span class="st">&#39;!=&#39;</span>]),
+  (<span class="st">&#39;rshift&#39;</span>, [<span class="st">&#39;&gt;&gt;&#39;</span>]),
+  (<span class="st">&#39;sub&#39;</span>, [<span class="st">&#39;-&#39;</span>]),
+  (<span class="st">&#39;xor&#39;</span>, [<span class="st">&#39;^&#39;</span>]),
+  (<span class="st">&#39;succ&#39;</span>, [<span class="st">&#39;++&#39;</span>]),
+  (<span class="st">&#39;pred&#39;</span>, [<span class="st">&#39;--&#39;</span>]),
+  (<span class="st">&#39;rolldown&#39;</span>, [<span class="st">&#39;roll&lt;&#39;</span>]),
+  (<span class="st">&#39;rollup&#39;</span>, [<span class="st">&#39;roll&gt;&#39;</span>]),
+  (<span class="st">&#39;id&#39;</span>, [<span class="st">&#39;•&#39;</span>]),
+  )
+
+
+<span class="kw">def</span> add_aliases(items, A=ALIASES):
+  D = <span class="dt">dict</span>(items)
+  <span class="kw">for</span> name, aliases in A:
+    <span class="kw">try</span>:
+      F = D[name]
+    <span class="kw">except</span> <span class="ot">KeyError</span>:
+      <span class="kw">continue</span>
+    <span class="kw">for</span> alias in aliases:
+      D[alias] = F
+  <span class="kw">return</span> D.items()</code></pre></td></tr></table>
+<h2 id="functionwrapper">FunctionWrapper</h2>
+<p>Right now, this just allows functions to have a nice repr().</p>
+<table class="sourceCode python numberLines" startFrom="92"><tr class="sourceCode"><td class="lineNumbers"><pre>92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">class</span> FunctionWrapper(<span class="dt">object</span>):
+  <span class="kw">def</span> <span class="ot">__init__</span>(<span class="ot">self</span>, f):
+    <span class="ot">self</span>.f = f
+    <span class="ot">self</span>.name = f.<span class="dt">__name__</span>.rstrip(<span class="st">&#39;_&#39;</span>)
+    <span class="ot">self</span>.__doc__ = f.__doc__ or <span class="dt">str</span>(f)
+
+  <span class="kw">def</span> <span class="ot">__call__</span>(<span class="ot">self</span>, stack, expression, dictionary):
+    <span class="kw">return</span> <span class="ot">self</span>.f(stack, expression, dictionary)
+
+  <span class="kw">def</span> <span class="ot">__repr__</span>(<span class="ot">self</span>):
+    <span class="kw">return</span> <span class="ot">self</span>.name
+
+
+<span class="kw">class</span> SimpleFunctionWrapper(FunctionWrapper):
+
+  <span class="kw">def</span> <span class="ot">__call__</span>(<span class="ot">self</span>, stack, expression, dictionary):
+    <span class="kw">return</span> <span class="ot">self</span>.f(stack), expression, dictionary
+
+
+<span class="kw">class</span> BinaryBuiltinWrapper(FunctionWrapper):
+
+  <span class="kw">def</span> <span class="ot">__call__</span>(<span class="ot">self</span>, stack, expression, dictionary):
+    (a, (b, stack)) = stack
+    result = <span class="ot">self</span>.f(b, a)
+    <span class="kw">return</span> (result, stack), expression, dictionary
+
+
+<span class="kw">class</span> UnaryBuiltinWrapper(FunctionWrapper):
+
+  <span class="kw">def</span> <span class="ot">__call__</span>(<span class="ot">self</span>, stack, expression, dictionary):
+    (a, stack) = stack
+    result = <span class="ot">self</span>.f(a)
+    <span class="kw">return</span> (result, stack), expression, dictionary
+
+
+<span class="kw">class</span> DefinitionWrapper(FunctionWrapper):
+
+  <span class="kw">def</span> <span class="ot">__init__</span>(<span class="ot">self</span>, name, body_text, dictionary, doc=<span class="ot">None</span>):
+    <span class="ot">self</span>.name = <span class="ot">self</span>.<span class="dt">__name__</span> = name
+    <span class="ot">self</span>.body = text_to_expression(body_text, dictionary)
+    <span class="ot">self</span>._body = <span class="dt">tuple</span>(iter_stack(<span class="ot">self</span>.body))
+    <span class="ot">self</span>.__doc__ = doc or body_text
+
+  <span class="kw">def</span> <span class="ot">__call__</span>(<span class="ot">self</span>, stack, expression, dictionary):
+    expression = list_to_stack(<span class="ot">self</span>._body, expression)
+    <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<p>Given some text describing a Joy function definition parse it and return a DefinitionWrapper.</p>
+<table class="sourceCode python numberLines" startFrom="143"><tr class="sourceCode"><td class="lineNumbers"><pre>143
+144
+145
+146
+147
+148
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="ot">@classmethod</span>
+  <span class="kw">def</span> parse_definition(class_, defi, dictionary):
+    name, proper, body_text = (n.strip() <span class="kw">for</span> n in defi.partition(<span class="st">&#39;==&#39;</span>))
+    <span class="kw">if</span> not proper:
+      <span class="kw">raise</span> <span class="ot">ValueError</span>(<span class="st">&#39;Definition </span><span class="ot">%r</span><span class="st"> failed&#39;</span> % (defi,))
+    <span class="kw">return</span> class_(name, body_text, dictionary)</code></pre></td></tr></table>
+<h2 id="generate_definitions">generate_definitions()</h2>
+<table class="sourceCode python numberLines" startFrom="153"><tr class="sourceCode"><td class="lineNumbers"><pre>153
+154
+155
+156
+157
+158
+159
+160
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> generate_definitions(defs, dictionary):
+  <span class="kw">for</span> definition in defs.splitlines():
+    definition = definition.strip()
+    <span class="kw">if</span> not definition or definition.isspace():
+      <span class="kw">continue</span>
+    F = DefinitionWrapper.parse_definition(definition, dictionary)
+    dictionary = insert(dictionary, F.name, F)
+  <span class="kw">return</span> dictionary</code></pre></td></tr></table>
+<h1 id="library">Library</h1>
+<table class="sourceCode python numberLines" startFrom="23"><tr class="sourceCode"><td class="lineNumbers"><pre>23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> inspect <span class="ch">import</span> getdoc
+
+<span class="ch">from</span> .btree <span class="ch">import</span> items
+<span class="ch">from</span> .joy <span class="ch">import</span> run
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack, iter_stack, pick
+
+
+definitions = <span class="st">&quot;&quot;&quot;\</span>
+<span class="st">rest == uncons popd</span>
+<span class="st">first == uncons pop</span>
+<span class="st">second == rest first</span>
+<span class="st">third == rest rest first</span>
+<span class="st">sum == 0 swap [+] step</span>
+<span class="st">product == 1 swap [*] step</span>
+<span class="st">swons == swap cons</span>
+<span class="st">swoncat == swap concat</span>
+<span class="st">shunt == [swons] step</span>
+<span class="st">reverse == [] swap shunt</span>
+<span class="st">flatten == [] swap [concat] step</span>
+<span class="st">unit == [] cons</span>
+<span class="st">quoted == [unit] dip</span>
+<span class="st">unquoted == [i] dip</span>
+<span class="st">enstacken == stack [clear] dip</span>
+<span class="st">disenstacken == [truthy] [uncons] while pop</span>
+<span class="st">pam == [i] map</span>
+<span class="st">run == [] swap infra</span>
+<span class="st">sqr == dup mul</span>
+<span class="st">size == 0 swap [pop ++] step</span>
+<span class="st">average == [sum 1.0 *] [size] cleave /</span>
+<span class="st">gcd == [0 &gt;] [dup rollup modulus] while pop</span>
+<span class="st">least_fraction == dup [gcd] infra [div] concat map</span>
+<span class="st">divisor == popop 2 *</span>
+<span class="st">minusb == pop neg</span>
+<span class="st">radical == swap dup * rollup * 4 * - sqrt</span>
+<span class="st">root1 == + swap /</span>
+<span class="st">root2 == - swap /</span>
+<span class="st">q0 == [divisor] [minusb] [radical]</span>
+<span class="st">q1 == [root1] [root2]</span>
+<span class="st">quadratic == [[q0] pam] ternary i [[q1] pam] ternary</span>
+<span class="st">*fraction == [uncons] dip uncons [swap] dip concat [*] infra [*] dip cons</span>
+<span class="st">*fraction0 == concat [[swap] dip * [*] dip] infra</span>
+<span class="st">down_to_zero == [0 &gt;] [dup --] while</span>
+<span class="st">range_to_zero == unit [down_to_zero] infra</span>
+<span class="st">times == [-- dip] cons [swap] infra [0 &gt;] swap while pop</span>
+<span class="st">&quot;&quot;&quot;</span>
+
+
+<span class="kw">def</span> first(stack):
+  Q, stack = stack
+  stack = Q[<span class="dv">0</span>], stack
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> truthy(stack):
+  n, stack = stack
+  <span class="kw">return</span> <span class="dt">bool</span>(n), stack
+
+
+<span class="kw">def</span> getitem(stack):
+  n, (Q, stack) = stack
+  <span class="kw">return</span> pick(Q, n), stack
+
+
+<span class="kw">def</span> min_(S):</code></pre></td></tr></table>
+<p>Given a list find the minimum.</p>
+<table class="sourceCode python numberLines" startFrom="90"><tr class="sourceCode"><td class="lineNumbers"><pre>90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  tos, stack = S
+  <span class="kw">return</span> <span class="dt">min</span>(iter_stack(tos)), stack
+
+
+<span class="kw">def</span> sum_(S):
+  tos, stack = S
+  <span class="kw">return</span> <span class="dt">sum</span>(iter_stack(tos)), stack
+
+
+<span class="kw">def</span> remove(S):
+  (tos, (second, stack)) = S
+  l = <span class="dt">list</span>(iter_stack(second))
+  l.remove(tos)
+  <span class="kw">return</span> list_to_stack(l), stack
+
+
+<span class="kw">def</span> cons(S):</code></pre></td></tr></table>
+<p>The cons operator expects a list on top of the stack and the potential member below. The effect is to add the potential member into the aggregate.</p>
+<table class="sourceCode python numberLines" startFrom="112"><tr class="sourceCode"><td class="lineNumbers"><pre>112
+113
+114
+115
+116
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, (second, stack)) = S
+  <span class="kw">return</span> (second, tos), stack
+
+
+<span class="kw">def</span> uncons(S):</code></pre></td></tr></table>
+<p>Inverse of cons, removes an item from the top of the list on the stack and places it under the remaining list.</p>
+<table class="sourceCode python numberLines" startFrom="121"><tr class="sourceCode"><td class="lineNumbers"><pre>121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, stack) = S
+  item, tos = tos
+  <span class="kw">return</span> tos, (item, stack)
+
+
+<span class="kw">def</span> clear(stack):
+  <span class="co">&#39;&#39;&#39;Clear everything from the stack.&#39;&#39;&#39;</span>
+  <span class="kw">return</span> ()
+
+
+<span class="kw">def</span> dup(S):
+  <span class="co">&#39;&#39;&#39;Duplicate the top item on the stack.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> tos, (tos, stack)
+
+
+<span class="kw">def</span> swap(S):
+  <span class="co">&#39;&#39;&#39;Swap the top two items on stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> second, (tos, stack)
+
+
+<span class="kw">def</span> stack_(stack):</code></pre></td></tr></table>
+<p>The stack operator pushes onto the stack a list containing all the elements of the stack.</p>
+<table class="sourceCode python numberLines" startFrom="148"><tr class="sourceCode"><td class="lineNumbers"><pre>148
+149
+150
+151
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">return</span> stack, stack
+
+
+<span class="kw">def</span> unstack(S):</code></pre></td></tr></table>
+<p>The unstack operator expects a list on top of the stack and makes that the stack discarding the rest of the stack.</p>
+<table class="sourceCode python numberLines" startFrom="156"><tr class="sourceCode"><td class="lineNumbers"><pre>156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, stack) = S
+  <span class="kw">return</span> tos
+
+
+<span class="kw">def</span> pop(S):
+  <span class="co">&#39;&#39;&#39;Pop and discard the top item from the stack.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> popd(S):
+  <span class="co">&#39;&#39;&#39;Pop and discard the second item from the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> tos, stack
+
+
+<span class="kw">def</span> popop(S):
+  <span class="co">&#39;&#39;&#39;Pop and discard the first and second items from the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> dupd(S):
+  <span class="co">&#39;&#39;&#39;Duplicate the second item on the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">return</span> tos, (second, (second, stack))
+
+
+<span class="kw">def</span> reverse(S):
+  <span class="co">&#39;&#39;&#39;Reverse the list on the top of the stack.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  res = ()
+  <span class="kw">for</span> term in iter_stack(tos):
+    res = term, res
+  <span class="kw">return</span> res, stack
+
+
+<span class="kw">def</span> concat(S):
+  <span class="co">&#39;&#39;&#39;Concatinate the two lists on the top of the stack.&#39;&#39;&#39;</span>
+  (tos, (second, stack)) = S
+  <span class="kw">for</span> term in <span class="dt">reversed</span>(<span class="dt">list</span>(iter_stack(second))):
+    tos = term, tos
+  <span class="kw">return</span> tos, stack
+
+
+<span class="kw">def</span> zip_(S):</code></pre></td></tr></table>
+<p>Replace the two lists on the top of the stack with a list of the pairs from each list. The smallest list sets the length of the result list.</p>
+<table class="sourceCode python numberLines" startFrom="206"><tr class="sourceCode"><td class="lineNumbers"><pre>206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (tos, (second, stack)) = S
+  accumulator = [
+    (a, (b, ()))
+    <span class="kw">for</span> a, b in <span class="dt">zip</span>(iter_stack(tos), iter_stack(second))
+    ]
+  <span class="kw">return</span> list_to_stack(accumulator), stack
+
+
+<span class="kw">def</span> succ(S):
+  <span class="co">&#39;&#39;&#39;Increment TOS.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> tos + <span class="dv">1</span>, stack
+
+
+<span class="kw">def</span> pred(S):
+  <span class="co">&#39;&#39;&#39;Decrement TOS.&#39;&#39;&#39;</span>
+  (tos, stack) = S
+  <span class="kw">return</span> tos - <span class="dv">1</span>, stack
+
+
+<span class="kw">def</span> rollup(S):
+  <span class="co">&#39;&#39;&#39;a b c -&gt; b c a&#39;&#39;&#39;</span>
+  (a, (b, (c, stack))) = S
+  <span class="kw">return</span> b, (c, (a, stack))
+
+
+<span class="kw">def</span> rolldown(S):
+  <span class="co">&#39;&#39;&#39;a b c -&gt; c a b&#39;&#39;&#39;</span>
+  (a, (b, (c, stack))) = S
+  <span class="kw">return</span> c, (a, (b, stack))
+
+
+<span class="kw">def</span> execute(S):
+  (text, stack) = S
+  <span class="kw">if</span> <span class="dt">isinstance</span>(text, <span class="dt">str</span>):
+    <span class="kw">return</span> run(text, stack)
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> id_(stack):
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> void(stack):
+  form, stack = stack
+  <span class="kw">return</span> _void(form), stack
+
+
+<span class="kw">def</span> _void(form):
+  <span class="kw">return</span> <span class="dt">any</span>(not _void(i) <span class="kw">for</span> i in iter_stack(form))
+
+
+<span class="co">##</span>
+<span class="co">##def first(((head, tail), stack)):</span>
+<span class="co">##  return head, stack</span>
+
+
+<span class="co">##</span>
+<span class="co">##def rest(((head, tail), stack)):</span>
+<span class="co">##  return tail, stack</span>
+
+
+<span class="co">##  flatten</span>
+<span class="co">##  transpose</span>
+<span class="co">##  sign</span>
+<span class="co">##  at</span>
+<span class="co">##  of</span>
+<span class="co">##  drop</span>
+<span class="co">##  take</span>
+
+
+<span class="kw">def</span> print_words(stack, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Print all the words in alphabetical order.&#39;&#39;&#39;</span>
+  <span class="kw">print</span>(<span class="st">&#39; &#39;</span>.join(name <span class="kw">for</span> name, f in items(dictionary)))
+  <span class="kw">return</span> stack, expression, dictionary
+
+
+<span class="kw">def</span> simple_manual(stack):</code></pre></td></tr></table>
+<p>Print words and help for each word.</p>
+<table class="sourceCode python numberLines" startFrom="287"><tr class="sourceCode"><td class="lineNumbers"><pre>287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">for</span> name, f in <span class="dt">sorted</span>(FUNCTIONS.items()):
+    d = getdoc(f)
+    boxline = <span class="st">&#39;+</span><span class="ot">%s</span><span class="st">+&#39;</span> % (<span class="st">&#39;-&#39;</span> * (<span class="dt">len</span>(name) + <span class="dv">2</span>))
+    <span class="kw">print</span>(<span class="st">&#39;</span><span class="ch">\n</span><span class="st">&#39;</span>.join((
+      boxline,
+      <span class="st">&#39;| </span><span class="ot">%s</span><span class="st"> |&#39;</span> % (name,),
+      boxline,
+      d <span class="kw">if</span> d <span class="kw">else</span> <span class="st">&#39;   ...&#39;</span>,
+      <span class="st">&#39;&#39;</span>,
+      <span class="st">&#39;--&#39;</span> * <span class="dv">40</span>,
+      <span class="st">&#39;&#39;</span>,
+      )))
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> help_(S):
+  <span class="co">&#39;&#39;&#39;Accepts a quoted word on the top of the stack and prints its docs.&#39;&#39;&#39;</span>
+  (quote, stack) = S
+  word = quote[<span class="dv">0</span>]
+  <span class="kw">print</span>(getdoc(word))
+  <span class="kw">return</span> stack</code></pre></td></tr></table>
+<p>§ Combinators</p>
+<p>TODO: Brief description of combinators (as contrasted with &quot;normal&quot; functions.)</p>
+<p>Note: the combinators that have calls to joy() in them haven't been rewritten to be in Continuation-Passing Style yet.</p>
+<table class="sourceCode python numberLines" startFrom="30"><tr class="sourceCode"><td class="lineNumbers"><pre>30
+31
+32
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> .joy <span class="ch">import</span> joy
+<span class="ch">from</span> .btree <span class="ch">import</span> get
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack, iter_stack</code></pre></td></tr></table>
+<h2 id="i">i</h2>
+<p>The most straightforward combinator is called &quot;i&quot;. It just executes the quoted program on the stack.</p>
+<p>In the Continuation-Passing Style (CSP) it works by transferring the terms from the quoted list on TOS into the pending expression before returning back to the main joy() loop.</p>
+<table class="sourceCode python numberLines" startFrom="44"><tr class="sourceCode"><td class="lineNumbers"><pre>44
+45
+46
+47
+48
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> i(stack, expression, dictionary):
+  (quote, stack) = stack
+  accumulator = <span class="dt">list</span>(iter_stack(quote))
+  expression = list_to_stack(accumulator, expression)
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="x">x</h2>
+<p>Given a quoted program on the stack, the &quot;x&quot; combinator duplicates it and then runs it.</p>
+<pre><code>... [Q] x = ... [Q] Q</code></pre>
+<p>It could be defined like so:</p>
+<pre><code>x == dup i
+
+... [Q] x = ... [Q] dup i
+... [Q] x = ... [Q] [Q] i
+... [Q] x = ... [Q]  Q</code></pre>
+<p>But rather than implement &quot;x&quot; as a definition, we write a Python function that is almost exactly like the &quot;i&quot; combinator.</p>
+<table class="sourceCode python numberLines" startFrom="70"><tr class="sourceCode"><td class="lineNumbers"><pre>70
+71
+72
+73
+74
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> x(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  quote = stack[<span class="dv">0</span>]
+  expression = (i, (quote, expression))
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="b">b</h2>
+<p>The &quot;b&quot; combinator...</p>
+<pre><code>... [P] [Q] b = ... P Q</code></pre>
+<p>This combinator is slightly more involved than the &quot;x&quot; combinator, so we look up the current &quot;i&quot; combinator and use it to make things simpler. The &quot;i&quot; combinator is interleaved with the [P] and [Q] quoted programs:</p>
+<pre><code>b == [i] dip i
+
+... [P] [Q] b = ... [P] [Q] [i] dip i
+... [P] [Q] b = ... [P] i [Q] i
+... [P] [Q] b = ... P [Q] i
+... [P] [Q] b = ... P Q</code></pre>
+<p>The implementation is straightforward:</p>
+<table class="sourceCode python numberLines" startFrom="97"><tr class="sourceCode"><td class="lineNumbers"><pre>97
+98
+99
+100
+101
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> b(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  (q, (p, (stack))) = stack
+  expression = (p, (i, (q, (i, expression))))
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="infra">infra</h2>
+<p>Accept a quoted program and a list on the stack and run the program with the list as its stack.</p>
+<table class="sourceCode python numberLines" startFrom="110"><tr class="sourceCode"><td class="lineNumbers"><pre>110
+111
+112
+113
+114
+115
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> infra(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  swaack = get(dictionary, <span class="st">&#39;swaack&#39;</span>)
+  (quote, (aggregate, stack)) = stack
+  Q = (i, (stack, (swaack, expression)))
+  <span class="kw">return</span> (quote, aggregate), Q, dictionary</code></pre></td></tr></table>
+<h2 id="swaack">swaack</h2>
+<p>The name comes from &quot;SWAp stACK&quot;. I am considering dropping the extra a.</p>
+<p>This is a weird combinator that takes a quoted literal and swaps the existing stack contents with the contents of the quoted literal:</p>
+<pre><code>c b a [x y z] swaack = z y x [a b c]</code></pre>
+<p>It is very useful (you can write a function much like call/cc with it for example.)</p>
+<p>The Python implementation is delightful:</p>
+<table class="sourceCode python numberLines" startFrom="133"><tr class="sourceCode"><td class="lineNumbers"><pre>133
+134
+135
+136
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> swaack(stack, expression, dictionary):
+  new_stack, stack = stack
+  stack = stack, new_stack
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="map">map</h2>
+<p>Run the quoted program on TOS on the items in the list under it, push a new list with the results (in place of the program and original list.</p>
+<table class="sourceCode python numberLines" startFrom="145"><tr class="sourceCode"><td class="lineNumbers"><pre>145
+146
+147
+148
+149
+150
+151
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> map_(S, expression, dictionary):
+  (quote, (aggregate, stack)) = S
+  results = list_to_stack([
+    joy((term, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+    <span class="kw">for</span> term in iter_stack(aggregate)
+    ])
+  <span class="kw">return</span> (results, stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="cleave">cleave</h2>
+<p>The cleave combinator expects two quotations, and below that an item X. It first executes [P], with X on top, and saves the top result element. Then it executes [Q], again with X, and saves the top result. Finally it restores the stack to what it was below X and pushes the two results P(X) and Q(X).</p>
+<table class="sourceCode python numberLines" startFrom="163"><tr class="sourceCode"><td class="lineNumbers"><pre>163
+164
+165
+166
+167
+168
+169
+170
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> cleave(S, expression, dictionary):
+  (Q, (P, (x, stack))) = S
+  p = joy((x, stack), P, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  q = joy((x, stack), Q, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  <span class="kw">return</span> (q, (p, stack)), expression, dictionary
+
+
+<span class="kw">def</span> linrec(S, expression, dictionary):</code></pre></td></tr></table>
+<p>The linrec combinator for linear recursion expects an if-part, a then- part, an else1-part and on top an else2-part. Like the ifte combinator it executes the if-part, and if that yields true it executes the then-part. Otherwise it executes the else1-part, then it recurses with all four parts, and finally it executes the else2-part.</p>
+<table class="sourceCode python numberLines" startFrom="178"><tr class="sourceCode"><td class="lineNumbers"><pre>178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="co">##  else2, (else1, (then, (if_, stack))) = S</span>
+<span class="co">##  n = joy(stack, if_, dictionary)[0][0]</span>
+<span class="co">##  if n:</span>
+<span class="co">##    stack, _, d = joy(stack, then, dictionary)</span>
+<span class="co">##  else:</span>
+<span class="co">##    stack, _, d = joy(stack, else1, dictionary)</span>
+<span class="co">##    stk = (else2, (else1, (then, (if_, stack))))</span>
+<span class="co">##    stack, _, d = linrec(stk, (), d)</span>
+<span class="co">##  stack, _, d = joy(stack, else2, d)</span>
+<span class="co">##  return stack, expression, d</span></code></pre></td></tr></table>
+<p>[ [[else1] i [if] [then] [else1] [else2] linrec] [then] ] [stackk] [if] infra first truthy getitem i [else2] i</p>
+<table class="sourceCode python numberLines" startFrom="199"><tr class="sourceCode"><td class="lineNumbers"><pre>199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  infra = get(dictionary, <span class="st">&#39;infra&#39;</span>)
+  first = get(dictionary, <span class="st">&#39;first&#39;</span>)
+  truthy = get(dictionary, <span class="st">&#39;truthy&#39;</span>)
+  getitem = get(dictionary, <span class="st">&#39;getitem&#39;</span>)
+  linrec = get(dictionary, <span class="st">&#39;linrec&#39;</span>)
+  else2, (else1, (then, (if_, stack))) = S
+
+  expression = (
+    ((else1, (i, (if_, (then, (else1, (else2, (linrec, ()))))))),
+     (then, ())),
+    (stack,
+     (if_,
+      (infra,
+       (first,
+        (truthy,
+         (getitem,
+          (i,
+           (else2,
+            (i,
+             expression))))))))))
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="ifte">ifte</h2>
+<pre><code>... [if] [then] [else] . ifte
+
+... [[else] [then]] [...] [if] . infra first truthy getitem i</code></pre>
+<table class="sourceCode python numberLines" startFrom="232"><tr class="sourceCode"><td class="lineNumbers"><pre>232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> ifte(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  infra = get(dictionary, <span class="st">&#39;infra&#39;</span>)
+  first = get(dictionary, <span class="st">&#39;first&#39;</span>)
+  truthy = get(dictionary, <span class="st">&#39;truthy&#39;</span>)
+  getitem = get(dictionary, <span class="st">&#39;getitem&#39;</span>)
+  (else_, (then, (if_, stack))) = stack
+  stack = (if_, (stack, ((else_, (then, ())), stack)))
+  expression = (infra, (first, (truthy, (getitem, (i, expression)))))
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="dip">dip</h2>
+<p>The dip combinator expects a program [P] and below that another item X. It pops both, saves X, executes P and then restores X.</p>
+<table class="sourceCode python numberLines" startFrom="250"><tr class="sourceCode"><td class="lineNumbers"><pre>250
+251
+252
+253
+254
+255
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> dip(stack, expression, dictionary):
+  i = get(dictionary, <span class="st">&#39;i&#39;</span>)
+  (quote, (x, stack)) = stack
+  stack = (quote, stack)
+  expression = i, (x, expression)
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="dipd">dipd</h2>
+<p>Like dip but expects two items.</p>
+<table class="sourceCode python numberLines" startFrom="263"><tr class="sourceCode"><td class="lineNumbers"><pre>263
+264
+265
+266
+267
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> dipd(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like dip but expects two items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, stack))) = S
+  stack = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (x, (y, stack)), expression, dictionary</code></pre></td></tr></table>
+<h2 id="dipdd">dipdd</h2>
+<p>Like dip but expects three items.</p>
+<table class="sourceCode python numberLines" startFrom="275"><tr class="sourceCode"><td class="lineNumbers"><pre>275
+276
+277
+278
+279
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> dipdd(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like dip but expects three items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, (z, stack)))) = S
+  stack = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (x, (y, (z, stack))), expression, dictionary</code></pre></td></tr></table>
+<h2 id="app1">app1</h2>
+<p>Given a quoted program on TOS and anything as the second stack item run the program and replace the two args with the first result of the program.</p>
+<table class="sourceCode python numberLines" startFrom="289"><tr class="sourceCode"><td class="lineNumbers"><pre>289
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> app1(S, expression, dictionary):</code></pre></td></tr></table>
+<p>Given a quoted program on TOS and anything as the second stack item run the program and replace the two args with the first result of the program.</p>
+<table class="sourceCode python numberLines" startFrom="295"><tr class="sourceCode"><td class="lineNumbers"><pre>295
+296
+297
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  (quote, (x, stack)) = S
+  result = joy((x, stack), quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="app2">app2</h2>
+<p>Like app1 with two items.</p>
+<table class="sourceCode python numberLines" startFrom="305"><tr class="sourceCode"><td class="lineNumbers"><pre>305
+306
+307
+308
+309
+310
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> app2(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like app1 with two items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, stack))) = S
+  resultx = joy((x, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  resulty = joy((y, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  <span class="kw">return</span> (resultx, (resulty, stack)), expression, dictionary</code></pre></td></tr></table>
+<h2 id="app3">app3</h2>
+<p>Like app1 with three items.</p>
+<table class="sourceCode python numberLines" startFrom="318"><tr class="sourceCode"><td class="lineNumbers"><pre>318
+319
+320
+321
+322
+323
+324
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> app3(S, expression, dictionary):
+  <span class="co">&#39;&#39;&#39;Like app1 with three items.&#39;&#39;&#39;</span>
+  (quote, (x, (y, (z, stack)))) = S
+  resultx = joy((x, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  resulty = joy((y, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  resultz = joy((z, stack), quote, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]
+  <span class="kw">return</span> (resultx, (resulty, (resultz, stack))), expression, dictionary</code></pre></td></tr></table>
+<h2 id="step">step</h2>
+<p>The step combinator removes the aggregate and the quotation, and then repeatedly puts the members of the aggregate on top of the remaining stack and executes the quotation.</p>
+<table class="sourceCode python numberLines" startFrom="334"><tr class="sourceCode"><td class="lineNumbers"><pre>334
+335
+336
+337
+338
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> step(S, expression, dictionary):
+  (quote, (aggregate, stack)) = S
+  <span class="kw">for</span> term in iter_stack(aggregate):
+    stack = joy((term, stack), quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="while">while</h2>
+<pre><code>[if] [body] while</code></pre>
+<table class="sourceCode python numberLines" startFrom="347"><tr class="sourceCode"><td class="lineNumbers"><pre>347
+348
+349
+350
+351
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> while_(S, expression, dictionary):
+  (body, (if_, stack)) = S
+  <span class="kw">while</span> joy(stack, if_, dictionary)[<span class="dv">0</span>][<span class="dv">0</span>]:
+    stack = joy(stack, body, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> stack, expression, dictionary</code></pre></td></tr></table>
+<h2 id="nullary">nullary</h2>
+<p>Run the program on TOS and return its first result without consuming any of the stack (except the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="360"><tr class="sourceCode"><td class="lineNumbers"><pre>360
+361
+362
+363
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> nullary(S, expression, dictionary):
+  (quote, stack) = S
+  result = joy(stack, quote, dictionary)
+  <span class="kw">return</span> (result[<span class="dv">0</span>][<span class="dv">0</span>], stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="unary">unary</h2>
+<p>Run the program on TOS and return its first result, consuming exactly one item from the stack (in addition to the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="372"><tr class="sourceCode"><td class="lineNumbers"><pre>372
+373
+374
+375
+376
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> unary(S, expression, dictionary):
+  (quote, stack) = S
+  _, return_stack = stack
+  result = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], return_stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="binary">binary</h2>
+<p>Run the program on TOS and return its first result, consuming exactly two items from the stack (in addition to the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="385"><tr class="sourceCode"><td class="lineNumbers"><pre>385
+386
+387
+388
+389
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> binary(S, expression, dictionary):
+  (quote, stack) = S
+  _, (_, return_stack) = stack
+  result = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], return_stack), expression, dictionary</code></pre></td></tr></table>
+<h2 id="ternary">ternary</h2>
+<p>Run the program on TOS and return its first result, consuming exactly three items from the stack (in addition to the program on TOS.)</p>
+<table class="sourceCode python numberLines" startFrom="398"><tr class="sourceCode"><td class="lineNumbers"><pre>398
+399
+400
+401
+402
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> ternary(S, expression, dictionary):
+  (quote, stack) = S
+  _, (_, (_, return_stack)) = stack
+  result = joy(stack, quote, dictionary)[<span class="dv">0</span>]
+  <span class="kw">return</span> (result[<span class="dv">0</span>], return_stack), expression, dictionary</code></pre></td></tr></table>
+<p>§ Converting text to a joy expression.</p>
+<p>This module exports a single function:</p>
+<p>text_to_expression(text, dictionary)</p>
+<p>When supplied with a string text and a dictionary BTree (see btree.py) this function will return a Python datastructure that represents the Joy datastructure described by the text expression. Any symbols (pretty much anything that isn't a number or enclosed in double-quote marks) will be looked up in the dictionary, a warning will be printed to stdout for any unfound symbols.</p>
+<table class="sourceCode python numberLines" startFrom="36"><tr class="sourceCode"><td class="lineNumbers"><pre>36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> <span class="dt">__future__</span> <span class="ch">import</span> print_function
+<span class="ch">from</span> sys <span class="ch">import</span> stderr
+<span class="ch">from</span> re <span class="ch">import</span> Scanner
+<span class="ch">from</span> .btree <span class="ch">import</span> get
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack
+
+
+<span class="kw">def</span> convert(token, dictionary):
+  <span class="co">&#39;&#39;&#39;Look up symbols in the functions dictionary.&#39;&#39;&#39;</span>
+  <span class="kw">try</span>:
+    <span class="kw">return</span> get(dictionary, token)
+  <span class="kw">except</span> <span class="ot">KeyError</span>:
+    <span class="kw">print</span>(<span class="st">&#39;unknown word&#39;</span>, token, <span class="dt">file</span>=stderr)
+    <span class="kw">return</span> token
+
+
+<span class="kw">def</span> text_to_expression(text, dictionary):</code></pre></td></tr></table>
+<p>Convert a text to a Joy expression.</p>
+<table class="sourceCode python numberLines" startFrom="56"><tr class="sourceCode"><td class="lineNumbers"><pre>56
+57
+58
+59
+60
+61
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  tokens = _tokenize(text, dictionary)
+  expression = _parse(tokens)
+  <span class="kw">return</span> expression
+
+
+<span class="kw">def</span> _tokenize(text, dictionary):</code></pre></td></tr></table>
+<p>Convert a text into a stream of tokens, look up command symbols using convert(). Raise ValueError (with some of the failing text) if the scan fails.</p>
+<table class="sourceCode python numberLines" startFrom="67"><tr class="sourceCode"><td class="lineNumbers"><pre>67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  _scanner.dictionary = dictionary
+  tokens, rest = _scanner.scan(text)
+  <span class="kw">if</span> rest:
+    <span class="kw">raise</span> <span class="ot">ValueError</span>(
+      <span class="st">&#39;Scan failed at position </span><span class="ot">%i</span><span class="st">, </span><span class="ot">%r</span><span class="st">&#39;</span>
+      % (<span class="dt">len</span>(text) - <span class="dt">len</span>(rest), rest[:<span class="dv">10</span>])
+      )
+  <span class="kw">return</span> tokens
+
+
+<span class="kw">def</span> _parse(tokens):</code></pre></td></tr></table>
+<p>Return a stack/list expression of the tokens.</p>
+<table class="sourceCode python numberLines" startFrom="81"><tr class="sourceCode"><td class="lineNumbers"><pre>81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  frame = []
+  stack = []
+  <span class="kw">for</span> tok in tokens:
+    <span class="kw">if</span> tok == <span class="st">&#39;[&#39;</span>:
+      stack.append(frame)
+      frame = []
+      stack[-<span class="dv">1</span>].append(frame)
+    <span class="kw">elif</span> tok == <span class="st">&#39;]&#39;</span>:
+      frame = stack.pop()
+      frame[-<span class="dv">1</span>] = list_to_stack(frame[-<span class="dv">1</span>])
+    <span class="kw">else</span>:
+      frame.append(tok)
+  <span class="kw">return</span> list_to_stack(frame)
+
+
+<span class="kw">def</span> _scan_identifier(scanner, token): <span class="kw">return</span> convert(token, scanner.dictionary)
+<span class="kw">def</span> _scan_bracket(scanner, token): <span class="kw">return</span> token
+<span class="kw">def</span> _scan_float(scanner, token): <span class="kw">return</span> <span class="dt">float</span>(token)
+<span class="kw">def</span> _scan_int(scanner, token): <span class="kw">return</span> <span class="dt">int</span>(token)
+<span class="kw">def</span> _scan_str(scanner, token): <span class="kw">return</span> token[<span class="dv">1</span>:-<span class="dv">1</span>].replace(<span class="st">&#39;</span><span class="ch">\\</span><span class="st">&quot;&#39;</span>, <span class="st">&#39;&quot;&#39;</span>)
+
+
+_scanner = Scanner([
+  (<span class="st">r&#39;-?\d+\.\d*&#39;</span>, _scan_float),
+  (<span class="st">r&#39;-?\d+&#39;</span>, _scan_int),
+  (<span class="st">r&#39;[•\w!@$%^&amp;*()_+&lt;&gt;?|\/;:`~,.=-]+&#39;</span>, _scan_identifier),
+  (<span class="st">r&#39;\[|\]&#39;</span>, _scan_bracket),
+  (<span class="st">r&#39;&quot;(?:[^&quot;\\]|\\.)*&quot;&#39;</span>, _scan_str),
+  (<span class="st">r&#39;\s+&#39;</span>, <span class="ot">None</span>),
+  ])</code></pre></td></tr></table>
+<h1 id="stack">§ Stack</h1>
+<p>When talking about Joy we use the terms &quot;stack&quot;, &quot;list&quot;, &quot;sequence&quot; and &quot;aggregate&quot; to mean the same thing: a simple datatype that permits certain operations such as iterating and pushing and popping values from (at least) one end.</p>
+<p>We use the venerable two-tuple recursive form of sequences where the empty tuple () is the empty stack and (head, rest) gives the recursive form of a stack with one or more items on it.</p>
+<pre><code>()
+(1, ())
+(1, (2, ()))
+(1, (2, (3, ())))
+...</code></pre>
+<p>And so on.</p>
+<p>We have two very simple functions to build up a stack from a Python iterable and also to iterate through a stack and yield its items one-by-one in order, and two functions to generate string representations of stacks:</p>
+<pre><code>list_to_stack()
+
+iter_stack()
+
+stack_to_string()
+
+strstack()</code></pre>
+<p>A word about the stack data structure.</p>
+<p>Python has very nice &quot;tuple packing and unpacking&quot; in its syntax which means we can directly &quot;unpack&quot; the expected arguments to a Joy function.</p>
+<p>For example:</p>
+<pre><code>def dup(stack):
+  head, tail = stack
+  return head, (head, tail)</code></pre>
+<p>We replace the argument &quot;stack&quot; by the expected structure of the stack, in this case &quot;(head, tail)&quot;, and Python takes care of de-structuring the incoming argument and assigning values to the names. Note that Python syntax doesn't require parentheses around tuples used in expressions where they would be redundant.</p>
+<table class="sourceCode python numberLines" startFrom="76"><tr class="sourceCode"><td class="lineNumbers"><pre>76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">
+
+<span class="kw">def</span> list_to_stack(el, stack=()):
+  <span class="co">&#39;&#39;&#39;Convert a list (or other sequence) to a stack.&#39;&#39;&#39;</span>
+  <span class="kw">for</span> item in <span class="dt">reversed</span>(el):
+    stack = item, stack
+  <span class="kw">return</span> stack
+
+
+<span class="kw">def</span> iter_stack(stack):
+  <span class="co">&#39;&#39;&#39;Iterate through the items on the stack.&#39;&#39;&#39;</span>
+  <span class="kw">while</span> stack:
+    item, stack = stack
+    <span class="kw">yield</span> item
+
+
+<span class="kw">def</span> stack_to_string(expression):</code></pre></td></tr></table>
+<p>Return a &quot;pretty print&quot; string for a stack.</p>
+<p>Ideally the output of this should result in the same expression if passed through tokenize() and parse(), but not yet.</p>
+<table class="sourceCode python numberLines" startFrom="99"><tr class="sourceCode"><td class="lineNumbers"><pre>99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not <span class="dt">isinstance</span>(expression, <span class="dt">tuple</span>):
+    <span class="kw">return</span> <span class="dt">repr</span>(expression)
+  <span class="kw">return</span> <span class="st">&#39;[</span><span class="ot">%s</span><span class="st">]&#39;</span> % strstack(expression)
+
+
+<span class="kw">def</span> strstack(stack):
+  <span class="kw">if</span> not <span class="dt">isinstance</span>(stack, <span class="dt">tuple</span>):
+    <span class="kw">return</span> <span class="dt">repr</span>(stack)
+  <span class="kw">if</span> not stack: <span class="co"># shortcut</span>
+    <span class="kw">return</span> <span class="st">&#39;&#39;</span>
+  <span class="kw">return</span> <span class="st">&#39; &#39;</span>.join(<span class="dt">map</span>(stack_to_string, iter_stack(stack)))
+
+
+<span class="kw">def</span> pick(s, n):</code></pre></td></tr></table>
+<p>Find the nth item on the stack. (Pick with zero is the same as &quot;dup&quot;.)</p>
+<table class="sourceCode python numberLines" startFrom="116"><tr class="sourceCode"><td class="lineNumbers"><pre>116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> n &lt; <span class="dv">0</span>:
+    <span class="kw">raise</span> <span class="ot">ValueError</span>
+  <span class="kw">while</span> <span class="ot">True</span>:
+    <span class="kw">try</span>:
+      item, s = s
+    <span class="kw">except</span> <span class="ot">ValueError</span>:
+      <span class="kw">raise</span> <span class="ot">IndexError</span>
+    n -= <span class="dv">1</span>
+    <span class="kw">if</span> n &lt; <span class="dv">0</span>:
+      <span class="kw">break</span>
+  <span class="kw">return</span> item</code></pre></td></tr></table>
+<h1 id="initializer">initializer</h1>
+<table class="sourceCode python numberLines" startFrom="23"><tr class="sourceCode"><td class="lineNumbers"><pre>23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">import</span> operator, math
+<span class="ch">from</span> .btree <span class="ch">import</span> fill_tree, items
+<span class="ch">from</span> .functions <span class="ch">import</span> (
+  add_aliases,
+  generate_definitions,
+  BinaryBuiltinWrapper,
+  FunctionWrapper,
+  SimpleFunctionWrapper,
+  UnaryBuiltinWrapper,
+  )
+<span class="ch">from</span> . <span class="ch">import</span> combinators <span class="ch">as</span> comb
+<span class="ch">from</span> . <span class="ch">import</span> library <span class="ch">as</span> lib
+
+
+builtins = (
+  BinaryBuiltinWrapper(operator.add),
+  BinaryBuiltinWrapper(operator.and_),
+  BinaryBuiltinWrapper(operator.div),
+  BinaryBuiltinWrapper(operator.eq),
+  BinaryBuiltinWrapper(operator.floordiv),
+  BinaryBuiltinWrapper(operator.ge),
+  BinaryBuiltinWrapper(operator.gt),
+  BinaryBuiltinWrapper(operator.le),
+  BinaryBuiltinWrapper(operator.lshift),
+  BinaryBuiltinWrapper(operator.lt),
+  BinaryBuiltinWrapper(operator.mod),
+  BinaryBuiltinWrapper(operator.mul),
+  BinaryBuiltinWrapper(operator.ne),
+  BinaryBuiltinWrapper(operator.or_),
+  BinaryBuiltinWrapper(operator.<span class="dt">pow</span>),
+  BinaryBuiltinWrapper(operator.rshift),
+  BinaryBuiltinWrapper(operator.sub),
+  BinaryBuiltinWrapper(operator.truediv),
+  BinaryBuiltinWrapper(operator.xor),
+
+  UnaryBuiltinWrapper(operator.neg),
+  UnaryBuiltinWrapper(operator.not_),
+  UnaryBuiltinWrapper(math.sqrt),
+  )
+
+
+combinators = (
+  FunctionWrapper(comb.app1),
+  FunctionWrapper(comb.app2),
+  FunctionWrapper(comb.app3),
+  FunctionWrapper(comb.b),
+  FunctionWrapper(comb.binary),
+  FunctionWrapper(comb.cleave),
+  FunctionWrapper(comb.dip),
+  FunctionWrapper(comb.dipd),
+  FunctionWrapper(comb.dipdd),
+  FunctionWrapper(comb.i),
+  FunctionWrapper(comb.ifte),
+  FunctionWrapper(comb.infra),
+  FunctionWrapper(comb.linrec),
+  FunctionWrapper(comb.map_),
+  FunctionWrapper(comb.nullary),
+  FunctionWrapper(comb.step),
+  FunctionWrapper(comb.swaack),
+  FunctionWrapper(comb.ternary),
+  FunctionWrapper(comb.unary),
+  FunctionWrapper(comb.while_),
+  FunctionWrapper(comb.x),
+  FunctionWrapper(lib.print_words),
+  FunctionWrapper(comb.linrec),
+  )
+
+
+primitives = (
+  SimpleFunctionWrapper(lib.first),
+  SimpleFunctionWrapper(lib.truthy),
+  SimpleFunctionWrapper(lib.getitem),
+  SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.clear),
+  SimpleFunctionWrapper(lib.concat),
+  SimpleFunctionWrapper(lib.cons),
+  SimpleFunctionWrapper(lib.dup),
+  SimpleFunctionWrapper(lib.dupd),
+  SimpleFunctionWrapper(lib.id_),
+  SimpleFunctionWrapper(lib.min_),
+  SimpleFunctionWrapper(lib.pop),
+  SimpleFunctionWrapper(lib.popd),
+  SimpleFunctionWrapper(lib.popop),
+  SimpleFunctionWrapper(lib.pred),
+  SimpleFunctionWrapper(lib.remove),
+  SimpleFunctionWrapper(lib.reverse),
+  SimpleFunctionWrapper(lib.rolldown),
+  SimpleFunctionWrapper(lib.rollup),
+  SimpleFunctionWrapper(lib.stack_),
+  SimpleFunctionWrapper(lib.succ),
+  SimpleFunctionWrapper(lib.sum_),
+  SimpleFunctionWrapper(lib.swap),
+  SimpleFunctionWrapper(lib.uncons),
+  SimpleFunctionWrapper(lib.unstack),
+  SimpleFunctionWrapper(lib.void),
+  SimpleFunctionWrapper(lib.zip_),
+  )
+
+
+<span class="kw">def</span> initialize(dictionary=()):
+  B = [(F.name, F) <span class="kw">for</span> F in builtins]
+  C = [(F.name, F) <span class="kw">for</span> F in combinators]
+  P = [(F.name, F) <span class="kw">for</span> F in primitives]
+  D = add_aliases(B + C + P)
+  dictionary = fill_tree(dictionary, D)
+  dictionary = generate_definitions(lib.definitions, dictionary)
+  <span class="co"># Re-balance the dictionary.</span>
+  dictionary = fill_tree((), items(dictionary))
+  <span class="kw">return</span> dictionary</code></pre></td></tr></table>
+<h1 id="running-joy-from-the-command-line">Running Joy from the Command Line</h1>
+<table class="sourceCode python numberLines" startFrom="23"><tr class="sourceCode"><td class="lineNumbers"><pre>23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> <span class="dt">__future__</span> <span class="ch">import</span> print_function
+<span class="ch">from</span> sys <span class="ch">import</span> argv
+<span class="ch">from</span> .joy <span class="ch">import</span> repl
+<span class="ch">from</span> .initializer <span class="ch">import</span> initialize
+
+
+<span class="kw">if</span> <span class="st">&#39;--gui&#39;</span> in argv:
+  <span class="ch">from</span> .gui.textwidget <span class="ch">import</span> main
+  t = main(dictionary=initialize())
+  <span class="kw">print</span>()
+  <span class="kw">print</span>(<span class="st">&#39;&lt;STACK&#39;</span>)
+  t.mainloop()
+<span class="kw">else</span>:
+  stack = repl(dictionary=initialize())</code></pre></td></tr></table>
+<h1 id="btree">BTree</h1>
+<p>This is a simple Binary Tree implementation that uses tuples in such a way as to permit &quot;persistant&quot; usage, i.e. all previous versions of the btree datastructures are retained and available (provided you don't throw them away yourself.)</p>
+<p>The empty tree is represented as an empty tuple. Nodes are a tuple consisting of a key, a value, and two (possible empty) sub-nodes for the lower and higher branches of the tree.</p>
+<p>This module defines the following functions:</p>
+<pre><code>insert(node, key, value)
+
+get(node, key)
+
+delete(node, key)</code></pre>
+<p>Both insert() and delete() return a new tuple that is the result of applying the operation to the existing node. (And both get() and delete() will raise KeyErrors if the key is not in the tree.)</p>
+<p>Because of the way that insert() and delete() are written, only as much of the tree is changed as necessary and the rest of it is reused. This provides persistance without using up memory for each version of the tree.</p>
+<p>These functions are implemented recursively so they have the potential to raise a RuntimeError if the maximum recursion depth is exceeded. This should only be a problem if used with very large trees. To avoid this issue you can use sys.setrecursionlimit(), but I think I might just rewrite these to not use recursion.</p>
+<h2 id="insert">insert()</h2>
+<p>Return a tree with value stored under key. Replaces old value if any.</p>
+<table class="sourceCode python numberLines" startFrom="60"><tr class="sourceCode"><td class="lineNumbers"><pre>60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> insert(node, key, value):
+  <span class="kw">if</span> not node:
+    <span class="kw">return</span> key, (value, ((), ((), ())))
+
+  node_key, (node_value, (lower, (higher, _))) = node
+
+  <span class="kw">if</span> key &lt; node_key:
+    <span class="kw">return</span> node_key, (node_value, (insert(lower, key, value), (higher, ())))
+
+  <span class="kw">if</span> key &gt; node_key:
+    <span class="kw">return</span> node_key, (node_value, (lower, (insert(higher, key, value), ())))
+
+  <span class="kw">return</span> key, (value, (lower, (higher, ())))</code></pre></td></tr></table>
+<h2 id="get">get()</h2>
+<p>Return the value stored under key or raise KeyError if not found.</p>
+<table class="sourceCode python numberLines" startFrom="80"><tr class="sourceCode"><td class="lineNumbers"><pre>80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> get(node, key):
+  <span class="kw">if</span> not node:
+    <span class="kw">raise</span> <span class="ot">KeyError</span>, key
+
+  node_key, (value, (lower, (higher, _))) = node
+
+  <span class="kw">if</span> key == node_key:
+    <span class="kw">return</span> value
+
+  <span class="kw">return</span> get(lower <span class="kw">if</span> key &lt; node_key <span class="kw">else</span> higher, key)</code></pre></td></tr></table>
+<h2 id="delete">delete()</h2>
+<p>Return a tree with the value (and key) removed or raise KeyError if not found.</p>
+<table class="sourceCode python numberLines" startFrom="98"><tr class="sourceCode"><td class="lineNumbers"><pre>98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> delete(node, key):
+  <span class="kw">if</span> not node:
+    <span class="kw">raise</span> <span class="ot">KeyError</span>, key
+
+  node_key, (value, (lower, (higher, _))) = node
+
+  <span class="kw">if</span> key &lt; node_key:
+    <span class="kw">return</span> node_key, (value, (delete(lower, key), (higher, ())))
+
+  <span class="kw">if</span> key &gt; node_key:
+    <span class="kw">return</span> node_key, (value, (lower, (delete(higher, key), ())))</code></pre></td></tr></table>
+<p>So, key == node_key, delete this node itself.</p>
+<p>If we only have one non-empty child node return it. If both child nodes are empty return an empty node (one of the children.)</p>
+<table class="sourceCode python numberLines" startFrom="115"><tr class="sourceCode"><td class="lineNumbers"><pre>115
+116
+117
+118
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not lower:
+    <span class="kw">return</span> higher
+  <span class="kw">if</span> not higher:
+    <span class="kw">return</span> lower</code></pre></td></tr></table>
+<p>If both child nodes are non-empty, we find the highest node in our lower sub-tree, take its key and value to replace (delete) our own, then get rid of it by recursively calling delete() on our lower sub-node with our new key.</p>
+<p>(We could also find the lowest node in our higher sub-tree and take its key and value and delete it. I only implemented one of these two symmetrical options. Over a lot of deletions this might make the tree more unbalanced. Oh well.)</p>
+<table class="sourceCode python numberLines" startFrom="130"><tr class="sourceCode"><td class="lineNumbers"><pre>130
+131
+132
+133
+134
+135
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  node = lower
+  <span class="kw">while</span> node[<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">0</span>]:
+    node = node[<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">1</span>][<span class="dv">0</span>]
+  key, value = node[<span class="dv">0</span>], node[<span class="dv">1</span>][<span class="dv">0</span>]
+
+  <span class="kw">return</span> key, (value, (delete(lower, key), (higher, ())))</code></pre></td></tr></table>
+<p>The above functions are the &quot;core&quot; functionality for dealing with this tuple-based persistant BTree datastructure. The rest of this module is just helper functions.</p>
+<h2 id="items">items()</h2>
+<p>Iterate in order over the (key, value) pairs in a tree.</p>
+<table class="sourceCode python numberLines" startFrom="148"><tr class="sourceCode"><td class="lineNumbers"><pre>148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> items(node):
+  <span class="kw">if</span> not node:
+    <span class="kw">return</span>
+
+  key, (value, (lower, (higher, _))) = node
+
+  <span class="kw">for</span> kv in items(lower):
+    <span class="kw">yield</span> kv
+
+  <span class="kw">yield</span> key, value
+
+  <span class="kw">for</span> kv in items(higher):
+    <span class="kw">yield</span> kv</code></pre></td></tr></table>
+<h3 id="yield_balanced">yield_balanced()</h3>
+<p>Recursive generator function to yield the items in a sorted sequence in such a way as to fill a btree in a balanced fashion.</p>
+<table class="sourceCode python numberLines" startFrom="169"><tr class="sourceCode"><td class="lineNumbers"><pre>169
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> _yield_balanced(sorted_items):</code></pre></td></tr></table>
+<p>For empty sequences do nothing.</p>
+<table class="sourceCode python numberLines" startFrom="173"><tr class="sourceCode"><td class="lineNumbers"><pre>173
+174
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not sorted_items:
+    <span class="kw">return</span></code></pre></td></tr></table>
+<p>Find the index of the middle item (rounding down for even-length sequences due to integer division.)</p>
+<table class="sourceCode python numberLines" startFrom="179"><tr class="sourceCode"><td class="lineNumbers"><pre>179
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  i = <span class="dt">len</span>(sorted_items) / <span class="dv">2</span></code></pre></td></tr></table>
+<p>Yield the middle item.</p>
+<table class="sourceCode python numberLines" startFrom="183"><tr class="sourceCode"><td class="lineNumbers"><pre>183
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">yield</span> sorted_items[i]</code></pre></td></tr></table>
+<p>Shortcut in case the length of <code>sorted_items</code> is one.</p>
+<table class="sourceCode python numberLines" startFrom="187"><tr class="sourceCode"><td class="lineNumbers"><pre>187
+188
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">if</span> not i:
+    <span class="kw">return</span></code></pre></td></tr></table>
+<p>Now recurse on lower and higher halves of the sequence.</p>
+<table class="sourceCode python numberLines" startFrom="192"><tr class="sourceCode"><td class="lineNumbers"><pre>192
+193
+194
+195
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  <span class="kw">for</span> low in _yield_balanced(sorted_items[:i]):
+    <span class="kw">yield</span> low
+  <span class="kw">for</span> high in _yield_balanced(sorted_items[i<span class="dv">+1</span>:]):
+    <span class="kw">yield</span> high</code></pre></td></tr></table>
+<h2 id="fill_tree">fill_tree()</h2>
+<p>Add the (key, value) pairs in items to a btree in a balanced way.</p>
+<p>You can balance a tree like so:</p>
+<pre><code>tree = fill_tree((), items(tree))</code></pre>
+<p>This iterates through the tree and returns a new, balanced tree from its contents.</p>
+<table class="sourceCode python numberLines" startFrom="210"><tr class="sourceCode"><td class="lineNumbers"><pre>210
+211
+212
+213
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> fill_tree(node, items):
+  <span class="kw">for</span> key, value in _yield_balanced(<span class="dt">sorted</span>(items)):
+    node = insert(node, key, value)
+  <span class="kw">return</span> node</code></pre></td></tr></table>
+</body>
+</html>

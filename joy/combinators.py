@@ -19,8 +19,7 @@
 #
 '''
 
-
-§ Combinators
+# Combinators
 
 TODO: Brief description of combinators (as contrasted with "normal" functions.)
 
@@ -131,8 +130,8 @@ example.)
 The Python implementation is delightful:
 '''
 def swaack(stack, expression, dictionary):
-  old_stack, stack = stack
-  stack = stack, old_stack
+  new_stack, stack = stack
+  stack = stack, new_stack
   return stack, expression, dictionary
 
 

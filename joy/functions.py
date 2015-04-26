@@ -21,11 +21,7 @@
 
 # Functions
 
-  stack → stack
-  note() decorator
-  define several functions
-  wrap functions from Python operator module
-
+stack → stack
 
 We can catagorize functions into those that rearrange things on the stack
 but don't otherwise process them, those that perform some process on

@@ -1,10 +1,6 @@
 # Functions
 
-  stack → stack
-  note() decorator
-  define several functions
-  wrap functions from Python operator module
-
+stack → stack
 
 We can catagorize functions into those that rearrange things on the stack
 but don't otherwise process them, those that perform some process on
@@ -23,7 +19,7 @@ as simple tuple unpacking and repacking.
 Definitions, functions defined by equations, refactoring and how
 important it is..
 
-~~~~ {.python .numberLines startFrom="47"}
+~~~~ {.python .numberLines startFrom="43"}
 from .btree import get, insert
 from .parser import text_to_expression
 from .stack import list_to_stack, iter_stack
@@ -33,7 +29,7 @@ from .stack import list_to_stack, iter_stack
 
 We allow for having alternate names for functions by this mapping.
 
-~~~~ {.python .numberLines startFrom="56"}
+~~~~ {.python .numberLines startFrom="52"}
 ALIASES = (
   ('add', ['+']),
   ('mul', ['*']),
@@ -73,7 +69,7 @@ def add_aliases(items, A=ALIASES):
 
 Right now, this just allows functions to have a nice repr().
 
-~~~~ {.python .numberLines startFrom="96"}
+~~~~ {.python .numberLines startFrom="92"}
 class FunctionWrapper(object):
   def __init__(self, f):
     self.f = f
@@ -125,7 +121,7 @@ class DefinitionWrapper(FunctionWrapper):
 Given some text describing a Joy function definition parse it and
   return a DefinitionWrapper.
 
-~~~~ {.python .numberLines startFrom="147"}
+~~~~ {.python .numberLines startFrom="143"}
   @classmethod
   def parse_definition(class_, defi, dictionary):
     name, proper, body_text = (n.strip() for n in defi.partition('=='))
@@ -136,7 +132,7 @@ Given some text describing a Joy function definition parse it and
 
 ## generate_definitions()
 
-~~~~ {.python .numberLines startFrom="157"}
+~~~~ {.python .numberLines startFrom="153"}
 def generate_definitions(defs, dictionary):
   for definition in defs.splitlines():
     definition = definition.strip()

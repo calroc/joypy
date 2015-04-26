@@ -129,13 +129,10 @@ if __name__ == '__main__':
     hfn = ofn[:-3] + '.html'
     command = (
       'pandoc %s -o %s '
-      '--standalone '
+      #'--standalone '
       '--highlight-style tango') % (
       ofn, hfn
       )
     print os.system(command)
-
-
-
-
-
+  os.chdir('./html_docs')
+  print os.system('./catdocs.sh')
