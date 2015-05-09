@@ -1,54 +1,39 @@
-<p>§ Converting text to a joy expression.</p>
+<h1 id="converting-text-to-a-joy-expression.">Converting text to a joy expression.</h1>
 <p>This module exports a single function:</p>
-<p>text_to_expression(text, dictionary)</p>
+<pre><code>text_to_expression(text, dictionary)</code></pre>
 <p>When supplied with a string text and a dictionary BTree (see btree.py) this function will return a Python datastructure that represents the Joy datastructure described by the text expression. Any symbols (pretty much anything that isn't a number or enclosed in double-quote marks) will be looked up in the dictionary, a warning will be printed to stdout for any unfound symbols.</p>
-<table class="sourceCode python numberLines" startFrom="36"><tr class="sourceCode"><td class="lineNumbers"><pre>36
+<table class="sourceCode python numberLines" startFrom="35"><tr class="sourceCode"><td class="lineNumbers"><pre>35
+36
 37
 38
 39
-40
-41
-42
-43
-44
-45
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> <span class="dt">__future__</span> <span class="ch">import</span> print_function
+<span class="ch">from</span> sys <span class="ch">import</span> stderr
+<span class="ch">from</span> re <span class="ch">import</span> Scanner
+<span class="ch">from</span> .btree <span class="ch">import</span> get
+<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack</code></pre></td></tr></table>
+<p>Look up symbols in the functions dictionary.</p>
+<table class="sourceCode python numberLines" startFrom="45"><tr class="sourceCode"><td class="lineNumbers"><pre>45
 46
 47
 48
 49
 50
-51
-52
-</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="ch">from</span> <span class="dt">__future__</span> <span class="ch">import</span> print_function
-<span class="ch">from</span> sys <span class="ch">import</span> stderr
-<span class="ch">from</span> re <span class="ch">import</span> Scanner
-<span class="ch">from</span> .btree <span class="ch">import</span> get
-<span class="ch">from</span> .stack <span class="ch">import</span> list_to_stack
-
-
-<span class="kw">def</span> convert(token, dictionary):
-  <span class="co">&#39;&#39;&#39;Look up symbols in the functions dictionary.&#39;&#39;&#39;</span>
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> convert(token, dictionary):
   <span class="kw">try</span>:
     <span class="kw">return</span> get(dictionary, token)
   <span class="kw">except</span> <span class="ot">KeyError</span>:
     <span class="kw">print</span>(<span class="st">&#39;unknown word&#39;</span>, token, <span class="dt">file</span>=stderr)
-    <span class="kw">return</span> token
-
-
-<span class="kw">def</span> text_to_expression(text, dictionary):</code></pre></td></tr></table>
+    <span class="kw">return</span> token</code></pre></td></tr></table>
 <p>Convert a text to a Joy expression.</p>
 <table class="sourceCode python numberLines" startFrom="56"><tr class="sourceCode"><td class="lineNumbers"><pre>56
 57
 58
 59
-60
-61
-</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  tokens = _tokenize(text, dictionary)
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> text_to_expression(text, dictionary):
+  tokens = _tokenize(text, dictionary)
   expression = _parse(tokens)
-  <span class="kw">return</span> expression
-
-
-<span class="kw">def</span> _tokenize(text, dictionary):</code></pre></td></tr></table>
+  <span class="kw">return</span> expression</code></pre></td></tr></table>
 <p>Convert a text into a stream of tokens, look up command symbols using convert(). Raise ValueError (with some of the failing text) if the scan fails.</p>
 <table class="sourceCode python numberLines" startFrom="67"><tr class="sourceCode"><td class="lineNumbers"><pre>67
 68
@@ -59,19 +44,15 @@
 73
 74
 75
-76
-77
-</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  _scanner.dictionary = dictionary
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> _tokenize(text, dictionary):
+  _scanner.dictionary = dictionary
   tokens, rest = _scanner.scan(text)
   <span class="kw">if</span> rest:
     <span class="kw">raise</span> <span class="ot">ValueError</span>(
       <span class="st">&#39;Scan failed at position </span><span class="ot">%i</span><span class="st">, </span><span class="ot">%r</span><span class="st">&#39;</span>
       % (<span class="dt">len</span>(text) - <span class="dt">len</span>(rest), rest[:<span class="dv">10</span>])
       )
-  <span class="kw">return</span> tokens
-
-
-<span class="kw">def</span> _parse(tokens):</code></pre></td></tr></table>
+  <span class="kw">return</span> tokens</code></pre></td></tr></table>
 <p>Return a stack/list expression of the tokens.</p>
 <table class="sourceCode python numberLines" startFrom="81"><tr class="sourceCode"><td class="lineNumbers"><pre>81
 82
@@ -103,7 +84,9 @@
 108
 109
 110
-</pre></td><td class="sourceCode"><pre><code class="sourceCode python">  frame = []
+111
+</pre></td><td class="sourceCode"><pre><code class="sourceCode python"><span class="kw">def</span> _parse(tokens):
+  frame = []
   stack = []
   <span class="kw">for</span> tok in tokens:
     <span class="kw">if</span> tok == <span class="st">&#39;[&#39;</span>:

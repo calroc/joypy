@@ -166,35 +166,23 @@ def cleave(S, expression, dictionary):
   return (q, (p, stack)), expression, dictionary
 
 
+'''
+The linrec combinator for linear recursion expects an if-part, a then-
+part, an else1-part and on top an else2-part. Like the ifte combinator it
+executes the if-part, and if that yields true it executes the then-part.
+Otherwise it executes the else1-part, then it recurses with all four
+parts, and finally it executes the else2-part.
+
+    [
+      [[else1] i [if] [then] [else1] [else2] linrec]
+      [then]
+    ]
+    [stackk] [if]
+    infra first truthy getitem
+    i [else2] i
+
+'''
 def linrec(S, expression, dictionary):
-  '''
-  The linrec combinator for linear recursion expects an if-part, a then-
-  part, an else1-part and on top an else2-part. Like the ifte combinator it
-  executes the if-part, and if that yields true it executes the then-part.
-  Otherwise it executes the else1-part, then it recurses with all four
-  parts, and finally it executes the else2-part.
-  '''
-##  else2, (else1, (then, (if_, stack))) = S
-##  n = joy(stack, if_, dictionary)[0][0]
-##  if n:
-##    stack, _, d = joy(stack, then, dictionary)
-##  else:
-##    stack, _, d = joy(stack, else1, dictionary)
-##    stk = (else2, (else1, (then, (if_, stack))))
-##    stack, _, d = linrec(stk, (), d)
-##  stack, _, d = joy(stack, else2, d)
-##  return stack, expression, d
-
-  '''
-  [
-    [[else1] i [if] [then] [else1] [else2] linrec]
-    [then]
-  ]
-  [stackk] [if]
-  infra first truthy getitem
-  i [else2] i
-
-  '''
   i = get(dictionary, 'i')
   infra = get(dictionary, 'infra')
   first = get(dictionary, 'first')
@@ -217,7 +205,6 @@ def linrec(S, expression, dictionary):
             (i,
              expression))))))))))
   return stack, expression, dictionary
-
 
 
 '''
@@ -286,11 +273,6 @@ the program and replace the two args with the first result of the
 program.
 '''
 def app1(S, expression, dictionary):
-  '''
-  Given a quoted program on TOS and anything as the second stack item run
-  the program and replace the two args with the first result of the
-  program.
-  '''
   (quote, (x, stack)) = S
   result = joy((x, stack), quote, dictionary)[0]
   return (result[0], stack), expression, dictionary
@@ -302,7 +284,6 @@ def app1(S, expression, dictionary):
 Like app1 with two items.
 '''
 def app2(S, expression, dictionary):
-  '''Like app1 with two items.'''
   (quote, (x, (y, stack))) = S
   resultx = joy((x, stack), quote, dictionary)[0][0]
   resulty = joy((y, stack), quote, dictionary)[0][0]
@@ -315,7 +296,6 @@ def app2(S, expression, dictionary):
 Like app1 with three items.
 '''
 def app3(S, expression, dictionary):
-  '''Like app1 with three items.'''
   (quote, (x, (y, (z, stack)))) = S
   resultx = joy((x, stack), quote, dictionary)[0][0]
   resulty = joy((y, stack), quote, dictionary)[0][0]

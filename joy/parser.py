@@ -19,12 +19,11 @@
 #
 '''
 
-
-§ Converting text to a joy expression.
+# Converting text to a joy expression.
 
 This module exports a single function:
 
-  text_to_expression(text, dictionary)
+    text_to_expression(text, dictionary)
 
 When supplied with a string text and a dictionary BTree (see btree.py)
 this function will return a Python datastructure that represents the Joy
@@ -40,8 +39,10 @@ from .btree import get
 from .stack import list_to_stack
 
 
+'''
+Look up symbols in the functions dictionary.
+'''
 def convert(token, dictionary):
-  '''Look up symbols in the functions dictionary.'''
   try:
     return get(dictionary, token)
   except KeyError:
@@ -49,21 +50,21 @@ def convert(token, dictionary):
     return token
 
 
+'''
+Convert a text to a Joy expression.
+'''
 def text_to_expression(text, dictionary):
-  '''
-  Convert a text to a Joy expression.
-  '''
   tokens = _tokenize(text, dictionary)
   expression = _parse(tokens)
   return expression
 
 
+'''
+Convert a text into a stream of tokens, look up command symbols using
+convert().  Raise ValueError (with some of the failing text) if the
+scan fails.
+'''
 def _tokenize(text, dictionary):
-  '''
-  Convert a text into a stream of tokens, look up command symbols using
-  convert().  Raise ValueError (with some of the failing text) if the
-  scan fails.
-  '''
   _scanner.dictionary = dictionary
   tokens, rest = _scanner.scan(text)
   if rest:
@@ -74,10 +75,10 @@ def _tokenize(text, dictionary):
   return tokens
 
 
+'''
+Return a stack/list expression of the tokens.
+'''
 def _parse(tokens):
-  '''
-  Return a stack/list expression of the tokens.
-  '''
   frame = []
   stack = []
   for tok in tokens:

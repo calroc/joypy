@@ -1,8 +1,8 @@
-§ Converting text to a joy expression.
+# Converting text to a joy expression.
 
 This module exports a single function:
 
-  text_to_expression(text, dictionary)
+    text_to_expression(text, dictionary)
 
 When supplied with a string text and a dictionary BTree (see btree.py)
 this function will return a Python datastructure that represents the Joy
@@ -11,42 +11,40 @@ anything that isn't a number or enclosed in double-quote marks) will be
 looked up in the dictionary, a warning will be printed to stdout for any
 unfound symbols.
 
-~~~~ {.python .numberLines startFrom="36"}
+~~~~ {.python .numberLines startFrom="35"}
 from __future__ import print_function
 from sys import stderr
 from re import Scanner
 from .btree import get
 from .stack import list_to_stack
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Look up symbols in the functions dictionary.
 
+~~~~ {.python .numberLines startFrom="45"}
 def convert(token, dictionary):
-  '''Look up symbols in the functions dictionary.'''
   try:
     return get(dictionary, token)
   except KeyError:
     print('unknown word', token, file=stderr)
     return token
-
-
-def text_to_expression(text, dictionary):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Convert a text to a Joy expression.
 
 ~~~~ {.python .numberLines startFrom="56"}
+def text_to_expression(text, dictionary):
   tokens = _tokenize(text, dictionary)
   expression = _parse(tokens)
   return expression
-
-
-def _tokenize(text, dictionary):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Convert a text into a stream of tokens, look up command symbols using
-  convert().  Raise ValueError (with some of the failing text) if the
-  scan fails.
+convert().  Raise ValueError (with some of the failing text) if the
+scan fails.
 
 ~~~~ {.python .numberLines startFrom="67"}
+def _tokenize(text, dictionary):
   _scanner.dictionary = dictionary
   tokens, rest = _scanner.scan(text)
   if rest:
@@ -55,14 +53,12 @@ Convert a text into a stream of tokens, look up command symbols using
       % (len(text) - len(rest), rest[:10])
       )
   return tokens
-
-
-def _parse(tokens):
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Return a stack/list expression of the tokens.
 
 ~~~~ {.python .numberLines startFrom="81"}
+def _parse(tokens):
   frame = []
   stack = []
   for tok in tokens:
