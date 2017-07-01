@@ -38,7 +38,7 @@ looked up in the dictionary, any missing symbols will raise a ParseError,
 as will unbalanced square brackets.
 '''
 from re import Scanner
-from .stack import list_to_stack
+from .utils.stack import list_to_stack
 
 
 class Symbol(str):

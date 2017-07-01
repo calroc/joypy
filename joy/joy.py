@@ -57,8 +57,8 @@ except NameError:
   pass
 from traceback import print_exc, format_exc
 from .parser import text_to_expression, ParseError, Symbol
-from .stack import strstack
-from .pretty_print import TracePrinter
+from .utils.stack import strstack
+from .utils.pretty_print import TracePrinter
 
 
 def joy(stack, expression, dictionary, viewer=None):

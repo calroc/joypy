@@ -20,10 +20,10 @@
 from inspect import getdoc
 import operator, math
 
-from .btree import insert, items
 from .joy import joy, run
 from .parser import text_to_expression, Symbol
-from .stack import list_to_stack, iter_stack, pick
+from .utils.btree import insert, items
+from .utils.stack import list_to_stack, iter_stack, pick
 
 
 ALIASES = (
