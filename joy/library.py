@@ -22,7 +22,6 @@ import operator, math
 
 from .joy import joy, run
 from .parser import text_to_expression, Symbol
-from .utils.btree import insert, items
 from .utils.stack import list_to_stack, iter_stack, pick
 
 
@@ -393,23 +392,23 @@ def print_words(stack, expression, dictionary):
   return stack, expression, dictionary
 
 
-def simple_manual(stack):
-  '''
-  Print words and help for each word.
-  '''
-  for name, f in sorted(FUNCTIONS.items()):
-    d = getdoc(f)
-    boxline = '+%s+' % ('-' * (len(name) + 2))
-    print('\n'.join((
-      boxline,
-      '| %s |' % (name,),
-      boxline,
-      d if d else '   ...',
-      '',
-      '--' * 40,
-      '',
-      )))
-  return stack
+# def simple_manual(stack):
+#   '''
+#   Print words and help for each word.
+#   '''
+#   for name, f in sorted(FUNCTIONS.items()):
+#     d = getdoc(f)
+#     boxline = '+%s+' % ('-' * (len(name) + 2))
+#     print('\n'.join((
+#       boxline,
+#       '| %s |' % (name,),
+#       boxline,
+#       d if d else '   ...',
+#       '',
+#       '--' * 40,
+#       '',
+#       )))
+#   return stack
 
 
 def help_(S):

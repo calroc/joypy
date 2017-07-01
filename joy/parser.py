@@ -30,12 +30,9 @@ As well as a single Symbol class and a single Exception type:
 
   ParseError
 
-When supplied with a string text and a dictionary BTree (see btree.py)
-this function returns a Python datastructure that represents the Joy
-datastructure described by the text expression.  Any symbols (pretty much
-anything that isn't a number or enclosed in double-quote marks) will be
-looked up in the dictionary, any missing symbols will raise a ParseError,
-as will unbalanced square brackets.
+When supplied with a string this function returns a Python datastructure
+that represents the Joy datastructure described by the text expression.
+Any unbalanced square brackets will raise a ParseError.
 '''
 from re import Scanner
 from .utils.stack import list_to_stack
