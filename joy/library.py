@@ -18,10 +18,11 @@
 #    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
 #
 from inspect import getdoc
+import operator, math
 
-from .btree import get, insert, items
+from .btree import insert, items
 from .joy import joy, run
-from .parser import text_to_expression
+from .parser import text_to_expression, Symbol
 from .stack import list_to_stack, iter_stack, pick
 
 
@@ -89,8 +90,7 @@ times == [-- dip] cons [swap] infra [0 >] swap while pop
 '''
 
 
-def add_aliases(items, A=ALIASES):
-  D = dict(items)
+def add_aliases(D, A=ALIASES):
   for name, aliases in A:
     try:
       F = D[name]
@@ -98,7 +98,6 @@ def add_aliases(items, A=ALIASES):
       continue
     for alias in aliases:
       D[alias] = F
-  return D.items()
 
 
 class FunctionWrapper(object):
@@ -175,10 +174,12 @@ def generate_definitions(defs, dictionary):
     if not definition or definition.isspace():
       continue
     F = DefinitionWrapper.parse_definition(definition)
-    dictionary = insert(dictionary, F.name, F)
-  return dictionary
+    dictionary[F.name] = F
 
 
+#
+# Functions
+#
 def first(stack):
   Q, stack = stack
   stack = Q[0], stack
@@ -388,7 +389,7 @@ def _void(form):
 
 def print_words(stack, expression, dictionary):
   '''Print all the words in alphabetical order.'''
-  print(' '.join(name for name, f in items(dictionary)))
+  print(' '.join(name for name, f in dictionary.items()))
   return stack, expression, dictionary
 
 
@@ -424,6 +425,15 @@ def help_(S):
 #
 
 
+S_i = Symbol('i')
+S_swaack = Symbol('swaack')
+S_i = Symbol('i')
+S_infra = Symbol('infra')
+S_first = Symbol('first')
+S_truthy = Symbol('truthy')
+S_getitem = Symbol('getitem')
+
+
 def i(stack, expression, dictionary):
   (quote, stack) = stack
   accumulator = list(iter_stack(quote))
@@ -440,9 +450,8 @@ def x(stack, expression, dictionary):
   ... [Q] x = ... [Q]  Q
 
   '''
-  i = get(dictionary, 'i')
   quote = stack[0]
-  expression = (i, (quote, expression))
+  expression = (S_i, (quote, expression))
   return stack, expression, dictionary
 
 
@@ -454,9 +463,8 @@ def b(stack, expression, dictionary):
   ... [P] [Q] b == ... P Q
 
   '''
-  i = get(dictionary, 'i')
   (q, (p, (stack))) = stack
-  expression = (p, (i, (q, (i, expression))))
+  expression = (p, (S_i, (q, (S_i, expression))))
   return stack, expression, dictionary
 
 
@@ -465,10 +473,8 @@ def infra(stack, expression, dictionary):
   Accept a quoted program and a list on the stack and run the program
   with the list as its stack.
   '''
-  i = get(dictionary, 'i')
-  swaack = get(dictionary, 'swaack')
   (quote, (aggregate, stack)) = stack
-  Q = (i, (stack, (swaack, expression)))
+  Q = (S_i, (stack, (S_swaack, expression)))
   return (quote, aggregate), Q, dictionary
 
 
@@ -506,31 +512,18 @@ def cleave(S, expression, dictionary):
 
 
 def ifte(stack, expression, dictionary):
-  i = get(dictionary, 'i')
-  infra = get(dictionary, 'infra')
-  first = get(dictionary, 'first')
-  truthy = get(dictionary, 'truthy')
-  getitem = get(dictionary, 'getitem')
-#  unstack = get(dictionary, 'unstack')
   (else_, (then, (if_, stack))) = stack
-
   expression = (
     (else_, (then, ())),
     (stack, (if_,
-             (infra, (first, (truthy, (getitem, (i, expression))))))))
-
-##  ii = (( (stack, (else_, (infra, ()))) , (
-##      (stack, (then,  (infra, ()))) , ())), ())
-##  stack = (if_, (stack, ii))
-##  expression = (infra, (first, (truthy, (getitem, (i, (unstack, ()))))))
+             (S_infra, (S_first, (S_truthy, (S_getitem, (S_i, expression))))))))
   return stack, expression, dictionary
 
 
 def dip(stack, expression, dictionary):
-  i = get(dictionary, 'i')
   (quote, (x, stack)) = stack
   stack = (quote, stack)
-  expression = i, (x, expression)
+  expression = S_i, (x, expression)
   return stack, expression, dictionary
 
 
@@ -625,3 +618,96 @@ def ternary(S, expression, dictionary):
   _, (_, (_, return_stack)) = stack
   result = joy(stack, quote, dictionary)[0]
   return (result[0], return_stack), expression, dictionary
+
+
+builtins = (
+  BinaryBuiltinWrapper(operator.add),
+  BinaryBuiltinWrapper(operator.and_),
+  BinaryBuiltinWrapper(operator.div),
+  BinaryBuiltinWrapper(operator.eq),
+  BinaryBuiltinWrapper(operator.floordiv),
+  BinaryBuiltinWrapper(operator.ge),
+  BinaryBuiltinWrapper(operator.gt),
+  BinaryBuiltinWrapper(operator.le),
+  BinaryBuiltinWrapper(operator.lshift),
+  BinaryBuiltinWrapper(operator.lt),
+  BinaryBuiltinWrapper(operator.mod),
+  BinaryBuiltinWrapper(operator.mul),
+  BinaryBuiltinWrapper(operator.ne),
+  BinaryBuiltinWrapper(operator.or_),
+  BinaryBuiltinWrapper(operator.pow),
+  BinaryBuiltinWrapper(operator.rshift),
+  BinaryBuiltinWrapper(operator.sub),
+  BinaryBuiltinWrapper(operator.truediv),
+  BinaryBuiltinWrapper(operator.xor),
+
+  UnaryBuiltinWrapper(operator.neg),
+  UnaryBuiltinWrapper(operator.not_),
+  UnaryBuiltinWrapper(math.sqrt),
+  )
+
+
+combinators = (
+  FunctionWrapper(app1),
+  FunctionWrapper(app2),
+  FunctionWrapper(app3),
+  FunctionWrapper(b),
+  FunctionWrapper(binary),
+  FunctionWrapper(cleave),
+  FunctionWrapper(dip),
+  FunctionWrapper(dipd),
+  FunctionWrapper(dipdd),
+  FunctionWrapper(i),
+  FunctionWrapper(ifte),
+  FunctionWrapper(infra),
+  FunctionWrapper(map_),
+  FunctionWrapper(nullary),
+  FunctionWrapper(step),
+  FunctionWrapper(swaack),
+  FunctionWrapper(ternary),
+  FunctionWrapper(unary),
+  FunctionWrapper(while_),
+  FunctionWrapper(x),
+  FunctionWrapper(print_words),
+  )
+
+
+primitives = (
+  SimpleFunctionWrapper(first),
+  SimpleFunctionWrapper(truthy),
+  SimpleFunctionWrapper(getitem),
+  SimpleFunctionWrapper(unstack),
+  SimpleFunctionWrapper(clear),
+  SimpleFunctionWrapper(concat),
+  SimpleFunctionWrapper(cons),
+  SimpleFunctionWrapper(dup),
+  SimpleFunctionWrapper(dupd),
+  SimpleFunctionWrapper(id_),
+  SimpleFunctionWrapper(min_),
+  SimpleFunctionWrapper(pop),
+  SimpleFunctionWrapper(popd),
+  SimpleFunctionWrapper(popop),
+  SimpleFunctionWrapper(pred),
+  SimpleFunctionWrapper(remove),
+  SimpleFunctionWrapper(reverse),
+  SimpleFunctionWrapper(rolldown),
+  SimpleFunctionWrapper(rollup),
+  SimpleFunctionWrapper(stack_),
+  SimpleFunctionWrapper(succ),
+  SimpleFunctionWrapper(sum_),
+  SimpleFunctionWrapper(swap),
+  SimpleFunctionWrapper(uncons),
+  SimpleFunctionWrapper(unstack),
+  SimpleFunctionWrapper(void),
+  SimpleFunctionWrapper(zip_),
+  )
+
+
+def initialize(dictionary=None):
+  if dictionary is None:
+    dictionary = {}
+  dictionary.update((F.name, F) for F in builtins)
+  dictionary.update((F.name, F) for F in combinators)
+  dictionary.update((F.name, F) for F in primitives)
+  add_aliases(dictionary)
+  return dictionary

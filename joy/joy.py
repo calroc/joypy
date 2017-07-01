@@ -57,7 +57,6 @@ except NameError:
   pass
 from traceback import print_exc, format_exc
 from .parser import text_to_expression, ParseError, Symbol
-from .btree import get
 from .stack import strstack
 from .pretty_print import TracePrinter
 
@@ -72,7 +71,7 @@ def joy(stack, expression, dictionary, viewer=None):
 
     term, expression = expression
     if isinstance(term, Symbol):
-      term = get(dictionary, term)
+      term = dictionary[term]
     if callable(term):  # I am leaving this in for now even though the
       # scanner/parser returns Symbols because the words that were
       # written to depend on other words look them up in the dictionary

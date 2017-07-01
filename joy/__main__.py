@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#    Copyright © 2014, 2015 Simon Forman
+#    Copyright © 2014, 2015, 2017 Simon Forman
 #
 #    This file is part of joy.py
 #
@@ -19,8 +19,7 @@
 #
 from __future__ import print_function
 from sys import argv
-from .joy import repl
-from .initializer import initialize
+from .library import initialize
 
 
 if '--gui' in argv:
@@ -30,4 +29,5 @@ if '--gui' in argv:
   print('<STACK')
   t.mainloop()
 else:
+  from .joy import repl
   stack = repl(dictionary=initialize())
