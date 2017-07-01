@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#    Copyright © 2014, 2015 Simon Forman
+#    Copyright © 2014, 2015, 2017 Simon Forman
 #
 #    This file is part of joy.py
 #
@@ -19,9 +19,34 @@
 #
 from inspect import getdoc
 
-from .btree import items
+from .btree import get, insert, items
 from .joy import run
+from .parser import text_to_expression
 from .stack import list_to_stack, iter_stack, pick
+
+
+ALIASES = (
+  ('add', ['+']),
+  ('mul', ['*']),
+  ('truediv', ['/']),
+  ('mod', ['%', 'rem', 'remainder', 'modulus']),
+  ('eq', ['=']),
+  ('ge', ['>=']),
+  ('gt', ['>']),
+  ('le', ['<=']),
+  ('lshift', ['<<']),
+  ('lt', ['<']),
+  ('ne', ['<>', '!=']),
+  ('rshift', ['>>']),
+  ('sub', ['-']),
+  ('xor', ['^']),
+  ('succ', ['++']),
+  ('pred', ['--']),
+  ('rolldown', ['roll<']),
+  ('rollup', ['roll>']),
+  ('id', ['•']),
+#  ('', ['']),
+  )
 
 
 definitions = '''\
@@ -62,6 +87,96 @@ down_to_zero == [0 >] [dup --] while
 range_to_zero == unit [down_to_zero] infra
 times == [-- dip] cons [swap] infra [0 >] swap while pop
 '''
+
+
+def add_aliases(items, A=ALIASES):
+  D = dict(items)
+  for name, aliases in A:
+    try:
+      F = D[name]
+    except KeyError:
+      continue
+    for alias in aliases:
+      D[alias] = F
+  return D.items()
+
+
+class FunctionWrapper(object):
+  '''
+  Allow functions to have a nice repr().
+  '''
+
+  def __init__(self, f):
+    self.f = f
+    self.name = f.__name__.rstrip('_')
+    self.__doc__ = f.__doc__ or str(f)
+
+  def __call__(self, stack, expression, dictionary):
+    return self.f(stack, expression, dictionary)
+
+  def __repr__(self):
+    return self.name
+
+
+class SimpleFunctionWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    return self.f(stack), expression, dictionary
+
+
+class BinaryBuiltinWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    (a, (b, stack)) = stack
+    result = self.f(b, a)
+    return (result, stack), expression, dictionary
+
+
+class UnaryBuiltinWrapper(FunctionWrapper):
+
+  def __call__(self, stack, expression, dictionary):
+    (a, stack) = stack
+    result = self.f(a)
+    return (result, stack), expression, dictionary
+
+
+class DefinitionWrapper(FunctionWrapper):
+  '''
+  Allow functions to have a nice repr().
+  '''
+
+  def __init__(self, name, body_text, doc=None):
+    self.name = self.__name__ = name
+    self.body = text_to_expression(body_text)
+    self._body = tuple(iter_stack(self.body))
+    self.__doc__ = doc or body_text
+
+  def __call__(self, stack, expression, dictionary):
+    expression = list_to_stack(self._body, expression)
+##    i = get(dictionary, 'i')
+##    expression = self.body, (i, expression)
+    return stack, expression, dictionary
+
+  @classmethod
+  def parse_definition(class_, defi):
+    '''
+    Given some text describing a Joy function definition parse it and
+    return a DefinitionWrapper.
+    '''
+    name, proper, body_text = (n.strip() for n in defi.partition('=='))
+    if not proper:
+      raise ValueError('Definition %r failed' % (defi,))
+    return class_(name, body_text)
+
+
+def generate_definitions(defs, dictionary):
+  for definition in defs.splitlines():
+    definition = definition.strip()
+    if not definition or definition.isspace():
+      continue
+    F = DefinitionWrapper.parse_definition(definition)
+    dictionary = insert(dictionary, F.name, F)
+  return dictionary
 
 
 def first(stack):

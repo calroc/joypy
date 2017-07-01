@@ -19,7 +19,7 @@
 #
 import operator, math
 from .btree import fill_tree, items
-from .functions import (
+from .library import (
   add_aliases,
   generate_definitions,
   BinaryBuiltinWrapper,
