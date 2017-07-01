@@ -27,7 +27,7 @@ from .library import (
   SimpleFunctionWrapper,
   UnaryBuiltinWrapper,
   )
-from . import combinators as comb
+from . import library as comb
 from . import library as lib
 
 
