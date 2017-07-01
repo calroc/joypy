@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#    Copyright © 2014, 2015 Simon Forman
+#    Copyright © 2014, 2015, 2016, 2017 Simon Forman
 #
 #    This file is part of Joypy.
 #
@@ -24,50 +24,46 @@
 
 This module exports a single function:
 
-  text_to_expression(text, dictionary)
+  text_to_expression(text)
+
+As well as a single Symbol class and a single Exception type:
+
+  ParseError
 
 When supplied with a string text and a dictionary BTree (see btree.py)
-this function will return a Python datastructure that represents the Joy
+this function returns a Python datastructure that represents the Joy
 datastructure described by the text expression.  Any symbols (pretty much
 anything that isn't a number or enclosed in double-quote marks) will be
-looked up in the dictionary, a warning will be printed to stdout for any
-unfound symbols.
+looked up in the dictionary, any missing symbols will raise a ParseError,
+as will unbalanced square brackets.
 '''
-from __future__ import print_function
-from sys import stderr
 from re import Scanner
-from .btree import get
 from .stack import list_to_stack
 
 
-def convert(token, dictionary):
-  '''Look up symbols in the functions dictionary.'''
-  try:
-    return get(dictionary, token)
-  except KeyError:
-    print('unknown word', token, file=stderr)
-    return token
+class Symbol(str):
+  __repr__ = str.__str__
 
 
-def text_to_expression(text, dictionary):
+def text_to_expression(text):
   '''
   Convert a text to a Joy expression.
   '''
-  tokens = _tokenize(text, dictionary)
-  expression = _parse(tokens)
-  return expression
+  return _parse(_tokenize(text))
 
 
-def _tokenize(text, dictionary):
+class ParseError(ValueError): pass
+
+
+def _tokenize(text):
   '''
-  Convert a text into a stream of tokens, look up command symbols using
-  convert().  Raise ValueError (with some of the failing text) if the
-  scan fails.
+  Convert a text into a stream of tokens, converting symbols using
+  symbol(token).  Raise ValueError (with some of the failing text)
+  if the scan fails.
   '''
-  _scanner.dictionary = dictionary
   tokens, rest = _scanner.scan(text)
   if rest:
-    raise ValueError(
+    raise ParseError(
       'Scan failed at position %i, %r'
       % (len(text) - len(rest), rest[:10])
       )
@@ -86,18 +82,24 @@ def _parse(tokens):
       frame = []
       stack[-1].append(frame)
     elif tok == ']':
-      frame = stack.pop()
+      try:
+        frame = stack.pop()
+      except IndexError:
+        raise ParseError('One or more extra closing brackets.')
       frame[-1] = list_to_stack(frame[-1])
     else:
       frame.append(tok)
+  if stack:
+    raise ParseError('One or more unclosed brackets.')
   return list_to_stack(frame)
 
 
-def _scan_identifier(scanner, token): return convert(token, scanner.dictionary)
+def _scan_identifier(scanner, token): return Symbol(token)
 def _scan_bracket(scanner, token): return token
 def _scan_float(scanner, token): return float(token)
 def _scan_int(scanner, token): return int(token)
-def _scan_str(scanner, token): return token[1:-1].replace('\\"', '"')
+def _scan_dstr(scanner, token): return token[1:-1].replace('\\"', '"')
+def _scan_sstr(scanner, token): return token[1:-1].replace("\\'", "'")
 
 
 _scanner = Scanner([
@@ -105,6 +107,7 @@ _scanner = Scanner([
   (r'-?\d+', _scan_int),
   (r'[•\w!@$%^&*()_+<>?|\/;:`~,.=-]+', _scan_identifier),
   (r'\[|\]', _scan_bracket),
-  (r'"(?:[^"\\]|\\.)*"', _scan_str),
+  (r'"(?:[^"\\]|\\.)*"', _scan_dstr),
+  (r"'(?:[^'\\]|\\.)*'", _scan_sstr),
   (r'\s+', None),
   ])

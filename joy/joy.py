@@ -12,7 +12,7 @@ to the spirit of Joy but does not precisely match the behaviour of the
 original version(s) written in C.  A Tkinter GUI is provided as well.
 
 
-    Copyright © 2014 Simon Forman
+    Copyright © 2014, 2016, 2017 Simon Forman
 
     This file is part of Joypy.
 
@@ -40,44 +40,65 @@ executed.
 Every Joy function is an unary mapping from stacks to stacks.  Even
 literals are considered to be functions that accept a stack and return a
 new stack with the literal value on top.
+
+Exports:
+
+  joy(stack, expression, dictionary, viewer=None)
+
+  run(text, stack, dictionary, viewer=None)
+
+  repl(stack=(), dictionary=())
+
 '''
 from __future__ import print_function
 try:
   input = raw_input
 except NameError:
   pass
-from traceback import print_exc
-from .parser import text_to_expression
-from .stack import strstack, iter_stack, list_to_stack
+from traceback import print_exc, format_exc
+from .parser import text_to_expression, ParseError, Symbol
+from .btree import get
+from .stack import strstack
+from .pretty_print import TracePrinter
 
 
-def print_trace(stack, expression):
-  stack = list(iter_stack(stack))
-  stack.reverse()
-  print(strstack(list_to_stack(stack)), '.', strstack(expression))
-
-
-def joy(stack, expression, dictionary, viewer=print_trace):
+def joy(stack, expression, dictionary, viewer=None):
   '''
   Evaluate the Joy expression on the stack.
   '''
   while expression:
-    viewer(stack, expression)
+
+    if viewer: viewer(stack, expression)
+
     term, expression = expression
-    if callable(term):
+    if isinstance(term, Symbol):
+      term = get(dictionary, term)
+    if callable(term):  # I am leaving this in for now even though the
+      # scanner/parser returns Symbols because the words that were
+      # written to depend on other words look them up in the dictionary
+      # and embed Functions directly in their result.  So for now, this
+      # check stays in as a hack to let those definitions still work.
+      # An interesting shift in semantics.  Instead of dependant words
+      # binding at the time a word executes now they bind when they
+      # themselves execute.
       stack, expression, dictionary = term(stack, expression, dictionary)
     else:
       stack = term, stack
-  viewer(stack, expression)
+
+  if viewer: viewer(stack, expression)
   return stack, expression, dictionary
 
 
-def run(text, stack, dictionary):
+def run(text, stack, dictionary, viewer=None):
   '''
   Return the stack resulting from running the Joy code text on the stack.
   '''
-  expression = text_to_expression(text, dictionary)
-  return joy(stack, expression, dictionary)
+  try:
+    expression = text_to_expression(text)
+  except ParseError as err:
+    print('Err:', err.message)
+    return stack, (), dictionary
+  return joy(stack, expression, dictionary, viewer)
 
 
 def repl(stack=(), dictionary=()):
@@ -95,10 +116,16 @@ def repl(stack=(), dictionary=()):
         text = input('joy? ')
       except (EOFError, KeyboardInterrupt):
         break
+      viewer = TracePrinter()
       try:
-        stack, _, dictionary = run(text, stack, dictionary)
+        stack, _, dictionary = run(text, stack, dictionary, viewer.viewer)
       except:
-        print_exc()
+        exc = format_exc() # Capture the exception.
+        viewer.print() # Print the Joy trace.
+        print('-' * 73)
+        print(exc) # Print the original exception.
+      else:
+        viewer.print()
   except:
     print_exc()
   print()

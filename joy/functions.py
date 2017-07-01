@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#    Copyright © 2014, 2015 Simon Forman
+#    Copyright © 2014, 2015, 2017 Simon Forman
 #
 #    This file is part of joy.py
 #
@@ -129,9 +129,9 @@ class DefinitionWrapper(FunctionWrapper):
   Allow functions to have a nice repr().
   '''
 
-  def __init__(self, name, body_text, dictionary, doc=None):
+  def __init__(self, name, body_text, doc=None):
     self.name = self.__name__ = name
-    self.body = text_to_expression(body_text, dictionary)
+    self.body = text_to_expression(body_text)
     self._body = tuple(iter_stack(self.body))
     self.__doc__ = doc or body_text
 
@@ -142,7 +142,7 @@ class DefinitionWrapper(FunctionWrapper):
     return stack, expression, dictionary
 
   @classmethod
-  def parse_definition(class_, defi, dictionary):
+  def parse_definition(class_, defi):
     '''
     Given some text describing a Joy function definition parse it and
     return a DefinitionWrapper.
@@ -150,7 +150,7 @@ class DefinitionWrapper(FunctionWrapper):
     name, proper, body_text = (n.strip() for n in defi.partition('=='))
     if not proper:
       raise ValueError('Definition %r failed' % (defi,))
-    return class_(name, body_text, dictionary)
+    return class_(name, body_text)
 
 
 def generate_definitions(defs, dictionary):
@@ -158,6 +158,6 @@ def generate_definitions(defs, dictionary):
     definition = definition.strip()
     if not definition or definition.isspace():
       continue
-    F = DefinitionWrapper.parse_definition(definition, dictionary)
+    F = DefinitionWrapper.parse_definition(definition)
     dictionary = insert(dictionary, F.name, F)
   return dictionary
