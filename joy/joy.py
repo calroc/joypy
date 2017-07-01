@@ -72,14 +72,6 @@ def joy(stack, expression, dictionary, viewer=None):
     term, expression = expression
     if isinstance(term, Symbol):
       term = dictionary[term]
-    if callable(term):  # I am leaving this in for now even though the
-      # scanner/parser returns Symbols because the words that were
-      # written to depend on other words look them up in the dictionary
-      # and embed Functions directly in their result.  So for now, this
-      # check stays in as a hack to let those definitions still work.
-      # An interesting shift in semantics.  Instead of dependant words
-      # binding at the time a word executes now they bind when they
-      # themselves execute.
       stack, expression, dictionary = term(stack, expression, dictionary)
     else:
       stack = term, stack
