@@ -165,7 +165,7 @@ class DefinitionWrapper(FunctionWrapper):
     return class_(name, body_text)
 
 
-def generate_definitions(defs, dictionary):
+def add_definitions(defs, dictionary):
   for definition in defs.splitlines():
     definition = definition.strip()
     if not definition or definition.isspace():
@@ -710,4 +710,5 @@ def initialize(dictionary=None):
   dictionary.update((F.name, F) for F in combinators)
   dictionary.update((F.name, F) for F in primitives)
   add_aliases(dictionary)
+  add_definitions(definitions, dictionary)
   return dictionary
