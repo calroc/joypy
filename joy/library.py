@@ -50,8 +50,6 @@ ALIASES = (
 
 
 definitions = '''\
-rest == uncons popd
-first == uncons pop
 second == rest first
 third == rest rest first
 sum == 0 swap [+] step
@@ -86,6 +84,8 @@ quadratic == [[q0] pam] ternary i [[q1] pam] ternary
 down_to_zero == [0 >] [dup --] while
 range_to_zero == unit [down_to_zero] infra
 times == [-- dip] cons [swap] infra [0 >] swap while pop
+anamorphism == [pop []] swap [dip swons] genrec
+range == [0 <=] [1 - dup] anamorphism
 '''
 
 
@@ -178,9 +178,15 @@ def add_definitions(defs, dictionary):
 # Functions
 #
 def first(stack):
+  '''first == uncons pop'''
   Q, stack = stack
   stack = Q[0], stack
   return stack
+
+
+def rest(((head, tail), stack)):
+  '''rest == uncons popd'''
+  return tail, stack
 
 
 def truthy(stack):
@@ -370,10 +376,6 @@ def _void(form):
 ##  return head, stack
 
 
-##
-##def rest(((head, tail), stack)):
-##  return tail, stack
-
 
 ##  flatten
 ##  transpose
@@ -414,7 +416,7 @@ def help_(S, expression, dictionary):
   ((symbol, _), stack) = S
   word = dictionary[symbol]
   print(getdoc(word))
-  return stack
+  return stack, expression, dictionary
 
 
 #
@@ -427,7 +429,9 @@ def help_(S, expression, dictionary):
 # could change the word in the dictionary to use different semantics.
 S_first = Symbol('first')
 S_getitem = Symbol('getitem')
+S_genrec = Symbol('genrec')
 S_i = Symbol('i')
+S_ifte = Symbol('ifte')
 S_infra = Symbol('infra')
 S_swaack = Symbol('swaack')
 S_truthy = Symbol('truthy')
@@ -481,6 +485,62 @@ def swaack(stack, expression, dictionary):
   old_stack, stack = stack
   stack = stack, old_stack
   return stack, expression, dictionary
+
+
+def genrec(stack, expression, dictionary):
+  '''
+  General Recursion Combinator.
+
+                          [if] [then] [rec1] [rec2] genrec
+    ---------------------------------------------------------------------
+       [if] [then] [rec1 [[if] [then] [rec1] [rec2] genrec] rec2] ifte
+
+  From "Recursion Theory and Joy" (j05cmp.html) by Manfred von Thun:
+  "The genrec combinator takes four program parameters in addition to
+  whatever data parameters it needs. Fourth from the top is an if-part,
+  followed by a then-part. If the if-part yields true, then the then-part
+  is executed and the combinator terminates. The other two parameters are
+  the rec1-part and the rec2-part. If the if-part yields false, the
+  rec1-part is executed. Following that the four program parameters and
+  the combinator are again pushed onto the stack bundled up in a quoted
+  form. Then the rec2-part is executed, where it will find the bundled
+  form. Typically it will then execute the bundled form, either with i or
+  with app2, or some other combinator."
+
+  The way to design one of these is to fix your base case [then] and the
+  test [if], and then treat rec1 and rec2 as an else-part "sandwiching"
+  a quotation of the whole function.
+
+  For example, given a (general recursive) function 'F':
+
+      F == [I] [T] [R1] [R2] genrec
+
+  If the [I] if-part fails you must derive R1 and R2 from:
+
+      ... R1 [F] R2
+
+  Just set the stack arguments in front, and figure out what R1 and R2
+  have to do to apply the quoted [F] in the proper way.  In effect, the
+  genrec combinator turns into an ifte combinator with a quoted copy of
+  the original definition in the else-part:
+
+      F == [I] [T] [R1]   [R2] genrec
+        == [I] [T] [R1 [F] R2] ifte
+
+  (Primitive recursive functions are those where R2 == i.
+
+      P == [I] [T] [R] primrec
+        == [I] [T] [R [P] i] ifte
+        == [I] [T] [R P] ifte
+  )
+  '''
+  (rec2, (rec1, T)) = stack
+  (then, (if_, _)) = T
+  Q = ((if_, (then, (rec1, (rec2, (S_genrec, ()))))), rec2)
+  for term in reversed(list(iter_stack(rec1))):
+    Q = term, Q
+  expression = (S_ifte, expression)
+  return (Q, T), expression, dictionary
 
 
 def map_(S, expression, dictionary):
@@ -545,27 +605,49 @@ def app1(S, expression, dictionary):
   Given a quoted program on TOS and anything as the second stack item run
   the program and replace the two args with the first result of the
   program.
+
+              ... x [Q] . app1
+     -----------------------------------
+        ... [x ...] [Q] . infra first
   '''
   (quote, (x, stack)) = S
-  result = joy((x, stack), quote, dictionary)[0]
-  return (result[0], stack), expression, dictionary
+  stack = (quote, ((x, stack), stack))
+  expression = (S_infra, (S_first, expression))
+  return stack, expression, dictionary
 
 
 def app2(S, expression, dictionary):
-  '''Like app1 with two items.'''
+  '''Like app1 with two items.
+  
+            ... y x [Q] . app2
+     -----------------------------------
+        ... [y ...] [Q] . infra first
+            [x ...] [Q]   infra first
+'''
   (quote, (x, (y, stack))) = S
-  resultx = joy((x, stack), quote, dictionary)[0][0]
-  resulty = joy((y, stack), quote, dictionary)[0][0]
-  return (resultx, (resulty, stack)), expression, dictionary
+  expression = (S_infra, (S_first,
+    ((x, stack), (quote, (S_infra, (S_first,
+      expression))))))
+  stack = (quote, ((y, stack), stack))
+  return stack, expression, dictionary
 
 
 def app3(S, expression, dictionary):
-  '''Like app1 with three items.'''
+  '''Like app1 with three items.
+
+            ... z y x [Q] . app3
+     -----------------------------------
+        ... [z ...] [Q] . infra first
+            [y ...] [Q]   infra first
+            [x ...] [Q]   infra first
+'''
   (quote, (x, (y, (z, stack)))) = S
-  resultx = joy((x, stack), quote, dictionary)[0][0]
-  resulty = joy((y, stack), quote, dictionary)[0][0]
-  resultz = joy((z, stack), quote, dictionary)[0][0]
-  return (resultx, (resulty, (resultz, stack))), expression, dictionary
+  expression = (S_infra, (S_first,
+    ((y, stack), (quote, (S_infra, (S_first,
+    ((x, stack), (quote, (S_infra, (S_first,
+      expression))))))))))
+  stack = (quote, ((z, stack), stack))
+  return stack, expression, dictionary
 
 
 def step(S, expression, dictionary):
@@ -656,32 +738,31 @@ combinators = (
   FunctionWrapper(dip),
   FunctionWrapper(dipd),
   FunctionWrapper(dipdd),
+  FunctionWrapper(genrec),
+  FunctionWrapper(help_),
   FunctionWrapper(i),
   FunctionWrapper(ifte),
   FunctionWrapper(infra),
   FunctionWrapper(map_),
   FunctionWrapper(nullary),
+  FunctionWrapper(print_words),
   FunctionWrapper(step),
   FunctionWrapper(swaack),
   FunctionWrapper(ternary),
   FunctionWrapper(unary),
   FunctionWrapper(while_),
   FunctionWrapper(x),
-  FunctionWrapper(print_words),
-  FunctionWrapper(help_),
   )
 
 
 primitives = (
-  SimpleFunctionWrapper(first),
-  SimpleFunctionWrapper(truthy),
-  SimpleFunctionWrapper(getitem),
-  SimpleFunctionWrapper(unstack),
   SimpleFunctionWrapper(clear),
   SimpleFunctionWrapper(concat),
   SimpleFunctionWrapper(cons),
   SimpleFunctionWrapper(dup),
   SimpleFunctionWrapper(dupd),
+  SimpleFunctionWrapper(first),
+  SimpleFunctionWrapper(getitem),
   SimpleFunctionWrapper(id_),
   SimpleFunctionWrapper(min_),
   SimpleFunctionWrapper(pop),
@@ -689,6 +770,7 @@ primitives = (
   SimpleFunctionWrapper(popop),
   SimpleFunctionWrapper(pred),
   SimpleFunctionWrapper(remove),
+  SimpleFunctionWrapper(rest),
   SimpleFunctionWrapper(reverse),
   SimpleFunctionWrapper(rolldown),
   SimpleFunctionWrapper(rollup),
@@ -696,7 +778,9 @@ primitives = (
   SimpleFunctionWrapper(succ),
   SimpleFunctionWrapper(sum_),
   SimpleFunctionWrapper(swap),
+  SimpleFunctionWrapper(truthy),
   SimpleFunctionWrapper(uncons),
+  SimpleFunctionWrapper(unstack),
   SimpleFunctionWrapper(unstack),
   SimpleFunctionWrapper(void),
   SimpleFunctionWrapper(zip_),
