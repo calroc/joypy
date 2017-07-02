@@ -109,6 +109,10 @@ def strstack(stack):
   return ' '.join(map(stack_to_string, iter_stack(stack)))
 
 
+def pushback(quote, expression):
+  return list_to_stack(list(iter_stack(quote)), expression)
+
+
 def pick(s, n):
   '''
   Find the nth item on the stack. (Pick with zero is the same as "dup".)

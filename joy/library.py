@@ -22,7 +22,7 @@ import operator, math
 
 from .joy import joy, run
 from .parser import text_to_expression, Symbol
-from .utils.stack import list_to_stack, iter_stack, pick
+from .utils.stack import list_to_stack, iter_stack, pick, pushback
 
 
 ALIASES = (
@@ -177,6 +177,8 @@ def add_definitions(defs, dictionary):
 #
 # Functions
 #
+
+
 def first(stack):
   '''first == uncons pop'''
   Q, stack = stack
@@ -197,6 +199,48 @@ def truthy(stack):
 def getitem(stack):
   n, (Q, stack) = stack
   return pick(Q, n), stack
+
+
+def choice(stack):
+  '''
+  Use a Boolean value to select one of two items.
+
+        A B False choice
+     ----------------------
+               A
+
+
+        A B True choice
+     ---------------------
+               B
+
+  Currently Python semantics are used to evaluate the "truthiness" of the
+  Boolean value (so empty string, zero, etc. are counted as false, etc.)
+  '''
+  (if_, (then, (else_, stack))) = stack
+  return then if if_ else else_, stack
+
+
+def select(stack):
+  '''
+  Use a Boolean value to select one of two items from a sequence.
+
+        [A B] False select
+     ------------------------
+                A
+
+
+        [A B] True select
+     -----------------------
+               B
+
+  The sequence can contain more than two items but not fewer.
+  Currently Python semantics are used to evaluate the "truthiness" of the
+  Boolean value (so empty string, zero, etc. are counted as false, etc.)
+  '''
+  (flag, (choices, stack)) = stack
+  (else_, (then, _)) = choices
+  return then if flag else else_, stack
 
 
 def min_(S):
@@ -427,6 +471,7 @@ def help_(S, expression, dictionary):
 # Several combinators depend on other words in their definitions,
 # we use symbols to prevent hard-coding these, so in theory, you
 # could change the word in the dictionary to use different semantics.
+S_choice = Symbol('choice')
 S_first = Symbol('first')
 S_getitem = Symbol('getitem')
 S_genrec = Symbol('genrec')
@@ -438,10 +483,8 @@ S_truthy = Symbol('truthy')
 
 
 def i(stack, expression, dictionary):
-  (quote, stack) = stack
-  accumulator = list(iter_stack(quote))
-  expression = list_to_stack(accumulator, expression)
-  return stack, expression, dictionary
+  quote, stack = stack
+  return stack, pushback(quote, expression), dictionary
 
 
 def x(stack, expression, dictionary):
@@ -453,9 +496,8 @@ def x(stack, expression, dictionary):
   ... [Q] x = ... [Q]  Q
 
   '''
-  quote = stack[0]
-  expression = (S_i, (quote, expression))
-  return stack, expression, dictionary
+  quote, _ = stack
+  return stack, pushback(quote, expression), dictionary
 
 
 def b(stack, expression, dictionary):
@@ -466,19 +508,22 @@ def b(stack, expression, dictionary):
   ... [P] [Q] b == ... P Q
 
   '''
-  (q, (p, (stack))) = stack
-  expression = (p, (S_i, (q, (S_i, expression))))
-  return stack, expression, dictionary
+  q, (p, (stack)) = stack
+  return stack, pushback(p, pushback(q, expression)), dictionary
 
 
 def infra(stack, expression, dictionary):
   '''
   Accept a quoted program and a list on the stack and run the program
   with the list as its stack.
+
+     ... [a b c] [Q] . infra
+  -----------------------------
+     c b a . Q [...] swaack
+
   '''
   (quote, (aggregate, stack)) = stack
-  Q = (S_i, (stack, (S_swaack, expression)))
-  return (quote, aggregate), Q, dictionary
+  return aggregate, pushback(quote, (stack, (S_swaack, expression))), dictionary
 
 
 def swaack(stack, expression, dictionary):
@@ -571,11 +616,27 @@ def cleave(S, expression, dictionary):
 
 
 def ifte(stack, expression, dictionary):
+  '''
+  If-Then-Else Combinator
+
+                  ... [if] [then] [else] ifte
+       ---------------------------------------------------
+          ... [[else] [then]] [...] [if] infra select i
+
+
+
+
+                ... [if] [then] [else] ifte
+       -------------------------------------------------------
+          ... [else] [then] [...] [if] infra first choice i
+
+
+  Has the effect of grabbing a copy of the stack on which to run the
+  if-part using infra.
+  '''
   (else_, (then, (if_, stack))) = stack
-  expression = (
-    (else_, (then, ())),
-    (stack, (if_,
-             (S_infra, (S_first, (S_truthy, (S_getitem, (S_i, expression))))))))
+  expression = (S_infra, (S_first, (S_choice, (S_i, expression))))
+  stack = (if_, (stack, (then, (else_, stack))))
   return stack, expression, dictionary
 
 
@@ -756,6 +817,7 @@ combinators = (
 
 
 primitives = (
+  SimpleFunctionWrapper(choice),
   SimpleFunctionWrapper(clear),
   SimpleFunctionWrapper(concat),
   SimpleFunctionWrapper(cons),
@@ -774,6 +836,7 @@ primitives = (
   SimpleFunctionWrapper(reverse),
   SimpleFunctionWrapper(rolldown),
   SimpleFunctionWrapper(rollup),
+  SimpleFunctionWrapper(select),
   SimpleFunctionWrapper(stack_),
   SimpleFunctionWrapper(succ),
   SimpleFunctionWrapper(sum_),
