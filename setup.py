@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#    Copyright © 2014, 2015 Simon Forman
+#    Copyright © 2014, 2015, 2017 Simon Forman
 #
 #    This file is part of joy.py
 #
@@ -27,5 +27,5 @@ setup(
   description='Python Implementation of Joy',
   author='Simon Forman',
   author_email='sforman@hushmail.com',
-  packages=['joy', 'joy.gui'],
+  packages=['joy', 'joy.gui', 'joy.utils'],
  )

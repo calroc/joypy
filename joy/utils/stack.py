@@ -34,8 +34,8 @@ form of a stack with one or more items on it.
 
   ()
   (1, ())
-  (1, (2, ()))
-  (1, (2, (3, ())))
+  (2, (1, ()))
+  (3, (2, (1, ())))
   ...
 
 And so on.

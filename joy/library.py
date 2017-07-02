@@ -151,8 +151,6 @@ class DefinitionWrapper(FunctionWrapper):
 
   def __call__(self, stack, expression, dictionary):
     expression = list_to_stack(self._body, expression)
-##    i = get(dictionary, 'i')
-##    expression = self.body, (i, expression)
     return stack, expression, dictionary
 
   @classmethod
@@ -388,7 +386,7 @@ def _void(form):
 
 def print_words(stack, expression, dictionary):
   '''Print all the words in alphabetical order.'''
-  print(' '.join(name for name, f in dictionary.items()))
+  print(' '.join(sorted(dictionary)))
   return stack, expression, dictionary
 
 
@@ -411,10 +409,10 @@ def print_words(stack, expression, dictionary):
 #   return stack
 
 
-def help_(S):
-  '''Accepts a quoted word on the top of the stack and prints its docs.'''
-  (quote, stack) = S
-  word = quote[0]
+def help_(S, expression, dictionary):
+  '''Accepts a quoted symbol on the top of the stack and prints its docs.'''
+  ((symbol, _), stack) = S
+  word = dictionary[symbol]
   print(getdoc(word))
   return stack
 
@@ -424,13 +422,15 @@ def help_(S):
 #
 
 
-S_i = Symbol('i')
-S_swaack = Symbol('swaack')
+# Several combinators depend on other words in their definitions,
+# we use symbols to prevent hard-coding these, so in theory, you
+# could change the word in the dictionary to use different semantics.
+S_first = Symbol('first')
+S_getitem = Symbol('getitem')
 S_i = Symbol('i')
 S_infra = Symbol('infra')
-S_first = Symbol('first')
+S_swaack = Symbol('swaack')
 S_truthy = Symbol('truthy')
-S_getitem = Symbol('getitem')
 
 
 def i(stack, expression, dictionary):
@@ -668,6 +668,7 @@ combinators = (
   FunctionWrapper(while_),
   FunctionWrapper(x),
   FunctionWrapper(print_words),
+  FunctionWrapper(help_),
   )
 
 
