@@ -20,7 +20,8 @@
 from inspect import getdoc
 import operator, math
 
-from .joy import joy, run
+#from .joy import joy, run
+# TODO (sforman) In the process of removing dependency on joy module.
 from .parser import text_to_expression, Symbol
 from .utils.stack import list_to_stack, iter_stack, pick, pushback
 
@@ -94,6 +95,10 @@ range == [0 <=] [1 - dup] anamorphism
 while == [pop i not] [popop] [dudipd] primrec
 dudipd == dup dipd
 primrec == [i] genrec
+z-down == [] swap uncons swap
+z-up == swons swap shunt
+z-right == [swons] cons dip uncons swap
+z-left == swons [uncons swap] dip swap
 '''
 
 
@@ -426,11 +431,11 @@ def rolldown(S):
   return c, (a, (b, stack))
 
 
-def execute(S):
-  (text, stack) = S
-  if isinstance(text, str):
-    return run(text, stack)
-  return stack
+#def execute(S):
+#  (text, stack) = S
+#  if isinstance(text, str):
+#    return run(text, stack)
+#  return stack
 
 
 def id_(stack):
@@ -637,18 +642,18 @@ def map_(S, expression, dictionary):
   return stack, (S_infra, expression), dictionary
 
 
-def cleave(S, expression, dictionary):
-  '''
-  The cleave combinator expects two quotations, and below that an item X.
-  It first executes [P], with X on top, and saves the top result element.
-  Then it executes [Q], again with X, and saves the top result.
-  Finally it restores the stack to what it was below X and pushes the two
-  results P(X) and Q(X).
-  '''
-  (Q, (P, (x, stack))) = S
-  p = joy((x, stack), P, dictionary)[0][0]
-  q = joy((x, stack), Q, dictionary)[0][0]
-  return (q, (p, stack)), expression, dictionary
+#def cleave(S, expression, dictionary):
+#  '''
+#  The cleave combinator expects two quotations, and below that an item X.
+#  It first executes [P], with X on top, and saves the top result element.
+#  Then it executes [Q], again with X, and saves the top result.
+#  Finally it restores the stack to what it was below X and pushes the two
+#  results P(X) and Q(X).
+#  '''
+#  (Q, (P, (x, stack))) = S
+#  p = joy((x, stack), P, dictionary)[0][0]
+#  q = joy((x, stack), Q, dictionary)[0][0]
+#  return (q, (p, stack)), expression, dictionary
 
 
 def ifte(stack, expression, dictionary):
@@ -873,7 +878,7 @@ combinators = (
   FunctionWrapper(app3),
   FunctionWrapper(b),
 #  FunctionWrapper(binary),
-  FunctionWrapper(cleave),
+#  FunctionWrapper(cleave),
   FunctionWrapper(dip),
   FunctionWrapper(dipd),
   FunctionWrapper(dipdd),
