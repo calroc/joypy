@@ -64,6 +64,11 @@ quoted == [unit] dip
 unquoted == [i] dip
 enstacken == stack [clear] dip
 disenstacken == [truthy] [uncons] while pop
+dinfrirst == dip infra first
+nullary == [stack] dinfrirst
+unary == [stack [pop] dip] dinfrirst
+binary == [stack [popop] dip] dinfrirst
+ternary == [stack [popop pop] dip] dinfrirst
 pam == [i] map
 run == [] swap infra
 sqr == dup mul
@@ -86,6 +91,9 @@ range_to_zero == unit [down_to_zero] infra
 times == [-- dip] cons [swap] infra [0 >] swap while pop
 anamorphism == [pop []] swap [dip swons] genrec
 range == [0 <=] [1 - dup] anamorphism
+while == [pop i not] [popop] [dudipd] primrec
+dudipd == dup dipd
+primrec == [i] genrec
 '''
 
 
@@ -284,7 +292,12 @@ def uncons(S):
 
 
 def clear(stack):
-  '''Clear everything from the stack.'''
+  '''Clear everything from the stack.
+
+     ... clear
+  ---------------
+
+  '''
   return ()
 
 
@@ -294,10 +307,28 @@ def dup(S):
   return tos, (tos, stack)
 
 
+def over(S):
+  '''
+  Copy the second item down on the stack to the top of the stack.
+
+     a b over
+  --------------
+      a b a
+
+  '''
+  second = S[1][0]
+  return second, S
+
+
 def swap(S):
   '''Swap the top two items on stack.'''
   (tos, (second, stack)) = S
   return second, (tos, stack)
+
+
+def swaack(stack):
+  old_stack, stack = stack
+  return stack, old_stack
 
 
 def stack_(stack):
@@ -475,9 +506,11 @@ S_choice = Symbol('choice')
 S_first = Symbol('first')
 S_getitem = Symbol('getitem')
 S_genrec = Symbol('genrec')
+S_loop = Symbol('loop')
 S_i = Symbol('i')
 S_ifte = Symbol('ifte')
 S_infra = Symbol('infra')
+S_step = Symbol('step')
 S_swaack = Symbol('swaack')
 S_truthy = Symbol('truthy')
 
@@ -524,12 +557,6 @@ def infra(stack, expression, dictionary):
   '''
   (quote, (aggregate, stack)) = stack
   return aggregate, pushback(quote, (stack, (S_swaack, expression))), dictionary
-
-
-def swaack(stack, expression, dictionary):
-  old_stack, stack = stack
-  stack = stack, old_stack
-  return stack, expression, dictionary
 
 
 def genrec(stack, expression, dictionary):
@@ -593,12 +620,21 @@ def map_(S, expression, dictionary):
   Run the quoted program on TOS on the items in the list under it, push a
   new list with the results (in place of the program and original list.
   '''
+#  (quote, (aggregate, stack)) = S
+#  results = list_to_stack([
+#    joy((term, stack), quote, dictionary)[0][0]
+#    for term in iter_stack(aggregate)
+#    ])
+#  return (results, stack), expression, dictionary
   (quote, (aggregate, stack)) = S
-  results = list_to_stack([
-    joy((term, stack), quote, dictionary)[0][0]
-    for term in iter_stack(aggregate)
-    ])
-  return (results, stack), expression, dictionary
+  if not aggregate:
+    return (aggregate, stack), expression, dictionary
+  batch = ()
+  for term in iter_stack(aggregate):
+    s = term, stack
+    batch = (s, (quote, (S_infra, (S_first, batch))))
+  stack = (batch, ((), stack))
+  return stack, (S_infra, expression), dictionary
 
 
 def cleave(S, expression, dictionary):
@@ -650,15 +686,17 @@ def dip(stack, expression, dictionary):
 def dipd(S, expression, dictionary):
   '''Like dip but expects two items.'''
   (quote, (x, (y, stack))) = S
-  stack = joy(stack, quote, dictionary)[0]
-  return (x, (y, stack)), expression, dictionary
+  stack = (quote, stack)
+  expression = S_i, (y, (x, expression))
+  return stack, expression, dictionary
 
 
 def dipdd(S, expression, dictionary):
   '''Like dip but expects three items.'''
   (quote, (x, (y, (z, stack)))) = S
-  stack = joy(stack, quote, dictionary)[0]
-  return (x, (y, (z, stack))), expression, dictionary
+  stack = (quote, stack)
+  expression = S_i, (z, (y, (x, expression)))
+  return stack, expression, dictionary
 
 
 def app1(S, expression, dictionary):
@@ -713,53 +751,93 @@ def app3(S, expression, dictionary):
 
 def step(S, expression, dictionary):
   '''
+  Run a quoted program on each item in a sequence.
+
+          ... [] [Q] . step
+       -----------------------
+                 ... .
+
+
+         ... [a] [Q] . step
+      ------------------------
+               ... a . Q
+
+
+     ... [a b c] [Q] . step
+  ----------------------------------------
+               ... a . Q [b c] [Q] step
+
   The step combinator removes the aggregate and the quotation, and then
   repeatedly puts the members of the aggregate on top of the remaining
   stack and executes the quotation.
   '''
   (quote, (aggregate, stack)) = S
-  for term in iter_stack(aggregate):
-    stack = joy((term, stack), quote, dictionary)[0]
+  if not aggregate:
+    return stack, expression, dictionary
+  head, tail = aggregate
+  stack = quote, (head, stack)
+  if tail:
+    expression = tail, (quote, (S_step, expression))
+  expression = S_i, expression
   return stack, expression, dictionary
 
 
-def while_(S, expression, dictionary):
-  '''[if] [body] while'''
-  (body, (if_, stack)) = S
-  while joy(stack, if_, dictionary)[0][0]:
-    stack = joy(stack, body, dictionary)[0]
+#def while_(S, expression, dictionary):
+#  '''[if] [body] while'''
+#  (body, (if_, stack)) = S
+#  while joy(stack, if_, dictionary)[0][0]:
+#    stack = joy(stack, body, dictionary)[0]
+#  return stack, expression, dictionary
+
+
+def loop(stack, expression, dictionary):
+  '''
+  Basic loop combinator.
+
+     ... True [Q] loop
+  -----------------------
+       ... Q [Q] loop
+
+     ... False [Q] loop
+  ------------------------
+            ...
+
+  '''
+  quote, (flag, stack) = stack
+  if flag:
+    stack = quote, stack
+    expression = S_i, (quote, (S_loop, expression))
   return stack, expression, dictionary
 
-
-def nullary(S, expression, dictionary):
-  '''
-  Run the program on TOS and return its first result without consuming
-  any of the stack (except the program on TOS.)
-  '''
-  (quote, stack) = S
-  result = joy(stack, quote, dictionary)
-  return (result[0][0], stack), expression, dictionary
-
-
-def unary(S, expression, dictionary):
-  (quote, stack) = S
-  _, return_stack = stack
-  result = joy(stack, quote, dictionary)[0]
-  return (result[0], return_stack), expression, dictionary
-
-
-def binary(S, expression, dictionary):
-  (quote, stack) = S
-  _, (_, return_stack) = stack
-  result = joy(stack, quote, dictionary)[0]
-  return (result[0], return_stack), expression, dictionary
-
-
-def ternary(S, expression, dictionary):
-  (quote, stack) = S
-  _, (_, (_, return_stack)) = stack
-  result = joy(stack, quote, dictionary)[0]
-  return (result[0], return_stack), expression, dictionary
+#def nullary(S, expression, dictionary):
+#  '''
+#  Run the program on TOS and return its first result without consuming
+#  any of the stack (except the program on TOS.)
+#  '''
+#  (quote, stack) = S
+#  result = joy(stack, quote, dictionary)
+#  return (result[0][0], stack), expression, dictionary
+#
+#
+#def unary(S, expression, dictionary):
+#  (quote, stack) = S
+#  _, return_stack = stack
+#  result = joy(stack, quote, dictionary)[0]
+#  return (result[0], return_stack), expression, dictionary
+#
+#
+#def binary(S, expression, dictionary):
+#  (quote, stack) = S
+#  _, (_, return_stack) = stack
+#  result = joy(stack, quote, dictionary)[0]
+#  return (result[0], return_stack), expression, dictionary
+#
+#
+#def ternary(S, expression, dictionary):
+#  (quote, stack) = S
+#  _, (_, (_, return_stack)) = stack
+#  result = joy(stack, quote, dictionary)[0]
+#  return (result[0], return_stack), expression, dictionary
 
 
 builtins = (
@@ -794,7 +872,7 @@ combinators = (
   FunctionWrapper(app2),
   FunctionWrapper(app3),
   FunctionWrapper(b),
-  FunctionWrapper(binary),
+#  FunctionWrapper(binary),
   FunctionWrapper(cleave),
   FunctionWrapper(dip),
   FunctionWrapper(dipd),
@@ -804,14 +882,14 @@ combinators = (
   FunctionWrapper(i),
   FunctionWrapper(ifte),
   FunctionWrapper(infra),
+  FunctionWrapper(loop),
   FunctionWrapper(map_),
-  FunctionWrapper(nullary),
+#  FunctionWrapper(nullary),
   FunctionWrapper(print_words),
   FunctionWrapper(step),
-  FunctionWrapper(swaack),
-  FunctionWrapper(ternary),
-  FunctionWrapper(unary),
-  FunctionWrapper(while_),
+#  FunctionWrapper(ternary),
+#  FunctionWrapper(unary),
+#  FunctionWrapper(while_),
   FunctionWrapper(x),
   )
 
@@ -827,6 +905,7 @@ primitives = (
   SimpleFunctionWrapper(getitem),
   SimpleFunctionWrapper(id_),
   SimpleFunctionWrapper(min_),
+  SimpleFunctionWrapper(over),
   SimpleFunctionWrapper(pop),
   SimpleFunctionWrapper(popd),
   SimpleFunctionWrapper(popop),
@@ -840,6 +919,7 @@ primitives = (
   SimpleFunctionWrapper(stack_),
   SimpleFunctionWrapper(succ),
   SimpleFunctionWrapper(sum_),
+  SimpleFunctionWrapper(swaack),
   SimpleFunctionWrapper(swap),
   SimpleFunctionWrapper(truthy),
   SimpleFunctionWrapper(uncons),
