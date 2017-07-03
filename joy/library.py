@@ -64,7 +64,8 @@ unit == [] cons
 quoted == [unit] dip
 unquoted == [i] dip
 enstacken == stack [clear] dip
-disenstacken == [truthy] [uncons] while pop
+disenstacken == ? [uncons ?] loop pop
+? == dup truthy
 dinfrirst == dip infra first
 nullary == [stack] dinfrirst
 unary == [stack [pop] dip] dinfrirst
