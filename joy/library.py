@@ -74,6 +74,7 @@ pam == [i] map
 run == [] swap infra
 sqr == dup mul
 size == 0 swap [pop ++] step
+cleave == [i] app2
 average == [sum 1.0 *] [size] cleave /
 gcd == [0 >] [dup rollup modulus] while pop
 least_fraction == dup [gcd] infra [div] concat map
