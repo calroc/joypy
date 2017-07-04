@@ -26,6 +26,7 @@ from .utils.stack import list_to_stack, iter_stack, pick, pushback
 
 ALIASES = (
   ('add', ['+']),
+  ('and', ['&']),
   ('mul', ['*']),
   ('truediv', ['/']),
   ('mod', ['%', 'rem', 'remainder', 'modulus']),
@@ -48,7 +49,7 @@ ALIASES = (
   )
 
 
-definitions = '''\
+definitions = ('''\
 second == rest first
 third == rest rest first
 sum == 0 swap [+] step
@@ -101,6 +102,17 @@ z-up == swons swap shunt
 z-right == [swons] cons dip uncons swap
 z-left == swons [uncons swap] dip swap
 '''
+
+# Project Euler
+'''\
+PE1.1 == + dup [+] dip
+PE1.2 == dup [3 & PE1.1] dip 2 >>
+PE1.3 == 14811 swap [PE1.2] times pop
+PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop
+'''
+#PE1.2 == [PE1.1] step
+#PE1 == 0 0 66 [[3 2 1 3 1 2 3] PE1.2] times [3 2 1 3] PE1.2 pop
+)
 
 
 def add_aliases(D, A=ALIASES):
@@ -191,6 +203,11 @@ def add_definitions(defs, dictionary):
 #
 # Functions
 #
+
+
+def parse((text, stack)):
+  expression = text_to_expression(text)
+  return expression, stack
 
 
 def first(stack):
@@ -923,6 +940,7 @@ primitives = (
   SimpleFunctionWrapper(id_),
   SimpleFunctionWrapper(min_),
   SimpleFunctionWrapper(over),
+  SimpleFunctionWrapper(parse),
   SimpleFunctionWrapper(pop),
   SimpleFunctionWrapper(popd),
   SimpleFunctionWrapper(popop),
