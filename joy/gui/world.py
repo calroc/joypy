@@ -19,9 +19,8 @@
 #
 from inspect import getdoc
 
-from ..btree import items, get
 from ..joy import run
-from ..stack import strstack
+from ..utils.stack import strstack
 
 from .misc import is_numerical
 
@@ -34,7 +33,7 @@ class World(object):
     self.text_widget = text_widget
 
   def do_lookup(self, name):
-    word = get(self.dictionary, name)
+    word = self.dictionary[name]
     self.stack = word, self.stack
     self.print_stack()
 
@@ -43,7 +42,7 @@ class World(object):
       print('The number', name)
     else:
       try:
-        word = get(self.dictionary, name)
+        word = self.dictionary[name]
       except KeyError:
         print(repr(name), '???')
       else:
@@ -74,7 +73,7 @@ class World(object):
 
   def has(self, name):
     try:
-      get(self.dictionary, name)
+      self.dictionary[name]
     except KeyError:
       res = False
     else:
