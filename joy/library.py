@@ -20,8 +20,6 @@
 from inspect import getdoc
 import operator, math
 
-#from .joy import joy, run
-# TODO (sforman) In the process of removing dependency on joy module.
 from .parser import text_to_expression, Symbol
 from .utils.stack import list_to_stack, iter_stack, pick, pushback
 
@@ -75,7 +73,7 @@ pam == [i] map
 run == [] swap infra
 sqr == dup mul
 size == 0 swap [pop ++] step
-cleave == [i] app2
+cleave == [i] app2 [popd] dip
 branch == roll< choice i
 average == [sum 1.0 *] [size] cleave /
 gcd == [0 >] [dup rollup modulus] while pop
