@@ -95,7 +95,7 @@ range_to_zero == unit [down_to_zero] infra
 times == [-- dip] cons [swap] infra [0 >] swap while pop
 anamorphism == [pop []] swap [dip swons] genrec
 range == [0 <=] [1 - dup] anamorphism
-while == [pop i not] [popop] [dudipd] primrec
+while == swap [nullary] cons dup dipd concat loop
 dudipd == dup dipd
 primrec == [i] genrec
 z-down == [] swap uncons swap
@@ -790,12 +790,23 @@ def step(S, expression, dictionary):
   return stack, expression, dictionary
 
 
+# The current definition above works like this:
+
+#             [P] [Q] while
+# --------------------------------------
+#    [P] nullary [Q [P] nullary] loop
+
+#   while == [pop i not] [popop] [dudipd] primrec
+
 #def while_(S, expression, dictionary):
 #  '''[if] [body] while'''
 #  (body, (if_, stack)) = S
 #  while joy(stack, if_, dictionary)[0][0]:
 #    stack = joy(stack, body, dictionary)[0]
 #  return stack, expression, dictionary
+
+
+
 
 
 def loop(stack, expression, dictionary):
