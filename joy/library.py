@@ -91,7 +91,6 @@ quadratic == [[q0] pam] ternary i [[q1] pam] ternary
 *fraction0 == concat [[swap] dip * [*] dip] infra
 down_to_zero == [0 >] [dup --] while
 range_to_zero == unit [down_to_zero] infra
-times == [-- dip] cons [swap] infra [0 >] swap while pop
 anamorphism == [pop []] swap [dip swons] genrec
 range == [0 <=] [1 - dup] anamorphism
 while == swap [nullary] cons dup dipd concat loop
@@ -534,6 +533,7 @@ S_i = Symbol('i')
 S_ifte = Symbol('ifte')
 S_infra = Symbol('infra')
 S_step = Symbol('step')
+S_times = Symbol('times')
 S_swaack = Symbol('swaack')
 S_truthy = Symbol('truthy')
 
@@ -805,6 +805,37 @@ def step(S, expression, dictionary):
   return stack, expression, dictionary
 
 
+def times(stack, expression, dictionary):
+  '''
+  times == [-- dip] cons [swap] infra [0 >] swap while pop
+
+     ... n [Q] . times
+  ---------------------  w/ n <= 0
+           ... .
+
+  
+     ... 1 [Q] . times
+  ---------------------------------
+           ... . Q
+
+  
+     ... n [Q] . times
+  ---------------------------------  w/ n > 1
+           ... . Q (n - 1) [Q] times
+
+  '''
+  # times == [-- dip] cons [swap] infra [0 >] swap while pop
+  (quote, (n, stack)) = stack
+  if n <= 0:
+    return stack, expression, dictionary
+  stack = quote, stack
+  n -= 1
+  if n:
+    expression = n, (quote, (S_times, expression))
+  expression = S_i, expression
+  return stack, expression, dictionary
+
+
 # The current definition above works like this:
 
 #             [P] [Q] while
@@ -921,6 +952,7 @@ combinators = (
 #  FunctionWrapper(nullary),
   FunctionWrapper(print_words),
   FunctionWrapper(step),
+  FunctionWrapper(times),
 #  FunctionWrapper(ternary),
 #  FunctionWrapper(unary),
 #  FunctionWrapper(while_),
