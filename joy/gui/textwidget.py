@@ -82,7 +82,7 @@ text_bindings = {
   '<Control-v>': lambda tv: tv._paste,
   '<Control-V>': lambda tv: tv._paste,
   '<Shift-Insert>': lambda tv: tv._paste,
-
+  '<Control-Return>': lambda tv: tv._control_enter,
   }
 
 
@@ -195,6 +195,18 @@ class TextViewerWidget(tk.Text, MouseBindingsMixin, SavingMixin):
     self.unhighlight_command()
     if self.command:
       self.run_command(self.command)
+
+  def _control_enter(self, event):
+    select_indices = self.tag_ranges(tk.SEL)
+    if select_indices:
+      command = self.get(select_indices[0], select_indices[1])
+    else:
+      linestart = self.index(tk.INSERT + ' linestart')
+      lineend = self.index(tk.INSERT + ' lineend')
+      command = self.get(linestart, lineend)
+    if command and not command.isspace():
+      self.run_command(command)
+    return 'break'
 
   def run_command(self, command):
     '''Given a string run it on the stack, report errors.'''
