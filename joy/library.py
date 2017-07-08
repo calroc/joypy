@@ -45,7 +45,6 @@ ALIASES = (
   ('rolldown', ['roll<']),
   ('rollup', ['roll>']),
   ('id', ['•']),
-#  ('', ['']),
   )
 
 
@@ -77,7 +76,7 @@ size == 0 swap [pop ++] step
 cleave == [i] app2 [popd] dip
 branch == roll< choice i
 average == [sum 1.0 *] [size] cleave /
-gcd == [0 >] [dup rollup modulus] while pop
+gcd == 1 [dup rollup modulus dup 0 >] loop pop
 least_fraction == dup [gcd] infra [div] concat map
 divisor == popop 2 *
 minusb == pop neg
@@ -112,6 +111,7 @@ PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop
 #PE1.2 == [PE1.1] step
 #PE1 == 0 0 66 [[3 2 1 3 1 2 3] PE1.2] times [3 2 1 3] PE1.2 pop
 )
+
 
 
 def add_aliases(D, A=ALIASES):
@@ -740,7 +740,7 @@ def app1(S, expression, dictionary):
 
 def app2(S, expression, dictionary):
   '''Like app1 with two items.
-  
+
             ... y x [Q] . app2
      -----------------------------------
         ... [y ...] [Q] . infra first
@@ -813,12 +813,12 @@ def times(stack, expression, dictionary):
   ---------------------  w/ n <= 0
            ... .
 
-  
+
      ... 1 [Q] . times
   ---------------------------------
            ... . Q
 
-  
+
      ... n [Q] . times
   ---------------------------------  w/ n > 1
            ... . Q (n - 1) [Q] times
