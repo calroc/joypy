@@ -55,7 +55,6 @@ sum == 0 swap [+] step
 product == 1 swap [*] step
 swons == swap cons
 swoncat == swap concat
-shunt == [swons] step
 reverse == [] swap shunt
 flatten == [] swap [concat] step
 unit == [] cons
@@ -409,6 +408,18 @@ def concat(S):
   for term in reversed(list(iter_stack(second))):
     tos = term, tos
   return tos, stack
+
+
+def shunt((tos, (second, stack))):
+  '''
+  shunt == [swons] step
+
+  Like concat but reverses the top list into the second.
+  '''
+  while tos:
+    term, tos = tos
+    second = term, second
+  return second, stack
 
 
 def zip_(S):
@@ -983,6 +994,7 @@ primitives = (
   SimpleFunctionWrapper(rolldown),
   SimpleFunctionWrapper(rollup),
   SimpleFunctionWrapper(select),
+  SimpleFunctionWrapper(shunt),
   SimpleFunctionWrapper(stack_),
   SimpleFunctionWrapper(succ),
   SimpleFunctionWrapper(sum_),
