@@ -75,7 +75,7 @@ size == 0 swap [pop ++] step
 cleave == [i] app2 [popd] dip
 branch == roll< choice i
 average == [sum 1.0 *] [size] cleave /
-gcd == 1 [dup rollup modulus dup 0 >] loop pop
+gcd == 1 [tuck modulus dup 0 >] loop pop
 least_fraction == dup [gcd] infra [div] concat map
 divisor == popop 2 *
 minusb == pop neg
@@ -339,6 +339,19 @@ def over(S):
   '''
   second = S[1][0]
   return second, S
+
+
+def tuck(S):
+  '''
+  Copy the item at TOS under the second item of the stack.
+
+     a b tuck
+  --------------
+      b a b
+
+  '''
+  (tos, (second, stack)) = S
+  return tos, (second, (tos, stack))
 
 
 def swap(S):
@@ -1001,6 +1014,7 @@ primitives = (
   SimpleFunctionWrapper(swaack),
   SimpleFunctionWrapper(swap),
   SimpleFunctionWrapper(truthy),
+  SimpleFunctionWrapper(tuck),
   SimpleFunctionWrapper(uncons),
   SimpleFunctionWrapper(unstack),
   SimpleFunctionWrapper(unstack),
