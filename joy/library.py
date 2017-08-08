@@ -82,9 +82,9 @@ minusb == pop neg
 radical == swap dup * rollup * 4 * - sqrt
 root1 == + swap /
 root2 == - swap /
-q0 == [divisor] [minusb] [radical]
-q1 == [root1] [root2]
-quadratic == [[q0] pam] ternary i [[q1] pam] ternary
+q0 == [[divisor] [minusb] [radical]] pam
+q1 == [[root1] [root2]] pam
+quadratic == [q0] ternary i [q1] ternary
 *fraction == [uncons] dip uncons [swap] dip concat [*] infra [*] dip cons
 *fraction0 == concat [[swap] dip * [*] dip] infra
 down_to_zero == [0 >] [dup --] while
@@ -208,11 +208,10 @@ def parse((text, stack)):
   return expression, stack
 
 
-def first(stack):
+
+def first(((head, tail), stack)):
   '''first == uncons pop'''
-  Q, stack = stack
-  stack = Q[0], stack
-  return stack
+  return head, stack
 
 
 def rest(((head, tail), stack)):
@@ -361,6 +360,7 @@ def swap(S):
 
 
 def swaack(stack):
+  '''swap stack'''
   old_stack, stack = stack
   return stack, old_stack
 
@@ -492,13 +492,7 @@ def _void(form):
   return any(not _void(i) for i in iter_stack(form))
 
 
-##
-##def first(((head, tail), stack)):
-##  return head, stack
 
-
-
-##  flatten
 ##  transpose
 ##  sign
 ##  at
@@ -653,13 +647,11 @@ def genrec(stack, expression, dictionary):
         == [I] [T] [R P] ifte
   )
   '''
-  (rec2, (rec1, T)) = stack
-  (then, (if_, _)) = T
-  Q = ((if_, (then, (rec1, (rec2, (S_genrec, ()))))), rec2)
-  for term in reversed(list(iter_stack(rec1))):
-    Q = term, Q
-  expression = (S_ifte, expression)
-  return (Q, T), expression, dictionary
+  (rec2, (rec1, stack)) = stack
+  (then, (if_, _)) = stack
+  F = (if_, (then, (rec1, (rec2, (S_genrec, ())))))
+  else_ = pushback(rec1, (F, rec2))
+  return (else_, stack), (S_ifte, expression), dictionary
 
 
 def map_(S, expression, dictionary):
@@ -725,25 +717,22 @@ def ifte(stack, expression, dictionary):
 
 def dip(stack, expression, dictionary):
   (quote, (x, stack)) = stack
-  stack = (quote, stack)
-  expression = S_i, (x, expression)
-  return stack, expression, dictionary
+  expression = x, expression
+  return stack, pushback(quote, expression), dictionary
 
 
 def dipd(S, expression, dictionary):
   '''Like dip but expects two items.'''
   (quote, (x, (y, stack))) = S
-  stack = (quote, stack)
-  expression = S_i, (y, (x, expression))
-  return stack, expression, dictionary
+  expression = y, (x, expression)
+  return stack, pushback(quote, expression), dictionary
 
 
 def dipdd(S, expression, dictionary):
   '''Like dip but expects three items.'''
   (quote, (x, (y, (z, stack)))) = S
-  stack = (quote, stack)
-  expression = S_i, (z, (y, (x, expression)))
-  return stack, expression, dictionary
+  expression = z, (y, (x, expression))
+  return stack, pushback(quote, expression), dictionary
 
 
 def app1(S, expression, dictionary):
