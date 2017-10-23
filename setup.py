@@ -27,5 +27,5 @@ setup(
   description='Python Implementation of Joy',
   author='Simon Forman',
   author_email='sforman@hushmail.com',
-  packages=['joy', 'joy.gui', 'joy.utils'],
- )
+  packages=['joy', 'joy.utils'],
+  )

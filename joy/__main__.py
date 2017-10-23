@@ -17,17 +17,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
 #
-from __future__ import print_function
-from sys import argv
 from .library import initialize
+from .joy import repl
 
 
-if '--gui' in argv:
-  from .gui.textwidget import main
-  t = main(dictionary=initialize())
-  print()
-  print('<STACK')
-  t.mainloop()
-else:
-  from .joy import repl
-  stack = repl(dictionary=initialize())
+stack = repl(dictionary=initialize())
