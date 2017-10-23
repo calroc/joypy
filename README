@@ -1,5 +1,4 @@
-﻿--------------------------------------------------
-   ____  ____     _    _____ _____
+﻿   ____  ____     _    _____ _____
   |  _ \|  _ \   / \  |  ___|_   _|
   | | | | |_) | / A \ | |_    | |
   | |_| |  _ < / ___ \|  _|   | |
@@ -9,17 +8,6 @@
 
 
 A dialect of Joy in Python.
-
-
---------------------------------------------------
-
-§ Introduction
-
-Joy is a programming language created by Manfred von Thun that is easy to
-use and understand and has many other nice properties.  This Python
-module implements an interpreter for a dialect of Joy that attempts to
-stay very close to the spirit of Joy but does not precisely match the
-behaviour of the original version(s) written in C.
 
 
 --------------------------------------------------
@@ -43,6 +31,16 @@ Joypy.  If not see <http://www.gnu.org/licenses/>.
 
 
 --------------------------------------------------
+
+
+§ Introduction
+
+Joy is a programming language created by Manfred von Thun that is easy to
+use and understand and has many other nice properties.  This Python
+package implements an interpreter for a dialect of Joy that attempts to
+stay very close to the spirit of Joy but does not precisely match the
+behaviour of the original version(s) written in C.
+
 
 § Basics of Joy
 
@@ -144,20 +142,23 @@ This Implementation
 
 
 joypy
- ├── COPYING
- ├── joy
- │   ├── __init__.py
- │   ├── __main__.py
- │   ├── joy.py
- │   ├── library.py
- │   ├── parser.py
- │   └── utils
- │       ├── __init__.py
- │       ├── pretty_print.py
- │       └── stack.py
- ├── README
- ├── runme.py
- └── setup.py
+ |-- COPYING - license
+ |-- README - this file
+ |
+ |-- archive - info on Joy
+ |   |-- Joy-Programming.zip
+ |   `-- README
+ |
+ |-- joy
+ |   |-- joy.py - main loop, REPL
+ |   |-- library.py - Functions, Combinators, Definitions
+ |   |-- parser.py - convert text to Joy datastructures
+ |   |
+ |   `-- utils
+ |       |-- pretty_print.py - convert Joy datastructures to text
+ |       `-- stack.py - work with stacks
+ |
+ `-- setup.py
 
 
 --------------------------------------------------
