@@ -13,131 +13,44 @@ A dialect of Joy in Python.
 
 --------------------------------------------------
 
+§ Introduction
 
 Joy is a programming language created by Manfred von Thun that is easy to
 use and understand and has many other nice properties.  This Python
 module implements an interpreter for a dialect of Joy that attempts to
 stay very close to the spirit of Joy but does not precisely match the
-behaviour of the original version(s) written in C.  A Tkinter GUI is
-provided as well.
+behaviour of the original version(s) written in C.
 
 
 --------------------------------------------------
 
 
-Copyright © 2014, 2015 Simon Forman
+Copyright © 2014, 2015, 2017 Simon Forman
 
-This file is part of joy.py
+This file is part of Joypy
 
-joy.py is free software: you can redistribute it and/or modify it under the
+Joypy is free software: you can redistribute it and/or modify it under the
 terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
 version.
 
-joy.py is distributed in the hope that it will be useful, but WITHOUT ANY
+Joypy is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-joy.py.  If not see <http://www.gnu.org/licenses/>.
+Joypy.  If not see <http://www.gnu.org/licenses/>.
 
 
 --------------------------------------------------
 
+§ Basics of Joy
 
-Table of Contents
-
-  Introduction
-
-  Part I - Joy
-    Manfred von Thun, Appreciation
-    Simplicity
-    Basics of Joy
-    Literals and Simple Functions
-    Simple Combinators
-    Definitions and More Elaborate Functions
-    Programming and Metaprogramming
-    Further Reading
-
-  Part II - This Implementation
-
-    joy()
-
-    Converting text to a joy expression.
-      parse()
-      tokenize()
-      convert()
-
-    Stack
-      list_to_stack()
-      iter_stack()
-      stack_to_string()
-
-    Functions
-      stack → stack
-      note() decorator
-      define several function
-
-    Combinators
-      functions that call joy()
-
-    Definitions
-      functions as equations
-
-    Initialize
-      add functions from Python operator module
-      add aliases
-      add definitions
-
-    REPL (Read, Eval, Print Loop)
-
-  Part III - The GUI
-
-    History
-    Structure
-    Commands
-      Mouse Chords
-      Keyboard
-    Output from Joy
-
-  References
-
-
---------------------------------------------------
-
-
-§ Introduction
-
-I don't recall exactly how or when I first heard of the Joy programming
-language, or even what it was that recently prompted me to investigate
-it and write this interpreter.  I am glad it happened though because as
-I study Joy I find that it is very aptly named.  It is clear, concise,
-and ameniable to advanced techniques for constructing bug-free
-software.
-
-Backus' Turing award paper - Functional programming - Notation for
-mathematical programming
-
-Exploring the system using this Python implementation - Pickling system
-state - The GUI
-
-
---------------------------------------------------
-
-
-Part I - Joy
+As I study Joy I find that it is very aptly named.  It is clear, concise,
+and ameniable to advanced techniques for constructing bug-free software.
 
 Developed by Manfred von Thun, don't know much about him, not much on
-the web about Joy and von Thun (Von Thun?) Several other people have
-played with it.  Other languages (Factor, Cat, Kont, etc?) I wish I had
-known of it a decade ago when it was the subject of active work.
-
-Stack based - literals (as functions) - functions - combinators -
-Refactoring and making new definitions - traces and comparing
-performance - metaprogramming as programming, even the lowly integer
-range function can be expressed in two phases: building a specialized
-program and then executing it with a combinator - ?Partial evaluation?
-- ?memoized dynamic dependency graphs? - algebra
+the web about Joy and von Thun (Von Thun?) See references below.
 
 Because it has desirable properties (concise, highly factored) the
 programming process changes, the ratio of designing to writing code
@@ -166,8 +79,6 @@ and a great deal of fascinating material mostly written by Von Thun on
 Joy and its deeper facets as well as how to program in it and several
 interesting aspects.  It's quite a treasure trove.
 
-§ Basics of Joy
-
 Joy is stack-based.  There is a main stack that holds data items:
 numbers, strings, functions, and sequences which hold data items
 themselves.  All functions are considered to be unary, accepting a
@@ -182,14 +93,12 @@ the main stack with the result returned.
 
 The main loop is very simple as most of the action happens through what
 are called "Combinators", which accept sequences on the stack and run
-them (using the joy() function) in various ways.  These combinators
-factor specific patterns that provide the effect of control-flow in
-other languages (such as ifte which is like if..then..else..) and
-strange and wonderful effects (such as cleave which is a simple
-concurrency combinator.)
+them in various ways.  These combinators factor specific patterns that
+provide the effect of control-flow in other languages (such as ifte which
+is like if..then..else..) and strange and wonderful effects (such as
+cleave which is a simple concurrency combinator.)
 
-**Mention that sequences intended as programs are called "quoted
-programs".
+Sequences intended as programs are called "quoted programs".
 
 § Literals and Simple Functions
 
@@ -218,6 +127,8 @@ programs".
     -> 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
 
 
+TODO:
+
 § Definitions and More Elaborate Functions
   Refactoring
 
@@ -229,80 +140,24 @@ programs".
 --------------------------------------------------
 
 
-Part II - This Implementation
+This Implementation
 
 
-   joy
-    |
-    |-- __main__.py
-    |-- combinators.py
-    |-- definitions.py
-    |-- functions.py
-    |-- initializer.py
-    |-- joy.py
-    |-- library.py
-    |-- parser.py
-    |-- stack.py
-    |-- tracer.py
-    |
-    `-- gui
-        |-- misc.py
-        |-- mousebindings.py
-        |-- saver.py
-        |-- textwidget.py
-        `-- world.py
-
-
-    joy()
-
-    Converting text to a joy expression.
-      parse()
-      tokenize()
-      convert()
-
-    Stack
-      list_to_stack()
-      iter_stack()
-      stack_to_string()
-
-    Functions
-      stack → stack
-      note() decorator
-      define several function
-
-    Combinators
-      functions that call joy()
-
-    Definitions
-      functions as equations
-
-    Initialize
-      add functions from Python operator module
-      add aliases
-      add definitions
-
-    REPL (Read, Eval, Print Loop)
-
-
-  - archive
-    |-- EBGaramond-0.016.zip
-    |-- Joy-Programming.zip
-    `-- README
-
-
---------------------------------------------------
-
-
-Part III - The GUI
-
-  See gui.py.
-
-    History
-    Structure
-    Commands
-      Mouse Chords
-      Keyboard
-    Output from Joy
+joypy
+ ├── COPYING
+ ├── joy
+ │   ├── __init__.py
+ │   ├── __main__.py
+ │   ├── joy.py
+ │   ├── library.py
+ │   ├── parser.py
+ │   └── utils
+ │       ├── __init__.py
+ │       ├── pretty_print.py
+ │       └── stack.py
+ ├── README
+ ├── runme.py
+ └── setup.py
 
 
 --------------------------------------------------
@@ -317,3 +172,14 @@ https://en.wikipedia.org/wiki/Joy_%28programming_language%29
 
 Homepage at La Trobe University:
 http://www.latrobe.edu.au/humanities/research/research-projects/past-projects/joy-programming-language
+
+
+Misc...
+
+Stack based - literals (as functions) - functions - combinators -
+Refactoring and making new definitions - traces and comparing
+performance - metaprogramming as programming, even the lowly integer
+range function can be expressed in two phases: building a specialized
+program and then executing it with a combinator - ?Partial evaluation?
+- ?memoized dynamic dependency graphs? - algebra
+
