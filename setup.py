@@ -19,13 +19,26 @@
 #    along with joy.py.  If not see <http://www.gnu.org/licenses/>.
 #
 from distutils.core import setup
+from textwrap import dedent
 
 
 setup(
   name='Joypy',
   version='0.1',
   description='Python Implementation of Joy',
+  long_description=dedent('''\
+    Joy is a programming language created by Manfred von Thun that is easy to
+    use and understand and has many other nice properties.  This Python
+    package implements an interpreter for a dialect of Joy that attempts to
+    stay very close to the spirit of Joy but does not precisely match the
+    behaviour of the original version written in C.'''),
   author='Simon Forman',
-  author_email='sforman@hushmail.com',
+  author_email='forman.simon@gmail.com',
+  url='https://github.com/calroc/joypy',
   packages=['joy', 'joy.utils'],
+  classifiers=[
+    'Development Status :: 3 - Alpha',
+    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
+    'Programming Language :: Python :: 2.7',
+    ],
   )
