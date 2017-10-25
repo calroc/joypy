@@ -188,14 +188,19 @@ class DefinitionWrapper(FunctionWrapper):
       raise ValueError('Definition %r failed' % (defi,))
     return class_(name, body_text)
 
+  @classmethod
+  def add_definitions(class_, defs, dictionary):
+    for definition in _text_to_defs(defs):
+      class_.add_def(definition, dictionary)
 
-def add_definitions(defs, dictionary):
-  for definition in defs.splitlines():
-    definition = definition.strip()
-    if not definition or definition.isspace():
-      continue
-    F = DefinitionWrapper.parse_definition(definition)
+  @classmethod
+  def add_def(class_, definition, dictionary):
+    F = class_.parse_definition(definition)
     dictionary[F.name] = F
+
+
+def _text_to_defs(text):
+  return filter(None, (line.strip() for line in text.splitlines()))
 
 
 #
@@ -501,9 +506,24 @@ def _void(form):
 ##  take
 
 
-def print_words(stack, expression, dictionary):
+def words(stack, expression, dictionary):
   '''Print all the words in alphabetical order.'''
   print(' '.join(sorted(dictionary)))
+  return stack, expression, dictionary
+
+
+def sharing(stack, expression, dictionary):
+  '''Print redistribution information.'''
+  print("You may convey verbatim copies of the Program's source code as"
+        ' you receive it, in any medium, provided that you conspicuously'
+        ' and appropriately publish on each copy an appropriate copyright'
+        ' notice; keep intact all notices stating that this License and'
+        ' any non-permissive terms added in accord with section 7 apply'
+        ' to the code; keep intact all notices of the absence of any'
+        ' warranty; and give all recipients a copy of this License along'
+        ' with the Program.'
+        ' You should have received a copy of the GNU General Public License'
+        ' along with Joypy.  If not see <http://www.gnu.org/licenses/>.')
   return stack, expression, dictionary
 
 
@@ -977,12 +997,12 @@ combinators = (
   FunctionWrapper(loop),
   FunctionWrapper(map_),
 #  FunctionWrapper(nullary),
-  FunctionWrapper(print_words),
   FunctionWrapper(step),
   FunctionWrapper(times),
 #  FunctionWrapper(ternary),
 #  FunctionWrapper(unary),
 #  FunctionWrapper(while_),
+  FunctionWrapper(words),
   FunctionWrapper(x),
   )
 
@@ -1023,6 +1043,9 @@ primitives = (
   SimpleFunctionWrapper(unstack),
   SimpleFunctionWrapper(void),
   SimpleFunctionWrapper(zip_),
+
+  FunctionWrapper(sharing),
+  FunctionWrapper(warranty),
   )
 
 
@@ -1033,5 +1056,5 @@ def initialize(dictionary=None):
   dictionary.update((F.name, F) for F in combinators)
   dictionary.update((F.name, F) for F in primitives)
   add_aliases(dictionary)
-  add_definitions(definitions, dictionary)
+  DefinitionWrapper.add_definitions(definitions, dictionary)
   return dictionary
