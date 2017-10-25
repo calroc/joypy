@@ -7,7 +7,9 @@
 --------------------------------------------------
 
 
-A dialect of Joy in Python.
+            Joypy
+
+  A dialect of Joy in Python.
 
 
 --------------------------------------------------
@@ -140,6 +142,9 @@ TODO:
 
 This Implementation
 
+Run with:
+
+    python -m joy
 
 joypy
  |-- COPYING - license

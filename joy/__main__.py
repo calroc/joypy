@@ -20,5 +20,10 @@
 from .library import initialize
 from .joy import repl
 
-
+print '''\
+Joypy - Copyright © 2017 Simon Forman
+This program comes with ABSOLUTELY NO WARRANTY; for details type "warranty".
+This is free software, and you are welcome to redistribute it
+under certain conditions; type "sharing" for details.
+'''
 stack = repl(dictionary=initialize())
