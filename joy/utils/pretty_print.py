@@ -71,7 +71,7 @@ class TracePrinter(object):
       strstack(expression)
       )
 
-  def print(self):
+  def print_(self):
     try:
       print(self)
     except:

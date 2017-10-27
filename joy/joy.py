@@ -114,11 +114,11 @@ def repl(stack=(), dictionary=None):
         stack, _, dictionary = run(text, stack, dictionary, viewer.viewer)
       except:
         exc = format_exc() # Capture the exception.
-        viewer.print() # Print the Joy trace.
+        viewer.print_() # Print the Joy trace.
         print('-' * 73)
         print(exc) # Print the original exception.
       else:
-        viewer.print()
+        viewer.print_()
   except:
     print_exc()
   print()
