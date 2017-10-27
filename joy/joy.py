@@ -92,12 +92,14 @@ def run(text, stack, dictionary, viewer=None):
   return joy(stack, expression, dictionary, viewer)
 
 
-def repl(stack=(), dictionary=()):
+def repl(stack=(), dictionary=None):
   '''
   Read-Evaluate-Print Loop
 
   Accept input and run it on the stack, loop.
   '''
+  if dictionary is None:
+    dictionary = {}
   try:
     while True:
       print()
