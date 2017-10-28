@@ -104,13 +104,18 @@ def stack_to_string(stack):
   return ' '.join(map(_s, iter_stack(stack)))
 
 
-def _s(expression):
-  if not isinstance(expression, tuple):
-    return repr(expression)
-  return '[%s]' % stack_to_string(expression)
+_s = lambda s: (
+  '[%s]' % stack_to_string(s)
+  if isinstance(s, tuple)
+  else repr(s)
+  )
 
 
 def pushback(quote, expression):
+  '''Concatinate quote onto expression.
+
+  In joy [1 2] [3 4] would become [1 2 3 4].
+  '''
   return list_to_stack(list(iter_stack(quote)), expression)
 
 
