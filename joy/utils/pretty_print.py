@@ -34,7 +34,7 @@ This is what does the formatting, e.g.:
 # smarter stuff.)
 from __future__ import print_function
 from traceback import print_exc
-from .stack import strstack, iter_stack, list_to_stack
+from .stack import stack_to_string, iter_stack, list_to_stack
 
 
 class TracePrinter(object):
@@ -64,11 +64,11 @@ class TracePrinter(object):
 
   @staticmethod
   def strings_of_trace(stack, expression):
-    stack = list(iter_stack(stack))
-    stack.reverse()
+    el = list(iter_stack(stack))
+    el.reverse()
     return (
-      strstack(list_to_stack(stack)),
-      strstack(expression)
+      stack_to_string(list_to_stack(el)),
+      stack_to_string(expression)
       )
 
   def print_(self):

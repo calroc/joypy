@@ -57,7 +57,7 @@ except NameError:
   pass
 from traceback import print_exc, format_exc
 from .parser import text_to_expression, ParseError, Symbol
-from .utils.stack import strstack
+from .utils.stack import stack_to_string
 from .utils.pretty_print import TracePrinter
 
 
@@ -103,7 +103,7 @@ def repl(stack=(), dictionary=None):
   try:
     while True:
       print()
-      print('->', strstack(stack))
+      print('->', stack_to_string(stack))
       print()
       try:
         text = input('joy? ')

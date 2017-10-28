@@ -43,7 +43,7 @@ And so on.
 
 We have two very simple functions to build up a stack from a Python
 iterable and also to iterate through a stack and yield its items
-one-by-one in order, and two functions to generate string representations
+one-by-one in order, and a function to generate string representations
 of stacks:
 
   list_to_stack()
@@ -51,9 +51,6 @@ of stacks:
   iter_stack()
 
   stack_to_string()
-
-  strstack()
-
 
 
 A word about the stack data structure.
@@ -76,7 +73,11 @@ where they would be redundant.
 
 
 def list_to_stack(el, stack=()):
-  '''Convert a list (or other sequence) to a stack.'''
+  '''Convert a list (or other sequence) to a stack.
+
+  [1, 2, 3] -> (1, (2, (3, ())))
+
+  '''
   for item in reversed(el):
     stack = item, stack
   return stack
@@ -89,24 +90,24 @@ def iter_stack(stack):
     yield item
 
 
-def stack_to_string(expression):
+def stack_to_string(stack):
   '''
   Return a "pretty print" string for a stack.
 
   Ideally the output of this should result in the same expression if
   passed through tokenize() and parse(), but not yet.
   '''
-  if not isinstance(expression, tuple):
-    return repr(expression)
-  return '[%s]' % strstack(expression)
-
-
-def strstack(stack):
   if not isinstance(stack, tuple):
     return repr(stack)
   if not stack: # shortcut
     return ''
-  return ' '.join(map(stack_to_string, iter_stack(stack)))
+  return ' '.join(map(_s, iter_stack(stack)))
+
+
+def _s(expression):
+  if not isinstance(expression, tuple):
+    return repr(expression)
+  return '[%s]' % stack_to_string(expression)
 
 
 def pushback(quote, expression):
