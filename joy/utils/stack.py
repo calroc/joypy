@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#    Copyright © 2014, 2015 Simon Forman
+#    Copyright © 2014, 2015, 2017 Simon Forman
 #
 #    This file is part of joy.py
 #

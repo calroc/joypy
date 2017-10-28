@@ -43,6 +43,7 @@ class TracePrinter(object):
     self.history = []
 
   def viewer(self, stack, expression):
+    '''Pass this method as the viewer to joy() function.'''
     self.history.append((stack, expression))
 
   def __str__(self):
