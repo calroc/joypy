@@ -621,6 +621,21 @@ def b(stack, expression, dictionary):
   return stack, pushback(p, pushback(q, expression)), dictionary
 
 
+def dupdip(stack, expression, dictionary):
+  '''
+  [F] [G] dupdip == dup [F] dip G
+
+  ... a [F] [G] dupdip
+  ... a dup [F] dip G
+  ... a a   [F] dip G
+  ... a F a         G
+
+  '''
+  G, (F, stack) = stack
+  a = stack[0]
+  return stack, pushback(F, (a, pushback(G, expression))), dictionary
+
+
 def infra(stack, expression, dictionary):
   '''
   Accept a quoted program and a list on the stack and run the program
@@ -989,6 +1004,7 @@ combinators = (
   FunctionWrapper(dip),
   FunctionWrapper(dipd),
   FunctionWrapper(dipdd),
+  FunctionWrapper(dupdip),
   FunctionWrapper(genrec),
   FunctionWrapper(help_),
   FunctionWrapper(i),
