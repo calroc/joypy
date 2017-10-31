@@ -209,6 +209,7 @@ def _text_to_defs(text):
 
 
 def parse((text, stack)):
+  '''Parse the string on the stack to a Joy expression.'''
   expression = text_to_expression(text)
   return expression, stack
 
@@ -837,9 +838,8 @@ def step(S, expression, dictionary):
   ----------------------------------------
                ... a . Q [b c] [Q] step
 
-  The step combinator removes the aggregate and the quotation, and then
-  repeatedly puts the members of the aggregate on top of the remaining
-  stack and executes the quotation.
+  The step combinator executes the quotation on each member of the list
+  on top of the stack.
   '''
   (quote, (aggregate, stack)) = S
   if not aggregate:
