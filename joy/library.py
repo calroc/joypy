@@ -937,9 +937,6 @@ def times(stack, expression, dictionary):
 #  return stack, expression, dictionary
 
 
-
-
-
 def loop(stack, expression, dictionary):
   '''
   Basic loop combinator.
@@ -955,9 +952,9 @@ def loop(stack, expression, dictionary):
   '''
   quote, (flag, stack) = stack
   if flag:
-    stack = quote, stack
-    expression = S_i, (quote, (S_loop, expression))
+    expression = pushback(quote, (quote, (S_loop, expression)))
   return stack, expression, dictionary
+
 
 #def nullary(S, expression, dictionary):
 #  '''
