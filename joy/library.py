@@ -73,7 +73,6 @@ run == [] swap infra
 sqr == dup mul
 size == 0 swap [pop ++] step
 cleave == [i] app2 [popd] dip
-branch == roll< choice i
 average == [sum 1.0 *] [size] cleave /
 gcd == 1 [tuck modulus dup 0 >] loop pop
 least_fraction == dup [gcd] infra [div] concat map
@@ -740,6 +739,30 @@ def map_(S, expression, dictionary):
 #  return (q, (p, stack)), expression, dictionary
 
 
+def branch(stack, expression, dictionary):
+  '''
+  Use a Boolean value to select one of two quoted programs to run.
+
+      branch == roll< choice i
+
+
+        False [F] [T] branch
+     --------------------------
+              [F] i
+           -----------
+               F
+
+        True [F] [T] branch
+     -------------------------
+              [T] i
+           -----------
+               T
+
+  '''
+  (then, (else_, (flag, stack))) = stack
+  return stack, pushback(then if flag else else_, expression), dictionary
+
+
 def ifte(stack, expression, dictionary):
   '''
   If-Then-Else Combinator
@@ -999,6 +1022,7 @@ combinators = (
   FunctionWrapper(app2),
   FunctionWrapper(app3),
   FunctionWrapper(b),
+  FunctionWrapper(branch),
 #  FunctionWrapper(binary),
 #  FunctionWrapper(cleave),
   FunctionWrapper(dip),
