@@ -622,17 +622,17 @@ def b(stack, expression, dictionary):
 
 def dupdip(stack, expression, dictionary):
   '''
-  [F] [G] dupdip == dup [F] dip G
+  [F] dupdip == dup [F] dip
 
-  ... a [F] [G] dupdip
-  ... a dup [F] dip G
-  ... a a   [F] dip G
-  ... a F a         G
+  ... a [F] dupdip
+  ... a dup [F] dip
+  ... a a   [F] dip
+  ... a F a
 
   '''
-  G, (F, stack) = stack
+  F, stack = stack
   a = stack[0]
-  return stack, pushback(F, (a, pushback(G, expression))), dictionary
+  return stack, pushback(F, (a,  expression)), dictionary
 
 
 def infra(stack, expression, dictionary):
