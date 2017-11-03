@@ -399,6 +399,12 @@ def popd(S):
   return tos, stack
 
 
+def popdd(S):
+  '''Pop and discard the third item from the stack.'''
+  (tos, (second, (third, stack))) = S
+  return tos, (second, stack)
+
+
 def popop(S):
   '''Pop and discard the first and second items from the stack.'''
   (tos, (second, stack)) = S
@@ -459,10 +465,35 @@ def succ(S):
   return tos + 1, stack
 
 
+def pm(stack):
+  '''
+  Plus or minus
+
+  a b pm == a b + a b -
+
+  '''
+  a, (b, stack) = stack
+  p, m, = b + a, b - a
+  return m, (p, stack)
+
+
 def pred(S):
   '''Decrement TOS.'''
   (tos, stack) = S
   return tos - 1, stack
+
+
+def sqrt(a):
+  '''
+  Return the square root of the number a.
+  Negative numbers return complex roots.
+  '''
+  try:
+    r = math.sqrt(a)
+  except ValueError:
+    assert a < 0, repr(a)
+    r = math.sqrt(-a) * 1j
+  return r
 
 
 def rollup(S):
@@ -1010,7 +1041,7 @@ builtins = (
 
   UnaryBuiltinWrapper(operator.neg),
   UnaryBuiltinWrapper(operator.not_),
-  UnaryBuiltinWrapper(math.sqrt),
+  UnaryBuiltinWrapper(sqrt),
   )
 
 
@@ -1057,8 +1088,10 @@ primitives = (
   SimpleFunctionWrapper(min_),
   SimpleFunctionWrapper(over),
   SimpleFunctionWrapper(parse),
+  SimpleFunctionWrapper(pm),
   SimpleFunctionWrapper(pop),
   SimpleFunctionWrapper(popd),
+  SimpleFunctionWrapper(popdd),
   SimpleFunctionWrapper(popop),
   SimpleFunctionWrapper(pred),
   SimpleFunctionWrapper(remove),
