@@ -8,7 +8,7 @@
 - Library Examples - Short examples of each word in the dictionary.  Various formats.
 - Quadratic - Not-so-annoying Quadratic Formula.
 - Replacing Functions in the Dictionary - Shows the basics of defining new "primitive" functions in Python or as definitions and adding them to the dictionary.
-- Zipper - An preliminary examination of the idea of data-structure "zippers" for traversing datastructures.
+- Zipper - A preliminary examination of the idea of data-structure "zippers" for traversing datastructures.
 - notebook_preamble.py - Imported into notebooks to simply the preamble code.
 - pe1.py pe1.txt - Set up and execute a Joy program for the first problem from Project Euler. The pe1.txt file is the trace.  It's 2.8M uncompressed.  Compressed with gzip it becomes just 0.12M.
 - repl.py - Run this script to start a REPL.  Useful for e.g. running Joy code in a debugger.
