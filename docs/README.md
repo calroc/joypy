@@ -1,5 +1,19 @@
 # Some Jupyter Notebooks and other material.
 
+In order to run the [Jupyter Notebooks](https://jupyter.org/index.html) you need Jupyter (obviously) and you should install `Joypy`.  Here's an example using `virtualenv` from the `joypy/` directory:
+
+    virtualenv --system-site-packages <DIRNAME>
+    . ./<DIRNAME>/bin/activate
+    python ./setup.py install
+
+Once that's done you should be able to start Jupyter Notebook server with, e.g.:
+
+    python -n notebook
+
+This starts it using the `virtualenv` version of Python so `joy` will be available.  Navigate to the `joypy/docs` directory and the notebooks should be able to import the `notebook_preamble.py` file.
+
+## Table of Contents
+
 - Basic Use of Joy in a Notebook
 - Developing a Program - Working with the first problem from Project Euler, "Find the sum of all the multiples of 3 or 5 below 1000", several forms of the program are derived.
 - Factorial Function and Paramorphisms - A basic pattern of recursive control-flow.
