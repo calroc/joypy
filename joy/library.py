@@ -51,11 +51,9 @@ ALIASES = (
 definitions = ('''\
 second == rest first
 third == rest rest first
-sum == 0 swap [+] step
 product == 1 swap [*] step
 swons == swap cons
 swoncat == swap concat
-reverse == [] swap shunt
 flatten == [] swap [concat] step
 unit == [] cons
 quoted == [unit] dip
@@ -76,14 +74,6 @@ cleave == [i] app2 [popd] dip
 average == [sum 1.0 *] [size] cleave /
 gcd == 1 [tuck modulus dup 0 >] loop pop
 least_fraction == dup [gcd] infra [div] concat map
-divisor == popop 2 *
-minusb == pop neg
-radical == swap dup * rollup * 4 * - sqrt
-root1 == + swap /
-root2 == - swap /
-q0 == [[divisor] [minusb] [radical]] pam
-q1 == [[root1] [root2]] pam
-quadratic == [q0] ternary i [q1] ternary
 *fraction == [uncons] dip uncons [swap] dip concat [*] infra [*] dip cons
 *fraction0 == concat [[swap] dip * [*] dip] infra
 down_to_zero == [0 >] [dup --] while
@@ -93,23 +83,34 @@ range == [0 <=] [1 - dup] anamorphism
 while == swap [nullary] cons dup dipd concat loop
 dudipd == dup dipd
 primrec == [i] genrec
-z-down == [] swap uncons swap
-z-up == swons swap shunt
-z-right == [swons] cons dip uncons swap
-z-left == swons [uncons swap] dip swap
 '''
 
+##Zipper
+##z-down == [] swap uncons swap
+##z-up == swons swap shunt
+##z-right == [swons] cons dip uncons swap
+##z-left == swons [uncons swap] dip swap
+
+##Quadratic Formula
+##divisor == popop 2 *
+##minusb == pop neg
+##radical == swap dup * rollup * 4 * - sqrt
+##root1 == + swap /
+##root2 == - swap /
+##q0 == [[divisor] [minusb] [radical]] pam
+##q1 == [[root1] [root2]] pam
+##quadratic == [q0] ternary i [q1] ternary
+
 # Project Euler
-'''\
-PE1.1 == + dup [+] dip
-PE1.2 == dup [3 & PE1.1] dip 2 >>
-PE1.3 == 14811 swap [PE1.2] times pop
-PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop
-'''
+##'''\
+##PE1.1 == + dup [+] dip
+##PE1.2 == dup [3 & PE1.1] dip 2 >>
+##PE1.3 == 14811 swap [PE1.2] times pop
+##PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop
+##'''
 #PE1.2 == [PE1.1] step
 #PE1 == 0 0 66 [[3 2 1 3 1 2 3] PE1.2] times [3 2 1 3] PE1.2 pop
 )
-
 
 
 def add_aliases(D, A=ALIASES):
@@ -285,6 +286,10 @@ def min_(S):
 
 
 def sum_(S):
+  '''Given a quoted sequence of numbers return the sum.
+
+  sum == 0 swap [+] step
+  '''
   tos, stack = S
   return sum(iter_stack(tos)), stack
 
@@ -418,7 +423,10 @@ def dupd(S):
 
 
 def reverse(S):
-  '''Reverse the list on the top of the stack.'''
+  '''Reverse the list on the top of the stack.
+
+  reverse == [] swap shunt
+  '''
   (tos, stack) = S
   res = ()
   for term in iter_stack(tos):
