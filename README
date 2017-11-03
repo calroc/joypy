@@ -154,6 +154,10 @@ joypy
  |   |-- Joy-Programming.zip
  |   `-- README
  |
+ |-- docs - Various Examples and Demos
+ |   |-- * - Jupyter Notebooks on Joypy and supporting modules
+ |   `-- README - Table of Contents
+ |
  |-- joy
  |   |-- joy.py - main loop, REPL
  |   |-- library.py - Functions, Combinators, Definitions
