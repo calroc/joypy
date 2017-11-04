@@ -1,0 +1,143 @@
+
+### Preamble
+
+First, import what we need.
+
+
+```python
+from joy.joy import run
+from joy.library import initialize
+from joy.utils.stack import stack_to_string
+from joy.utils.pretty_print import TracePrinter
+```
+
+Define a dictionary, an initial stack, and two helper functions to run Joy code and print results for us.
+
+
+```python
+D = initialize()
+S = ()
+
+
+def J(text):
+    print stack_to_string(run(text, S, D)[0])
+
+
+def V(text):
+    tp = TracePrinter()
+    run(text, S, D, tp.viewer)
+    tp.print_()
+```
+
+### Run some simple programs
+
+
+```python
+J('23 18 +')
+```
+
+    41
+
+
+
+```python
+J('45 30 gcd')
+```
+
+    15
+
+
+### With Viewer
+
+A `viewer` records each step of the evaluation of a Joy program.  The `TracePrinter` has a facility for printing out a trace of the evaluation, one line per step.  Each step is aligned to the current interpreter position, signified by a period separating the stack on the left from the pending expression ("continuation") on the right.  I find these traces beautiful, like a kind of art.
+
+
+```python
+V('23 18 +')
+```
+
+          . 23 18 +
+       23 . 18 +
+    23 18 . +
+       41 . 
+
+
+
+```python
+V('45 30 gcd')
+```
+
+                                      . 45 30 gcd
+                                   45 . 30 gcd
+                                45 30 . gcd
+                                45 30 . 1 [tuck modulus dup 0 >] loop pop
+                              45 30 1 . [tuck modulus dup 0 >] loop pop
+       45 30 1 [tuck modulus dup 0 >] . loop pop
+         45 30 [tuck modulus dup 0 >] . i [tuck modulus dup 0 >] loop pop
+                                45 30 . tuck modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                             30 45 30 . modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                                30 15 . dup 0 > [tuck modulus dup 0 >] loop pop
+                             30 15 15 . 0 > [tuck modulus dup 0 >] loop pop
+                           30 15 15 0 . > [tuck modulus dup 0 >] loop pop
+                           30 15 True . [tuck modulus dup 0 >] loop pop
+    30 15 True [tuck modulus dup 0 >] . loop pop
+         30 15 [tuck modulus dup 0 >] . i [tuck modulus dup 0 >] loop pop
+                                30 15 . tuck modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                             15 30 15 . modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                                 15 0 . dup 0 > [tuck modulus dup 0 >] loop pop
+                               15 0 0 . 0 > [tuck modulus dup 0 >] loop pop
+                             15 0 0 0 . > [tuck modulus dup 0 >] loop pop
+                           15 0 False . [tuck modulus dup 0 >] loop pop
+    15 0 False [tuck modulus dup 0 >] . loop pop
+                                 15 0 . pop
+                                   15 . 
+
+
+Here's a longer trace.
+
+
+```python
+V('96 27 gcd')
+```
+
+                                      . 96 27 gcd
+                                   96 . 27 gcd
+                                96 27 . gcd
+                                96 27 . 1 [tuck modulus dup 0 >] loop pop
+                              96 27 1 . [tuck modulus dup 0 >] loop pop
+       96 27 1 [tuck modulus dup 0 >] . loop pop
+         96 27 [tuck modulus dup 0 >] . i [tuck modulus dup 0 >] loop pop
+                                96 27 . tuck modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                             27 96 27 . modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                                27 15 . dup 0 > [tuck modulus dup 0 >] loop pop
+                             27 15 15 . 0 > [tuck modulus dup 0 >] loop pop
+                           27 15 15 0 . > [tuck modulus dup 0 >] loop pop
+                           27 15 True . [tuck modulus dup 0 >] loop pop
+    27 15 True [tuck modulus dup 0 >] . loop pop
+         27 15 [tuck modulus dup 0 >] . i [tuck modulus dup 0 >] loop pop
+                                27 15 . tuck modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                             15 27 15 . modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                                15 12 . dup 0 > [tuck modulus dup 0 >] loop pop
+                             15 12 12 . 0 > [tuck modulus dup 0 >] loop pop
+                           15 12 12 0 . > [tuck modulus dup 0 >] loop pop
+                           15 12 True . [tuck modulus dup 0 >] loop pop
+    15 12 True [tuck modulus dup 0 >] . loop pop
+         15 12 [tuck modulus dup 0 >] . i [tuck modulus dup 0 >] loop pop
+                                15 12 . tuck modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                             12 15 12 . modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                                 12 3 . dup 0 > [tuck modulus dup 0 >] loop pop
+                               12 3 3 . 0 > [tuck modulus dup 0 >] loop pop
+                             12 3 3 0 . > [tuck modulus dup 0 >] loop pop
+                            12 3 True . [tuck modulus dup 0 >] loop pop
+     12 3 True [tuck modulus dup 0 >] . loop pop
+          12 3 [tuck modulus dup 0 >] . i [tuck modulus dup 0 >] loop pop
+                                 12 3 . tuck modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                               3 12 3 . modulus dup 0 > [tuck modulus dup 0 >] loop pop
+                                  3 0 . dup 0 > [tuck modulus dup 0 >] loop pop
+                                3 0 0 . 0 > [tuck modulus dup 0 >] loop pop
+                              3 0 0 0 . > [tuck modulus dup 0 >] loop pop
+                            3 0 False . [tuck modulus dup 0 >] loop pop
+     3 0 False [tuck modulus dup 0 >] . loop pop
+                                  3 0 . pop
+                                    3 . 
+

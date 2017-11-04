@@ -1,0 +1,158 @@
+
+### Preamble
+
+
+```python
+from notebook_preamble import D, J, V
+```
+
+### A long trace
+
+
+```python
+V('[23 18] average')
+```
+
+                                      . [23 18] average
+                              [23 18] . average
+                              [23 18] . [sum 1.0 *] [size] cleave /
+                  [23 18] [sum 1.0 *] . [size] cleave /
+           [23 18] [sum 1.0 *] [size] . cleave /
+           [23 18] [sum 1.0 *] [size] . [i] app2 [popd] dip /
+       [23 18] [sum 1.0 *] [size] [i] . app2 [popd] dip /
+    [23 18] [[sum 1.0 *] [23 18]] [i] . infra first [[size] [23 18]] [i] infra first [popd] dip /
+                  [23 18] [sum 1.0 *] . i [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                              [23 18] . sum 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                              [23 18] . 0 swap [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                            [23 18] 0 . swap [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                            0 [23 18] . [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                        0 [23 18] [+] . step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                             0 23 [+] . i [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                                 0 23 . + [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                                   23 . [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                              23 [18] . [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                          23 [18] [+] . step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                            23 18 [+] . i 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                                23 18 . + 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                                   41 . 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                               41 1.0 . * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                                 41.0 . [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                       41.0 [[23 18]] . swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                       [23 18] [41.0] . first [[size] [23 18]] [i] infra first [popd] dip /
+                         [23 18] 41.0 . [[size] [23 18]] [i] infra first [popd] dip /
+        [23 18] 41.0 [[size] [23 18]] . [i] infra first [popd] dip /
+    [23 18] 41.0 [[size] [23 18]] [i] . infra first [popd] dip /
+                       [23 18] [size] . i [41.0 [23 18]] swaack first [popd] dip /
+                              [23 18] . size [41.0 [23 18]] swaack first [popd] dip /
+                              [23 18] . 0 swap [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                            [23 18] 0 . swap [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                            0 [23 18] . [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                   0 [23 18] [pop ++] . step [41.0 [23 18]] swaack first [popd] dip /
+                        0 23 [pop ++] . i [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                                 0 23 . pop ++ [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                                    0 . ++ [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                                    1 . [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                               1 [18] . [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                      1 [18] [pop ++] . step [41.0 [23 18]] swaack first [popd] dip /
+                        1 18 [pop ++] . i [41.0 [23 18]] swaack first [popd] dip /
+                                 1 18 . pop ++ [41.0 [23 18]] swaack first [popd] dip /
+                                    1 . ++ [41.0 [23 18]] swaack first [popd] dip /
+                                    2 . [41.0 [23 18]] swaack first [popd] dip /
+                     2 [41.0 [23 18]] . swaack first [popd] dip /
+                     [23 18] 41.0 [2] . first [popd] dip /
+                       [23 18] 41.0 2 . [popd] dip /
+                [23 18] 41.0 2 [popd] . dip /
+                         [23 18] 41.0 . popd 2 /
+                                 41.0 . 2 /
+                               41.0 2 . /
+                                 20.5 . 
+
+
+### Replacing `sum` and `size` with "compiled" versions.
+
+Both `sum` and `size` are [catamorphisms](https://en.wikipedia.org/wiki/Catamorphism), they each convert a sequence to a single value.
+
+
+```python
+J('[sum] help')
+```
+
+    0 swap [+] step
+    
+
+
+
+```python
+J('[size] help')
+```
+
+    0 swap [pop ++] step
+    
+
+
+We can use "compiled" versions (they're not really compiled in this case, they're hand-written in Python) to speed up evaluation and make the trace more readable.  The `sum` function is already in the library.  It gets shadowed by the definition version above during `initialize()`.
+
+
+```python
+from joy.library import SimpleFunctionWrapper, primitives
+from joy.utils.stack import iter_stack
+
+
+@SimpleFunctionWrapper
+def size(stack):
+    '''Return the size of the sequence on the stack.'''
+    sequence, stack = stack
+    n = 0
+    for _ in iter_stack(sequence):
+        n += 1
+    return n, stack
+
+
+sum_ = next(p for p in primitives if p.name == 'sum')
+```
+
+Now we replace them old versions in the dictionary with the new versions and re-evaluate the expression.
+
+
+```python
+old_sum, D['sum'] = D['sum'], sum_
+old_size, D['size'] = D['size'], size
+```
+
+You can see that `size` and `sum` now execute in a single step.
+
+
+```python
+V('[23 18] average')
+```
+
+                                      . [23 18] average
+                              [23 18] . average
+                              [23 18] . [sum 1.0 *] [size] cleave /
+                  [23 18] [sum 1.0 *] . [size] cleave /
+           [23 18] [sum 1.0 *] [size] . cleave /
+           [23 18] [sum 1.0 *] [size] . [i] app2 [popd] dip /
+       [23 18] [sum 1.0 *] [size] [i] . app2 [popd] dip /
+    [23 18] [[sum 1.0 *] [23 18]] [i] . infra first [[size] [23 18]] [i] infra first [popd] dip /
+                  [23 18] [sum 1.0 *] . i [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                              [23 18] . sum 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                                   41 . 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                               41 1.0 . * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                                 41.0 . [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                       41.0 [[23 18]] . swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                       [23 18] [41.0] . first [[size] [23 18]] [i] infra first [popd] dip /
+                         [23 18] 41.0 . [[size] [23 18]] [i] infra first [popd] dip /
+        [23 18] 41.0 [[size] [23 18]] . [i] infra first [popd] dip /
+    [23 18] 41.0 [[size] [23 18]] [i] . infra first [popd] dip /
+                       [23 18] [size] . i [41.0 [23 18]] swaack first [popd] dip /
+                              [23 18] . size [41.0 [23 18]] swaack first [popd] dip /
+                                    2 . [41.0 [23 18]] swaack first [popd] dip /
+                     2 [41.0 [23 18]] . swaack first [popd] dip /
+                     [23 18] 41.0 [2] . first [popd] dip /
+                       [23 18] 41.0 2 . [popd] dip /
+                [23 18] 41.0 2 [popd] . dip /
+                         [23 18] 41.0 . popd 2 /
+                                 41.0 . 2 /
+                               41.0 2 . /
+                                 20.5 . 
+

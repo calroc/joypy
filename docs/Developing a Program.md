@@ -1,0 +1,683 @@
+
+# [Project Euler, first problem: "Multiples of 3 and 5"](https://projecteuler.net/problem=1)
+
+    If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. The sum of these multiples is 23.
+
+    Find the sum of all the multiples of 3 or 5 below 1000.
+
+
+```python
+from notebook_preamble import J, V, define
+```
+
+Let's create a predicate that returns `True` if a number is a multiple of 3 or 5 and `False` otherwise.
+
+
+```python
+define('P == [3 % not] dupdip 5 % not or')
+```
+
+
+```python
+V('80 P')
+```
+
+                 . 80 P
+              80 . P
+              80 . [3 % not] dupdip 5 % not or
+    80 [3 % not] . dupdip 5 % not or
+              80 . 3 % not 80 5 % not or
+            80 3 . % not 80 5 % not or
+               2 . not 80 5 % not or
+           False . 80 5 % not or
+        False 80 . 5 % not or
+      False 80 5 . % not or
+         False 0 . not or
+      False True . or
+            True . 
+
+
+Given the predicate function `P` a suitable program is:
+
+    PE1 == 1000 range [P] filter sum
+
+This function generates a list of the integers from 0 to 999, filters
+that list by `P`, and then sums the result.
+
+Logically this is fine, but pragmatically we are doing more work than we
+should be; we generate one thousand integers but actually use less than
+half of them.  A better solution would be to generate just the multiples
+we want to sum, and to add them as we go rather than storing them and
+adding summing them at the end.
+
+At first I had the idea to use two counters and increase them by three
+and five, respectively.  This way we only generate the terms that we
+actually want to sum.  We have to proceed by incrementing the counter
+that is lower, or if they are equal, the three counter, and we have to
+take care not to double add numbers like 15 that are multiples of both
+three and five.
+
+This seemed a little clunky, so I tried a different approach.
+
+Consider the first few terms in the series:
+
+    3 5 6 9 10 12 15 18 20 21 ...
+
+Subtract each number from the one after it (subtracting 0 from 3):
+
+    3 5 6 9 10 12 15 18 20 21 24 25 27 30 ...
+    0 3 5 6  9 10 12 15 18 20 21 24 25 27 ...
+    -------------------------------------------
+    3 2 1 3  1  2  3  3  2  1  3  1  2  3 ...
+
+You get this lovely repeating palindromic sequence:
+
+    3 2 1 3 1 2 3
+
+To make a counter that increments by factors of 3 and 5 you just add
+these differences to the counter one-by-one in a loop.
+
+
+To make use of this sequence to increment a counter and sum terms as we
+go we need a function that will accept the sum, the counter, and the next
+term to add, and that adds the term to the counter and a copy of the
+counter to the running sum.  This function will do that:
+
+    PE1.1 == + [+] dupdip
+
+
+```python
+define('PE1.1 == + [+] dupdip')
+```
+
+
+```python
+V('0 0 3 PE1.1')
+```
+
+            . 0 0 3 PE1.1
+          0 . 0 3 PE1.1
+        0 0 . 3 PE1.1
+      0 0 3 . PE1.1
+      0 0 3 . + [+] dupdip
+        0 3 . [+] dupdip
+    0 3 [+] . dupdip
+        0 3 . + 3
+          3 . 3
+        3 3 . 
+
+
+
+```python
+V('0 0 [3 2 1 3 1 2 3] [PE1.1] step')
+```
+
+                                . 0 0 [3 2 1 3 1 2 3] [PE1.1] step
+                              0 . 0 [3 2 1 3 1 2 3] [PE1.1] step
+                            0 0 . [3 2 1 3 1 2 3] [PE1.1] step
+            0 0 [3 2 1 3 1 2 3] . [PE1.1] step
+    0 0 [3 2 1 3 1 2 3] [PE1.1] . step
+                  0 0 3 [PE1.1] . i [2 1 3 1 2 3] [PE1.1] step
+                          0 0 3 . PE1.1 [2 1 3 1 2 3] [PE1.1] step
+                          0 0 3 . + [+] dupdip [2 1 3 1 2 3] [PE1.1] step
+                            0 3 . [+] dupdip [2 1 3 1 2 3] [PE1.1] step
+                        0 3 [+] . dupdip [2 1 3 1 2 3] [PE1.1] step
+                            0 3 . + 3 [2 1 3 1 2 3] [PE1.1] step
+                              3 . 3 [2 1 3 1 2 3] [PE1.1] step
+                            3 3 . [2 1 3 1 2 3] [PE1.1] step
+              3 3 [2 1 3 1 2 3] . [PE1.1] step
+      3 3 [2 1 3 1 2 3] [PE1.1] . step
+                  3 3 2 [PE1.1] . i [1 3 1 2 3] [PE1.1] step
+                          3 3 2 . PE1.1 [1 3 1 2 3] [PE1.1] step
+                          3 3 2 . + [+] dupdip [1 3 1 2 3] [PE1.1] step
+                            3 5 . [+] dupdip [1 3 1 2 3] [PE1.1] step
+                        3 5 [+] . dupdip [1 3 1 2 3] [PE1.1] step
+                            3 5 . + 5 [1 3 1 2 3] [PE1.1] step
+                              8 . 5 [1 3 1 2 3] [PE1.1] step
+                            8 5 . [1 3 1 2 3] [PE1.1] step
+                8 5 [1 3 1 2 3] . [PE1.1] step
+        8 5 [1 3 1 2 3] [PE1.1] . step
+                  8 5 1 [PE1.1] . i [3 1 2 3] [PE1.1] step
+                          8 5 1 . PE1.1 [3 1 2 3] [PE1.1] step
+                          8 5 1 . + [+] dupdip [3 1 2 3] [PE1.1] step
+                            8 6 . [+] dupdip [3 1 2 3] [PE1.1] step
+                        8 6 [+] . dupdip [3 1 2 3] [PE1.1] step
+                            8 6 . + 6 [3 1 2 3] [PE1.1] step
+                             14 . 6 [3 1 2 3] [PE1.1] step
+                           14 6 . [3 1 2 3] [PE1.1] step
+                 14 6 [3 1 2 3] . [PE1.1] step
+         14 6 [3 1 2 3] [PE1.1] . step
+                 14 6 3 [PE1.1] . i [1 2 3] [PE1.1] step
+                         14 6 3 . PE1.1 [1 2 3] [PE1.1] step
+                         14 6 3 . + [+] dupdip [1 2 3] [PE1.1] step
+                           14 9 . [+] dupdip [1 2 3] [PE1.1] step
+                       14 9 [+] . dupdip [1 2 3] [PE1.1] step
+                           14 9 . + 9 [1 2 3] [PE1.1] step
+                             23 . 9 [1 2 3] [PE1.1] step
+                           23 9 . [1 2 3] [PE1.1] step
+                   23 9 [1 2 3] . [PE1.1] step
+           23 9 [1 2 3] [PE1.1] . step
+                 23 9 1 [PE1.1] . i [2 3] [PE1.1] step
+                         23 9 1 . PE1.1 [2 3] [PE1.1] step
+                         23 9 1 . + [+] dupdip [2 3] [PE1.1] step
+                          23 10 . [+] dupdip [2 3] [PE1.1] step
+                      23 10 [+] . dupdip [2 3] [PE1.1] step
+                          23 10 . + 10 [2 3] [PE1.1] step
+                             33 . 10 [2 3] [PE1.1] step
+                          33 10 . [2 3] [PE1.1] step
+                    33 10 [2 3] . [PE1.1] step
+            33 10 [2 3] [PE1.1] . step
+                33 10 2 [PE1.1] . i [3] [PE1.1] step
+                        33 10 2 . PE1.1 [3] [PE1.1] step
+                        33 10 2 . + [+] dupdip [3] [PE1.1] step
+                          33 12 . [+] dupdip [3] [PE1.1] step
+                      33 12 [+] . dupdip [3] [PE1.1] step
+                          33 12 . + 12 [3] [PE1.1] step
+                             45 . 12 [3] [PE1.1] step
+                          45 12 . [3] [PE1.1] step
+                      45 12 [3] . [PE1.1] step
+              45 12 [3] [PE1.1] . step
+                45 12 3 [PE1.1] . i
+                        45 12 3 . PE1.1
+                        45 12 3 . + [+] dupdip
+                          45 15 . [+] dupdip
+                      45 15 [+] . dupdip
+                          45 15 . + 15
+                             60 . 15
+                          60 15 . 
+
+
+So one `step` through all seven terms brings the counter to 15 and the total to 60.
+
+
+```python
+1000 / 15
+```
+
+
+
+
+    66
+
+
+
+
+```python
+66 * 15
+```
+
+
+
+
+    990
+
+
+
+
+```python
+1000 - 990
+```
+
+
+
+
+    10
+
+
+
+We only want the terms *less than* 1000.
+
+
+```python
+999 - 990
+```
+
+
+
+
+    9
+
+
+
+That means we want to run the full list of numbers sixty-six times to get to 990 and then the first four numbers 3 2 1 3 to get to 999.
+
+
+```python
+define('PE1 == 0 0 66 [[3 2 1 3 1 2 3] [PE1.1] step] times [3 2 1 3] [PE1.1] step pop')
+```
+
+
+```python
+J('PE1')
+```
+
+    233168
+
+
+This form uses no extra storage and produces no unused summands.  It's
+good but there's one more trick we can apply.  The list of seven terms
+takes up at least seven bytes.  But notice that all of the terms are less
+than four, and so each can fit in just two bits.  We could store all
+seven terms in just fourteen bits and use masking and shifts to pick out
+each term as we go.  This will use less space and save time loading whole
+integer terms from the list.
+
+        3  2  1  3  1  2  3
+    0b 11 10 01 11 01 10 11 == 14811
+
+
+```python
+0b11100111011011
+```
+
+
+
+
+    14811
+
+
+
+
+```python
+define('PE1.2 == [3 & PE1.1] dupdip 2 >>')
+```
+
+
+```python
+V('0 0 14811 PE1.2')
+```
+
+                          . 0 0 14811 PE1.2
+                        0 . 0 14811 PE1.2
+                      0 0 . 14811 PE1.2
+                0 0 14811 . PE1.2
+                0 0 14811 . [3 & PE1.1] dupdip 2 >>
+    0 0 14811 [3 & PE1.1] . dupdip 2 >>
+                0 0 14811 . 3 & PE1.1 14811 2 >>
+              0 0 14811 3 . & PE1.1 14811 2 >>
+                    0 0 3 . PE1.1 14811 2 >>
+                    0 0 3 . + [+] dupdip 14811 2 >>
+                      0 3 . [+] dupdip 14811 2 >>
+                  0 3 [+] . dupdip 14811 2 >>
+                      0 3 . + 3 14811 2 >>
+                        3 . 3 14811 2 >>
+                      3 3 . 14811 2 >>
+                3 3 14811 . 2 >>
+              3 3 14811 2 . >>
+                 3 3 3702 . 
+
+
+
+```python
+V('3 3 3702 PE1.2')
+```
+
+                         . 3 3 3702 PE1.2
+                       3 . 3 3702 PE1.2
+                     3 3 . 3702 PE1.2
+                3 3 3702 . PE1.2
+                3 3 3702 . [3 & PE1.1] dupdip 2 >>
+    3 3 3702 [3 & PE1.1] . dupdip 2 >>
+                3 3 3702 . 3 & PE1.1 3702 2 >>
+              3 3 3702 3 . & PE1.1 3702 2 >>
+                   3 3 2 . PE1.1 3702 2 >>
+                   3 3 2 . + [+] dupdip 3702 2 >>
+                     3 5 . [+] dupdip 3702 2 >>
+                 3 5 [+] . dupdip 3702 2 >>
+                     3 5 . + 5 3702 2 >>
+                       8 . 5 3702 2 >>
+                     8 5 . 3702 2 >>
+                8 5 3702 . 2 >>
+              8 5 3702 2 . >>
+                 8 5 925 . 
+
+
+
+```python
+V('0 0 14811 7 [PE1.2] times pop')
+```
+
+                          . 0 0 14811 7 [PE1.2] times pop
+                        0 . 0 14811 7 [PE1.2] times pop
+                      0 0 . 14811 7 [PE1.2] times pop
+                0 0 14811 . 7 [PE1.2] times pop
+              0 0 14811 7 . [PE1.2] times pop
+      0 0 14811 7 [PE1.2] . times pop
+        0 0 14811 [PE1.2] . i 6 [PE1.2] times pop
+                0 0 14811 . PE1.2 6 [PE1.2] times pop
+                0 0 14811 . [3 & PE1.1] dupdip 2 >> 6 [PE1.2] times pop
+    0 0 14811 [3 & PE1.1] . dupdip 2 >> 6 [PE1.2] times pop
+                0 0 14811 . 3 & PE1.1 14811 2 >> 6 [PE1.2] times pop
+              0 0 14811 3 . & PE1.1 14811 2 >> 6 [PE1.2] times pop
+                    0 0 3 . PE1.1 14811 2 >> 6 [PE1.2] times pop
+                    0 0 3 . + [+] dupdip 14811 2 >> 6 [PE1.2] times pop
+                      0 3 . [+] dupdip 14811 2 >> 6 [PE1.2] times pop
+                  0 3 [+] . dupdip 14811 2 >> 6 [PE1.2] times pop
+                      0 3 . + 3 14811 2 >> 6 [PE1.2] times pop
+                        3 . 3 14811 2 >> 6 [PE1.2] times pop
+                      3 3 . 14811 2 >> 6 [PE1.2] times pop
+                3 3 14811 . 2 >> 6 [PE1.2] times pop
+              3 3 14811 2 . >> 6 [PE1.2] times pop
+                 3 3 3702 . 6 [PE1.2] times pop
+               3 3 3702 6 . [PE1.2] times pop
+       3 3 3702 6 [PE1.2] . times pop
+         3 3 3702 [PE1.2] . i 5 [PE1.2] times pop
+                 3 3 3702 . PE1.2 5 [PE1.2] times pop
+                 3 3 3702 . [3 & PE1.1] dupdip 2 >> 5 [PE1.2] times pop
+     3 3 3702 [3 & PE1.1] . dupdip 2 >> 5 [PE1.2] times pop
+                 3 3 3702 . 3 & PE1.1 3702 2 >> 5 [PE1.2] times pop
+               3 3 3702 3 . & PE1.1 3702 2 >> 5 [PE1.2] times pop
+                    3 3 2 . PE1.1 3702 2 >> 5 [PE1.2] times pop
+                    3 3 2 . + [+] dupdip 3702 2 >> 5 [PE1.2] times pop
+                      3 5 . [+] dupdip 3702 2 >> 5 [PE1.2] times pop
+                  3 5 [+] . dupdip 3702 2 >> 5 [PE1.2] times pop
+                      3 5 . + 5 3702 2 >> 5 [PE1.2] times pop
+                        8 . 5 3702 2 >> 5 [PE1.2] times pop
+                      8 5 . 3702 2 >> 5 [PE1.2] times pop
+                 8 5 3702 . 2 >> 5 [PE1.2] times pop
+               8 5 3702 2 . >> 5 [PE1.2] times pop
+                  8 5 925 . 5 [PE1.2] times pop
+                8 5 925 5 . [PE1.2] times pop
+        8 5 925 5 [PE1.2] . times pop
+          8 5 925 [PE1.2] . i 4 [PE1.2] times pop
+                  8 5 925 . PE1.2 4 [PE1.2] times pop
+                  8 5 925 . [3 & PE1.1] dupdip 2 >> 4 [PE1.2] times pop
+      8 5 925 [3 & PE1.1] . dupdip 2 >> 4 [PE1.2] times pop
+                  8 5 925 . 3 & PE1.1 925 2 >> 4 [PE1.2] times pop
+                8 5 925 3 . & PE1.1 925 2 >> 4 [PE1.2] times pop
+                    8 5 1 . PE1.1 925 2 >> 4 [PE1.2] times pop
+                    8 5 1 . + [+] dupdip 925 2 >> 4 [PE1.2] times pop
+                      8 6 . [+] dupdip 925 2 >> 4 [PE1.2] times pop
+                  8 6 [+] . dupdip 925 2 >> 4 [PE1.2] times pop
+                      8 6 . + 6 925 2 >> 4 [PE1.2] times pop
+                       14 . 6 925 2 >> 4 [PE1.2] times pop
+                     14 6 . 925 2 >> 4 [PE1.2] times pop
+                 14 6 925 . 2 >> 4 [PE1.2] times pop
+               14 6 925 2 . >> 4 [PE1.2] times pop
+                 14 6 231 . 4 [PE1.2] times pop
+               14 6 231 4 . [PE1.2] times pop
+       14 6 231 4 [PE1.2] . times pop
+         14 6 231 [PE1.2] . i 3 [PE1.2] times pop
+                 14 6 231 . PE1.2 3 [PE1.2] times pop
+                 14 6 231 . [3 & PE1.1] dupdip 2 >> 3 [PE1.2] times pop
+     14 6 231 [3 & PE1.1] . dupdip 2 >> 3 [PE1.2] times pop
+                 14 6 231 . 3 & PE1.1 231 2 >> 3 [PE1.2] times pop
+               14 6 231 3 . & PE1.1 231 2 >> 3 [PE1.2] times pop
+                   14 6 3 . PE1.1 231 2 >> 3 [PE1.2] times pop
+                   14 6 3 . + [+] dupdip 231 2 >> 3 [PE1.2] times pop
+                     14 9 . [+] dupdip 231 2 >> 3 [PE1.2] times pop
+                 14 9 [+] . dupdip 231 2 >> 3 [PE1.2] times pop
+                     14 9 . + 9 231 2 >> 3 [PE1.2] times pop
+                       23 . 9 231 2 >> 3 [PE1.2] times pop
+                     23 9 . 231 2 >> 3 [PE1.2] times pop
+                 23 9 231 . 2 >> 3 [PE1.2] times pop
+               23 9 231 2 . >> 3 [PE1.2] times pop
+                  23 9 57 . 3 [PE1.2] times pop
+                23 9 57 3 . [PE1.2] times pop
+        23 9 57 3 [PE1.2] . times pop
+          23 9 57 [PE1.2] . i 2 [PE1.2] times pop
+                  23 9 57 . PE1.2 2 [PE1.2] times pop
+                  23 9 57 . [3 & PE1.1] dupdip 2 >> 2 [PE1.2] times pop
+      23 9 57 [3 & PE1.1] . dupdip 2 >> 2 [PE1.2] times pop
+                  23 9 57 . 3 & PE1.1 57 2 >> 2 [PE1.2] times pop
+                23 9 57 3 . & PE1.1 57 2 >> 2 [PE1.2] times pop
+                   23 9 1 . PE1.1 57 2 >> 2 [PE1.2] times pop
+                   23 9 1 . + [+] dupdip 57 2 >> 2 [PE1.2] times pop
+                    23 10 . [+] dupdip 57 2 >> 2 [PE1.2] times pop
+                23 10 [+] . dupdip 57 2 >> 2 [PE1.2] times pop
+                    23 10 . + 10 57 2 >> 2 [PE1.2] times pop
+                       33 . 10 57 2 >> 2 [PE1.2] times pop
+                    33 10 . 57 2 >> 2 [PE1.2] times pop
+                 33 10 57 . 2 >> 2 [PE1.2] times pop
+               33 10 57 2 . >> 2 [PE1.2] times pop
+                 33 10 14 . 2 [PE1.2] times pop
+               33 10 14 2 . [PE1.2] times pop
+       33 10 14 2 [PE1.2] . times pop
+         33 10 14 [PE1.2] . i 1 [PE1.2] times pop
+                 33 10 14 . PE1.2 1 [PE1.2] times pop
+                 33 10 14 . [3 & PE1.1] dupdip 2 >> 1 [PE1.2] times pop
+     33 10 14 [3 & PE1.1] . dupdip 2 >> 1 [PE1.2] times pop
+                 33 10 14 . 3 & PE1.1 14 2 >> 1 [PE1.2] times pop
+               33 10 14 3 . & PE1.1 14 2 >> 1 [PE1.2] times pop
+                  33 10 2 . PE1.1 14 2 >> 1 [PE1.2] times pop
+                  33 10 2 . + [+] dupdip 14 2 >> 1 [PE1.2] times pop
+                    33 12 . [+] dupdip 14 2 >> 1 [PE1.2] times pop
+                33 12 [+] . dupdip 14 2 >> 1 [PE1.2] times pop
+                    33 12 . + 12 14 2 >> 1 [PE1.2] times pop
+                       45 . 12 14 2 >> 1 [PE1.2] times pop
+                    45 12 . 14 2 >> 1 [PE1.2] times pop
+                 45 12 14 . 2 >> 1 [PE1.2] times pop
+               45 12 14 2 . >> 1 [PE1.2] times pop
+                  45 12 3 . 1 [PE1.2] times pop
+                45 12 3 1 . [PE1.2] times pop
+        45 12 3 1 [PE1.2] . times pop
+          45 12 3 [PE1.2] . i pop
+                  45 12 3 . PE1.2 pop
+                  45 12 3 . [3 & PE1.1] dupdip 2 >> pop
+      45 12 3 [3 & PE1.1] . dupdip 2 >> pop
+                  45 12 3 . 3 & PE1.1 3 2 >> pop
+                45 12 3 3 . & PE1.1 3 2 >> pop
+                  45 12 3 . PE1.1 3 2 >> pop
+                  45 12 3 . + [+] dupdip 3 2 >> pop
+                    45 15 . [+] dupdip 3 2 >> pop
+                45 15 [+] . dupdip 3 2 >> pop
+                    45 15 . + 15 3 2 >> pop
+                       60 . 15 3 2 >> pop
+                    60 15 . 3 2 >> pop
+                  60 15 3 . 2 >> pop
+                60 15 3 2 . >> pop
+                  60 15 0 . pop
+                    60 15 . 
+
+
+And so we have at last:
+
+
+```python
+define('PE1 == 0 0 66 [14811 7 [PE1.2] times pop] times 14811 4 [PE1.2] times popop')
+```
+
+
+```python
+J('PE1')
+```
+
+    233168
+
+
+Let's refactor.
+
+      14811 7 [PE1.2] times pop
+      14811 4 [PE1.2] times pop
+      14811 n [PE1.2] times pop
+    n 14811 swap [PE1.2] times pop
+
+
+```python
+define('PE1.3 == 14811 swap [PE1.2] times pop')
+```
+
+Now we can simplify the definition above:
+
+
+```python
+define('PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop')
+```
+
+
+```python
+J('PE1')
+```
+
+    233168
+
+
+Here's our joy program all in one place.  It doesn't make so much sense, but if you have read through the above description of how it was derived I hope it's clear.
+
+    PE1.1 == + [+] dupdip
+    PE1.2 == [3 & PE1.1] dupdip 2 >>
+    PE1.3 == 14811 swap [PE1.2] times pop
+    PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop
+
+# Generator Version
+It's a little clunky iterating sixty-six times though the seven numbers then four more.  In the _Generator Programs_ notebook we derive a generator that can be repeatedly driven by the `x` combinator to produce a stream of the seven numbers repeating over and over again.
+
+
+```python
+define('PE1.terms == [0 swap [dup [pop 14811] [] branch [3 &] dupdip 2 >>] dip rest cons]')
+```
+
+
+```python
+J('PE1.terms 21 [x] times')
+```
+
+    [0 swap [dup [pop 14811] [] branch [3 &] dupdip 2 >>] dip rest cons] 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3
+
+
+We know from above that we need sixty-six times seven then four more terms to reach up to but not over one thousand.
+
+
+```python
+J('7 66 * 4 +')
+```
+
+    466
+
+
+### Here they are...
+
+
+```python
+J('PE1.terms 466 [x] times pop')
+```
+
+    3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3
+
+
+### ...and they do sum to 999.
+
+
+```python
+J('[PE1.terms 466 [x] times pop] run sum')
+```
+
+    999
+
+
+Now we can use `PE1.1` to accumulate the terms as we go, and then `pop` the generator and the counter from the stack when we're done, leaving just the sum.
+
+
+```python
+J('0 0 PE1.terms 466 [x [PE1.1] dip] times popop')
+```
+
+    233168
+
+
+# A little further analysis renders iteration unnecessary.
+Consider finding the sum of the positive integers less than or equal to ten.
+
+
+```python
+J('[10 9 8 7 6 5 4 3 2 1] sum')
+```
+
+    55
+
+
+Instead of summing them, [observe](https://en.wikipedia.org/wiki/File:Animated_proof_for_the_formula_giving_the_sum_of_the_first_integers_1%2B2%2B...%2Bn.gif):
+
+      10  9  8  7  6
+    +  1  2  3  4  5
+    ---- -- -- -- --
+      11 11 11 11 11
+      
+      11 * 5 = 55
+
+From the above example we can deduce that the sum of the first N positive integers is:
+
+    (N + 1) * N / 2 
+
+(The formula also works for odd values of N, I'll leave that to you if you want to work it out or you can take my word for it.)
+
+
+```python
+define('F == dup ++ * 2 floordiv')
+```
+
+
+```python
+V('10 F')
+```
+
+          . 10 F
+       10 . F
+       10 . dup ++ * 2 floordiv
+    10 10 . ++ * 2 floordiv
+    10 11 . * 2 floordiv
+      110 . 2 floordiv
+    110 2 . floordiv
+       55 . 
+
+
+## Generalizing to Blocks of Terms
+We can apply the same reasoning to the PE1 problem.
+
+Between 0 and 990 inclusive there are sixty-six "blocks" of seven terms each, starting with:
+
+    [3 5 6 9 10 12 15]
+    
+And ending with:
+
+    [978 980 981 984 985 987 990]
+    
+If we reverse one of these two blocks and sum pairs...
+
+
+```python
+J('[3 5 6 9 10 12 15] reverse [978 980 981 984 985 987 990] zip')
+```
+
+    [[978 15] [980 12] [981 10] [984 9] [985 6] [987 5] [990 3]]
+
+
+
+```python
+J('[3 5 6 9 10 12 15] reverse [978 980 981 984 985 987 990] zip [sum] map')
+```
+
+    [993 992 991 993 991 992 993]
+
+
+(Interesting that the sequence of seven numbers appears again in the rightmost digit of each term.)
+
+
+```python
+J('[ 3 5 6 9 10 12 15] reverse [978 980 981 984 985 987 990] zip [sum] map sum')
+```
+
+    6945
+
+
+Since there are sixty-six blocks and we are pairing them up, there must be thirty-three pairs, each of which sums to 6945.  We also have these additional unpaired terms between 990 and 1000:
+
+    993 995 996 999
+    
+So we can give the "sum of all the multiples of 3 or 5 below 1000" like so:
+
+
+```python
+J('6945 33 * [993 995 996 999] cons sum')
+```
+
+    233168
+
+
+# The Simplest Program
+
+Of course, the simplest joy program for the first Project Euler problem is just:
+
+    PE1 == 233168
+
+Fin.
