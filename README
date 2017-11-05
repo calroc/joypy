@@ -43,6 +43,19 @@ package implements an interpreter for a dialect of Joy that attempts to
 stay very close to the spirit of Joy but does not precisely match the
 behaviour of the original version(s) written in C.
 
+The main difference between Joypy and the originals, other than being
+written in Python, is that it works by the "Continuation-Passing Style".
+In Joy, control-flow is done by combinators that expect quoted programs
+on the stack and execute them in various ways.  In Joypy they work by
+changing the pending expression that the interpreter is about to execute.
+In concrete terms, the combinators could work by making recursive calls
+to the interpreter and all intermediate state would be held in the call
+stack of the implementation language, in this Joypy implementation they
+work instead by changing the pending expression, and intermediate state
+is put there.
+
+
+
 
 § Basics of Joy
 
