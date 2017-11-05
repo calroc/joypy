@@ -267,6 +267,14 @@ If we plug `14811` and `[PE1.1]` into our generator form...
 
 
 ```python
+J('14811 [PE1.1] G')
+```
+
+    [14811 swap [PE1.1] direco]
+
+
+
+```python
 J('[14811 swap [PE1.1] direco] x')
 ```
 
@@ -353,6 +361,177 @@ J('0 0 0 [PE1.1.check PE1.1] G 466 [x [PE1.2] dip] times popop')
 ```
 
     233168
+
+
+# A generator for the Fibonacci Sequence.
+Consider:
+
+    [b a F] x
+    [b a F] b a F
+
+The obvious first thing to do is just add `b` and `a`:
+
+    [b a F] b a +
+    [b a F] b+a
+
+From here we want to arrive at:
+
+    b [b+a b F]
+
+Let's start with `swons`:
+
+    [b a F] b+a swons
+    [b+a b a F]
+
+Considering this quote as a stack:
+
+    F a b b+a
+
+We want to get it to:
+
+    F b b+a b
+
+So:
+
+    F a b b+a popdd over
+    F b b+a b
+
+And therefore:
+
+    [b+a b a F] [popdd over] infra
+    [b b+a b F]
+
+And lastly:
+
+    [b b+a b F] uncons
+    b [b+a b F]
+
+Done.
+
+Putting it all together:
+
+    F == + swons [popdd over] infra uncons
+
+And:
+
+    fib_gen == [1 1 F]
+
+
+```python
+define('fib == + swons [popdd over] infra uncons')
+```
+
+
+```python
+define('fib_gen == [1 1 fib]')
+```
+
+
+```python
+J('fib_gen 10 [x] times')
+```
+
+    [144 89 fib] 89 55 34 21 13 8 5 3 2 1
+
+
+### Project Euler Problem Two
+    By considering the terms in the Fibonacci sequence whose values do not exceed four million, find the sum of the even-valued terms.
+
+Now that we have a generator for the Fibonacci sequence, we need a function that adds a term in the sequence to a sum if it is even, and `pop`s it otherwise.
+
+
+```python
+define('PE2.1 == dup 2 % [+] [pop] branch')
+```
+
+And a predicate function that detects when the terms in the series "exceed four million".
+
+
+```python
+define('>4M == 4000000 >')
+```
+
+Now it's straightforward to define `PE2` as a recursive function that generates terms in the Fibonacci sequence until they exceed four million and sums the even ones.
+
+
+```python
+define('PE2 == 0 fib_gen x [pop >4M] [popop] [[PE2.1] dip x] primrec')
+```
+
+
+```python
+J('PE2')
+```
+
+    4613732
+
+
+Here's the collected program definitions:
+
+    fib == + swons [popdd over] infra uncons
+    fib_gen == [1 1 fib]
+
+    even == dup 2 %
+    >4M == 4000000 >
+
+    PE2.1 == even [+] [pop] branch
+    PE2 == 0 fib_gen x [pop >4M] [popop] [[PE2.1] dip x] primrec
+
+### Even-valued Fibonacci Terms
+
+Using `o` for odd and `e` for even:
+
+    o + o = e
+    e + e = e
+    o + e = o
+
+So the Fibonacci sequence considered in terms of just parity would be:
+
+    o o e o o e o o e o o e o o e o o e
+    1 1 2 3 5 8 . . .
+
+Every third term is even.
+
+
+
+```python
+J('[1 0 fib] x x x')  # To start the sequence with 1 1 2 3 instead of 1 2 3.
+```
+
+    [3 2 fib] 2 1 1
+
+
+Drive the generator three times and `popop` the two odd terms.
+
+
+```python
+J('[1 0 fib] x x x [popop] dipd')
+```
+
+    [3 2 fib] 2
+
+
+
+```python
+define('PE2.2 == x x x [popop] dipd')
+```
+
+
+```python
+J('[1 0 fib] 10 [PE2.2] times')
+```
+
+    [1346269 832040 fib] 832040 196418 46368 10946 2584 610 144 34 8 2
+
+
+Replace `x` with our new driver function `PE2.2` and start our `fib` generator at `1 0`.
+
+
+```python
+J('0 [1 0 fib] PE2.2 [pop >4M] [popop] [[PE2.1] dip PE2.2] primrec')
+```
+
+    4613732
 
 
 # How to compile these?

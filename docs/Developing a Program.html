@@ -13238,6 +13238,23 @@ PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p>It's worth noting, I think, that this same reasoning holds for any two numbers $n$ and $m$ the multiples of which we hope to sum.  The multiples would have a cycle of differences of length $k$ and so we could compute the sum of $Nk$ multiples as above.</p>
+<p>The sequence of differences will always be a palidrome.  Consider an interval spanning the least common multiple of $n$ and $m$:</p>
+
+<pre><code>|   |   |   |   |   |   |   |
+|      |      |      |      |
+
+</code></pre>
+<p>Here we have 4 and 7, and you can read off the sequence of differences directly from the diagram: 4 3 1 4 2 2 4 1 3 4.</p>
+<p>Geometrically, the actual values of $n$ and $m$ and their <em>lcm</em> don't matter, the pattern they make will always be symmetrical around its midpoint.  The same reasoning holds for multiples of more than two numbers.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="The-Simplest-Program">The Simplest Program<a class="anchor-link" href="#The-Simplest-Program">&#182;</a></h1>
 </div>
 </div>

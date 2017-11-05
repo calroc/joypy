@@ -2,7 +2,7 @@
 
 TESTDIR = ./test00
 
-.PHONY: clean sdist test
+.PHONY: clean sdist test docs
 
 
 clean:
@@ -18,3 +18,8 @@ test: sdist
 	. $(TESTDIR)/bin/activate && \
 		pip install --no-cache-dir --no-index ./dist/Joypy-0.1.tar.gz
 	echo "Type: source ./test00/bin/activate"
+
+
+docs:
+	cd ./docs && python -m nbconvert --to html *.ipynb
+	cd ./docs && python -m nbconvert --to markdown *.ipynb

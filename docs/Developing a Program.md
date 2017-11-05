@@ -674,6 +674,17 @@ J('6945 33 * [993 995 996 999] cons sum')
     233168
 
 
+It's worth noting, I think, that this same reasoning holds for any two numbers $n$ and $m$ the multiples of which we hope to sum.  The multiples would have a cycle of differences of length $k$ and so we could compute the sum of $Nk$ multiples as above.
+
+The sequence of differences will always be a palidrome.  Consider an interval spanning the least common multiple of $n$ and $m$:
+
+    |   |   |   |   |   |   |   |
+    |      |      |      |      |
+    
+Here we have 4 and 7, and you can read off the sequence of differences directly from the diagram: 4 3 1 4 2 2 4 1 3 4.
+    
+Geometrically, the actual values of $n$ and $m$ and their *lcm* don't matter, the pattern they make will always be symmetrical around its midpoint.  The same reasoning holds for multiples of more than two numbers.
+
 # The Simplest Program
 
 Of course, the simplest joy program for the first Project Euler problem is just:
