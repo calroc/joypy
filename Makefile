@@ -14,7 +14,7 @@ sdist:
 
 test: sdist
 	$(RM) -r $(TESTDIR)
-	virtualenv --system-site-packages $(TESTDIR)
+	virtualenv --system-site-packages --never-download $(TESTDIR)
 	. $(TESTDIR)/bin/activate && \
 		pip install --no-cache-dir --no-index ./dist/Joypy-0.1.tar.gz
 	echo "Type: source ./test00/bin/activate"
