@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Basic Use of Joy in a Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>4. Replacing Functions in the Dictionary</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11775,8 +11775,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Preamble">Preamble<a class="anchor-link" href="#Preamble">&#182;</a></h3><p>First, import what we need.</p>
-
+<h3 id="Preamble">Preamble<a class="anchor-link" href="#Preamble">&#182;</a></h3>
 </div>
 </div>
 </div>
@@ -11785,10 +11784,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">joy.joy</span> <span class="kn">import</span> <span class="n">run</span>
-<span class="kn">from</span> <span class="nn">joy.library</span> <span class="kn">import</span> <span class="n">initialize</span>
-<span class="kn">from</span> <span class="nn">joy.utils.stack</span> <span class="kn">import</span> <span class="n">stack_to_string</span>
-<span class="kn">from</span> <span class="nn">joy.utils.pretty_print</span> <span class="kn">import</span> <span class="n">TracePrinter</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">notebook_preamble</span> <span class="kn">import</span> <span class="n">D</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">V</span>
 </pre></div>
 
 </div>
@@ -11800,8 +11796,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Define a dictionary, an initial stack, and two helper functions to run Joy code and print results for us.</p>
-
+<h3 id="A-long-trace">A long trace<a class="anchor-link" href="#A-long-trace">&#182;</a></h3>
 </div>
 </div>
 </div>
@@ -11810,39 +11805,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">D</span> <span class="o">=</span> <span class="n">initialize</span><span class="p">()</span>
-<span class="n">S</span> <span class="o">=</span> <span class="p">()</span>
-
-
-<span class="k">def</span> <span class="nf">J</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-    <span class="k">print</span> <span class="n">stack_to_string</span><span class="p">(</span><span class="n">run</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">D</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
-
-
-<span class="k">def</span> <span class="nf">V</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-    <span class="n">tp</span> <span class="o">=</span> <span class="n">TracePrinter</span><span class="p">()</span>
-    <span class="n">run</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">tp</span><span class="o">.</span><span class="n">viewer</span><span class="p">)</span>
-    <span class="n">tp</span><span class="o">.</span><span class="n">print_</span><span class="p">()</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Run-some-simple-programs">Run some simple programs<a class="anchor-link" href="#Run-some-simple-programs">&#182;</a></h3>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[3]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;23 18 +&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[23 18] average&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11859,7 +11822,100 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>41
+<pre>                                  . [23 18] average
+                          [23 18] . average
+                          [23 18] . [sum 1.0 *] [size] cleave /
+              [23 18] [sum 1.0 *] . [size] cleave /
+       [23 18] [sum 1.0 *] [size] . cleave /
+       [23 18] [sum 1.0 *] [size] . [i] app2 [popd] dip /
+   [23 18] [sum 1.0 *] [size] [i] . app2 [popd] dip /
+[23 18] [[sum 1.0 *] [23 18]] [i] . infra first [[size] [23 18]] [i] infra first [popd] dip /
+              [23 18] [sum 1.0 *] . i [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                          [23 18] . sum 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                          [23 18] . 0 swap [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                        [23 18] 0 . swap [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                        0 [23 18] . [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                    0 [23 18] [+] . step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                         0 23 [+] . i [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                             0 23 . + [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                               23 . [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                          23 [18] . [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                      23 [18] [+] . step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                        23 18 [+] . i 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                            23 18 . + 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                               41 . 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                           41 1.0 . * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                             41.0 . [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                   41.0 [[23 18]] . swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                   [23 18] [41.0] . first [[size] [23 18]] [i] infra first [popd] dip /
+                     [23 18] 41.0 . [[size] [23 18]] [i] infra first [popd] dip /
+    [23 18] 41.0 [[size] [23 18]] . [i] infra first [popd] dip /
+[23 18] 41.0 [[size] [23 18]] [i] . infra first [popd] dip /
+                   [23 18] [size] . i [41.0 [23 18]] swaack first [popd] dip /
+                          [23 18] . size [41.0 [23 18]] swaack first [popd] dip /
+                          [23 18] . 0 swap [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                        [23 18] 0 . swap [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                        0 [23 18] . [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+               0 [23 18] [pop ++] . step [41.0 [23 18]] swaack first [popd] dip /
+                    0 23 [pop ++] . i [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                             0 23 . pop ++ [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                                0 . ++ [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                                1 . [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                           1 [18] . [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
+                  1 [18] [pop ++] . step [41.0 [23 18]] swaack first [popd] dip /
+                    1 18 [pop ++] . i [41.0 [23 18]] swaack first [popd] dip /
+                             1 18 . pop ++ [41.0 [23 18]] swaack first [popd] dip /
+                                1 . ++ [41.0 [23 18]] swaack first [popd] dip /
+                                2 . [41.0 [23 18]] swaack first [popd] dip /
+                 2 [41.0 [23 18]] . swaack first [popd] dip /
+                 [23 18] 41.0 [2] . first [popd] dip /
+                   [23 18] 41.0 2 . [popd] dip /
+            [23 18] 41.0 2 [popd] . dip /
+                     [23 18] 41.0 . popd 2 /
+                             41.0 . 2 /
+                           41.0 2 . /
+                             20.5 . 
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Replacing-sum-and-size-with-&quot;compiled&quot;-versions.">Replacing <code>sum</code> and <code>size</code> with "compiled" versions.<a class="anchor-link" href="#Replacing-sum-and-size-with-&quot;compiled&quot;-versions.">&#182;</a></h3><p>Both <code>sum</code> and <code>size</code> are <a href="https://en.wikipedia.org/wiki/Catamorphism">catamorphisms</a>, they each convert a sequence to a single value.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[sum] help&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>0 swap [+] step
+
 </pre>
 </div>
 </div>
@@ -11873,7 +11929,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;45 30 gcd&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[size] help&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11890,7 +11946,8 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>15
+<pre>0 swap [pop ++] step
+
 </pre>
 </div>
 </div>
@@ -11903,7 +11960,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="With-Viewer">With Viewer<a class="anchor-link" href="#With-Viewer">&#182;</a></h3><p>A <code>viewer</code> records each step of the evaluation of a Joy program.  The <code>TracePrinter</code> has a facility for printing out a trace of the evaluation, one line per step.  Each step is aligned to the current interpreter position, signified by a period separating the stack on the left from the pending expression ("continuation") on the right.  I find these traces beautiful, like a kind of art.</p>
+<p>We can use "compiled" versions (they're not really compiled in this case, they're hand-written in Python) to speed up evaluation and make the trace more readable.  The <code>sum</code> function is already in the library.  It gets shadowed by the definition version above during <code>initialize()</code>.</p>
 
 </div>
 </div>
@@ -11913,85 +11970,24 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;23 18 +&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">joy.library</span> <span class="kn">import</span> <span class="n">SimpleFunctionWrapper</span><span class="p">,</span> <span class="n">primitives</span>
+<span class="kn">from</span> <span class="nn">joy.utils.stack</span> <span class="kn">import</span> <span class="n">iter_stack</span>
+
+
+<span class="nd">@SimpleFunctionWrapper</span>
+<span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="n">stack</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Return the size of the sequence on the stack.&#39;&#39;&#39;</span>
+    <span class="n">sequence</span><span class="p">,</span> <span class="n">stack</span> <span class="o">=</span> <span class="n">stack</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">iter_stack</span><span class="p">(</span><span class="n">sequence</span><span class="p">):</span>
+        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">n</span><span class="p">,</span> <span class="n">stack</span>
+
+
+<span class="n">sum_</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">primitives</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>      . 23 18 +
-   23 . 18 +
-23 18 . +
-   41 . 
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;45 30 gcd&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                                  . 45 30 gcd
-                               45 . 30 gcd
-                            45 30 . gcd
-                            45 30 . 1 [tuck modulus dup 0 &gt;] loop pop
-                          45 30 1 . [tuck modulus dup 0 &gt;] loop pop
-   45 30 1 [tuck modulus dup 0 &gt;] . loop pop
-     45 30 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
-                            45 30 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         30 45 30 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                            30 15 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         30 15 15 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                       30 15 15 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
-                       30 15 True . [tuck modulus dup 0 &gt;] loop pop
-30 15 True [tuck modulus dup 0 &gt;] . loop pop
-     30 15 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
-                            30 15 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         15 30 15 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                             15 0 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                           15 0 0 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         15 0 0 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
-                       15 0 False . [tuck modulus dup 0 &gt;] loop pop
-15 0 False [tuck modulus dup 0 &gt;] . loop pop
-                             15 0 . pop
-                               15 . 
-</pre>
-</div>
-</div>
-
 </div>
 </div>
 
@@ -12000,7 +11996,30 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Here's a longer trace.</p>
+<p>Now we replace them old versions in the dictionary with the new versions and re-evaluate the expression.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">old_sum</span><span class="p">,</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">],</span> <span class="n">sum_</span>
+<span class="n">old_size</span><span class="p">,</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">size</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>You can see that <code>size</code> and <code>sum</code> now execute in a single step.</p>
 
 </div>
 </div>
@@ -12010,7 +12029,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;96 27 gcd&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[23 18] average&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12027,46 +12046,35 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>                                  . 96 27 gcd
-                               96 . 27 gcd
-                            96 27 . gcd
-                            96 27 . 1 [tuck modulus dup 0 &gt;] loop pop
-                          96 27 1 . [tuck modulus dup 0 &gt;] loop pop
-   96 27 1 [tuck modulus dup 0 &gt;] . loop pop
-     96 27 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
-                            96 27 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         27 96 27 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                            27 15 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         27 15 15 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                       27 15 15 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
-                       27 15 True . [tuck modulus dup 0 &gt;] loop pop
-27 15 True [tuck modulus dup 0 &gt;] . loop pop
-     27 15 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
-                            27 15 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         15 27 15 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                            15 12 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         15 12 12 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                       15 12 12 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
-                       15 12 True . [tuck modulus dup 0 &gt;] loop pop
-15 12 True [tuck modulus dup 0 &gt;] . loop pop
-     15 12 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
-                            15 12 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         12 15 12 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                             12 3 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                           12 3 3 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                         12 3 3 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
-                        12 3 True . [tuck modulus dup 0 &gt;] loop pop
- 12 3 True [tuck modulus dup 0 &gt;] . loop pop
-      12 3 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
-                             12 3 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                           3 12 3 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                              3 0 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                            3 0 0 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
-                          3 0 0 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
-                        3 0 False . [tuck modulus dup 0 &gt;] loop pop
- 3 0 False [tuck modulus dup 0 &gt;] . loop pop
-                              3 0 . pop
-                                3 . 
+<pre>                                  . [23 18] average
+                          [23 18] . average
+                          [23 18] . [sum 1.0 *] [size] cleave /
+              [23 18] [sum 1.0 *] . [size] cleave /
+       [23 18] [sum 1.0 *] [size] . cleave /
+       [23 18] [sum 1.0 *] [size] . [i] app2 [popd] dip /
+   [23 18] [sum 1.0 *] [size] [i] . app2 [popd] dip /
+[23 18] [[sum 1.0 *] [23 18]] [i] . infra first [[size] [23 18]] [i] infra first [popd] dip /
+              [23 18] [sum 1.0 *] . i [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                          [23 18] . sum 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                               41 . 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                           41 1.0 . * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                             41.0 . [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                   41.0 [[23 18]] . swaack first [[size] [23 18]] [i] infra first [popd] dip /
+                   [23 18] [41.0] . first [[size] [23 18]] [i] infra first [popd] dip /
+                     [23 18] 41.0 . [[size] [23 18]] [i] infra first [popd] dip /
+    [23 18] 41.0 [[size] [23 18]] . [i] infra first [popd] dip /
+[23 18] 41.0 [[size] [23 18]] [i] . infra first [popd] dip /
+                   [23 18] [size] . i [41.0 [23 18]] swaack first [popd] dip /
+                          [23 18] . size [41.0 [23 18]] swaack first [popd] dip /
+                                2 . [41.0 [23 18]] swaack first [popd] dip /
+                 2 [41.0 [23 18]] . swaack first [popd] dip /
+                 [23 18] 41.0 [2] . first [popd] dip /
+                   [23 18] 41.0 2 . [popd] dip /
+            [23 18] 41.0 2 [popd] . dip /
+                     [23 18] 41.0 . popd 2 /
+                             41.0 . 2 /
+                           41.0 2 . /
+                             20.5 . 
 </pre>
 </div>
 </div>

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Replacing Functions in the Dictionary</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Trees</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11775,7 +11775,95 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Preamble">Preamble<a class="anchor-link" href="#Preamble">&#182;</a></h3>
+<h1 id="Treating-Trees">Treating Trees<a class="anchor-link" href="#Treating-Trees">&#182;</a></h1><p>Although any expression in Joy can be considered to describe a <a href="https://en.wikipedia.org/wiki/Tree_structure">tree</a> with the quotes as compound nodes and the non-quote values as leaf nodes, in this page I want to talk about <a href="https://en.wikipedia.org/wiki/Binary_search_tree">ordered binary trees</a> and how to make and use them.</p>
+<p>The basic structure, in a <a href="https://en.wikipedia.org/wiki/Algebraic_data_type">crude type notation</a>, is:</p>
+
+<pre><code>BTree :: [] | [key value BTree BTree]
+
+</code></pre>
+<p>That says that a BTree is either the empty quote <code>[]</code> or a quote with four items: a key, a value, and two BTrees representing the left and right branches of the tree.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="A-Function-to-Traverse-this-Structure">A Function to Traverse this Structure<a class="anchor-link" href="#A-Function-to-Traverse-this-Structure">&#182;</a></h2><p>Let's take a crack at writing a function that can recursively iterate or traverse these trees.</p>
+<h4 id="Base-case-[]">Base case <code>[]</code><a class="anchor-link" href="#Base-case-[]">&#182;</a></h4><p>The stopping predicate just has to detect the empty list:</p>
+
+<pre><code>BTree-iter == [not] [E] [R0] [R1] genrec
+
+</code></pre>
+<p>And since there's nothing at this node, we just <code>pop</code> it:</p>
+
+<pre><code>BTree-iter == [not] [pop] [R0] [R1] genrec
+
+</code></pre>
+<h4 id="Node-case-[key-value-left-right]">Node case <code>[key value left right]</code><a class="anchor-link" href="#Node-case-[key-value-left-right]">&#182;</a></h4><p>Now we need to figure out <code>R0</code> and <code>R1</code>:</p>
+
+<pre><code>BTree-iter == [not] [pop] [R0]            [R1] genrec
+           == [not] [pop] [R0 [BTree-iter] R1] ifte
+
+</code></pre>
+<p>Let's look at it <em>in situ</em>:</p>
+
+<pre><code>[key value left right] R0 [BTree-iter] R1
+
+</code></pre>
+<h4 id="Processing-the-current-node.">Processing the current node.<a class="anchor-link" href="#Processing-the-current-node.">&#182;</a></h4><p><code>R0</code> is almost certainly going to use <code>dup</code> to make a copy of the node and then <code>dip</code> on some function to process the copy with it:</p>
+
+<pre><code>[key value left right] [F] dupdip                 [BTree-iter] R1
+[key value left right]  F  [key value left right] [BTree-iter] R1
+
+</code></pre>
+<p>For example, if we're getting all the keys <code>F</code> would be <code>first</code>:</p>
+
+<pre><code>R0 == [first] dupdip
+
+[key value left right] [first] dupdip                 [BTree-iter] R1
+[key value left right]  first  [key value left right] [BTree-iter] R1
+key                            [key value left right] [BTree-iter] R1
+
+</code></pre>
+<h4 id="Recur">Recur<a class="anchor-link" href="#Recur">&#182;</a></h4><p>Now <code>R1</code> needs to apply <code>[BTree-iter]</code> to <code>left</code> and <code>right</code>.  If we drop the key and value from the node using <code>rest</code> twice we are left with an interesting situation:</p>
+
+<pre><code>key [key value left right] [BTree-iter] R1
+key [key value left right] [BTree-iter] [rest rest] dip
+key [key value left right] rest rest [BTree-iter]
+key [left right] [BTree-iter]
+
+</code></pre>
+<p>Hmm, will <code>step</code> do?</p>
+
+<pre><code>key [left right] [BTree-iter] step
+key left BTree-iter [right] [BTree-iter] step
+key left-keys [right] [BTree-iter] step
+key left-keys right BTree-iter
+key left-keys right-keys
+
+</code></pre>
+<p>Wow. So:</p>
+
+<pre><code>R1 == [rest rest] dip step
+
+</code></pre>
+<h4 id="Parameterizing-the-F-per-node-processing-function.">Parameterizing the <code>F</code> per-node processing function.<a class="anchor-link" href="#Parameterizing-the-F-per-node-processing-function.">&#182;</a></h4>
+<pre><code>[F] BTree-iter == [not] [pop] [[F] dupdip] [[rest rest] dip step] genrec
+
+</code></pre>
+<p>Working backward:</p>
+
+<pre><code>[not] [pop] [[F] dupdip]            [[rest rest] dip step] genrec
+[not] [pop] [F]       [dupdip] cons [[rest rest] dip step] genrec
+[F] [not] [pop] roll&lt; [dupdip] cons [[rest rest] dip step] genrec
+
+</code></pre>
+<p>Ergo:</p>
+
+<pre><code>BTree-iter == [not] [pop] roll&lt; [dupdip] cons [[rest rest] dip step] genrec</code></pre>
+
 </div>
 </div>
 </div>
@@ -11784,120 +11872,33 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">notebook_preamble</span> <span class="kn">import</span> <span class="n">D</span><span class="p">,</span> <span class="n">J</span><span class="p">,</span> <span class="n">V</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">notebook_preamble</span> <span class="kn">import</span> <span class="n">J</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">define</span>
 </pre></div>
 
 </div>
 </div>
 </div>
 
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="A-long-trace">A long trace<a class="anchor-link" href="#A-long-trace">&#182;</a></h3>
-</div>
-</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[23 18] average&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;BTree-iter == [not] [pop] roll&lt; [dupdip] cons [[rest rest] dip step] genrec&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                                  . [23 18] average
-                          [23 18] . average
-                          [23 18] . [sum 1.0 *] [size] cleave /
-              [23 18] [sum 1.0 *] . [size] cleave /
-       [23 18] [sum 1.0 *] [size] . cleave /
-       [23 18] [sum 1.0 *] [size] . [i] app2 [popd] dip /
-   [23 18] [sum 1.0 *] [size] [i] . app2 [popd] dip /
-[23 18] [[sum 1.0 *] [23 18]] [i] . infra first [[size] [23 18]] [i] infra first [popd] dip /
-              [23 18] [sum 1.0 *] . i [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                          [23 18] . sum 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                          [23 18] . 0 swap [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                        [23 18] 0 . swap [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                        0 [23 18] . [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                    0 [23 18] [+] . step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                         0 23 [+] . i [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                             0 23 . + [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                               23 . [18] [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                          23 [18] . [+] step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                      23 [18] [+] . step 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                        23 18 [+] . i 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                            23 18 . + 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                               41 . 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                           41 1.0 . * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                             41.0 . [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                   41.0 [[23 18]] . swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                   [23 18] [41.0] . first [[size] [23 18]] [i] infra first [popd] dip /
-                     [23 18] 41.0 . [[size] [23 18]] [i] infra first [popd] dip /
-    [23 18] 41.0 [[size] [23 18]] . [i] infra first [popd] dip /
-[23 18] 41.0 [[size] [23 18]] [i] . infra first [popd] dip /
-                   [23 18] [size] . i [41.0 [23 18]] swaack first [popd] dip /
-                          [23 18] . size [41.0 [23 18]] swaack first [popd] dip /
-                          [23 18] . 0 swap [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-                        [23 18] 0 . swap [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-                        0 [23 18] . [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-               0 [23 18] [pop ++] . step [41.0 [23 18]] swaack first [popd] dip /
-                    0 23 [pop ++] . i [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-                             0 23 . pop ++ [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-                                0 . ++ [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-                                1 . [18] [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-                           1 [18] . [pop ++] step [41.0 [23 18]] swaack first [popd] dip /
-                  1 [18] [pop ++] . step [41.0 [23 18]] swaack first [popd] dip /
-                    1 18 [pop ++] . i [41.0 [23 18]] swaack first [popd] dip /
-                             1 18 . pop ++ [41.0 [23 18]] swaack first [popd] dip /
-                                1 . ++ [41.0 [23 18]] swaack first [popd] dip /
-                                2 . [41.0 [23 18]] swaack first [popd] dip /
-                 2 [41.0 [23 18]] . swaack first [popd] dip /
-                 [23 18] 41.0 [2] . first [popd] dip /
-                   [23 18] 41.0 2 . [popd] dip /
-            [23 18] 41.0 2 [popd] . dip /
-                     [23 18] 41.0 . popd 2 /
-                             41.0 . 2 /
-                           41.0 2 . /
-                             20.5 . 
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Replacing-sum-and-size-with-&quot;compiled&quot;-versions.">Replacing <code>sum</code> and <code>size</code> with "compiled" versions.<a class="anchor-link" href="#Replacing-sum-and-size-with-&quot;compiled&quot;-versions.">&#182;</a></h3><p>Both <code>sum</code> and <code>size</code> are <a href="https://en.wikipedia.org/wiki/Catamorphism">catamorphisms</a>, they each convert a sequence to a single value.</p>
-
-</div>
-</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[sum] help&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[] [23] BTree-iter&#39;</span><span class="p">)</span>  <span class="c1">#  It doesn&#39;t matter what F is as it won&#39;t be used.</span>
 </pre></div>
 
 </div>
@@ -11914,8 +11915,7 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>0 swap [+] step
-
+<pre>
 </pre>
 </div>
 </div>
@@ -11929,7 +11929,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[size] help&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;tommy&quot; 23 [] []] [first] BTree-iter&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11946,8 +11946,69 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>0 swap [pop ++] step
+<pre>&#39;tommy&#39;
+</pre>
+</div>
+</div>
 
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;tommy&quot; 23 [&quot;richard&quot; 48 [] []] [&quot;jenny&quot; 18 [] []]] [first] BTree-iter&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>&#39;jenny&#39; &#39;richard&#39; &#39;tommy&#39;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;tommy&quot; 23 [&quot;richard&quot; 48 [] []] [&quot;jenny&quot; 18 [] []]] [second] BTree-iter&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>18 48 23
 </pre>
 </div>
 </div>
@@ -11960,66 +12021,32 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We can use "compiled" versions (they're not really compiled in this case, they're hand-written in Python) to speed up evaluation and make the trace more readable.  The <code>sum</code> function is already in the library.  It gets shadowed by the definition version above during <code>initialize()</code>.</p>
+<h1 id="Adding-Nodes-to-the-BTree">Adding Nodes to the BTree<a class="anchor-link" href="#Adding-Nodes-to-the-BTree">&#182;</a></h1><p>Let's consider adding nodes to a BTree structure.</p>
+
+<pre><code>BTree value key BTree-add == BTree</code></pre>
 
 </div>
 </div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">joy.library</span> <span class="kn">import</span> <span class="n">SimpleFunctionWrapper</span><span class="p">,</span> <span class="n">primitives</span>
-<span class="kn">from</span> <span class="nn">joy.utils.stack</span> <span class="kn">import</span> <span class="n">iter_stack</span>
-
-
-<span class="nd">@SimpleFunctionWrapper</span>
-<span class="k">def</span> <span class="nf">size</span><span class="p">(</span><span class="n">stack</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;Return the size of the sequence on the stack.&#39;&#39;&#39;</span>
-    <span class="n">sequence</span><span class="p">,</span> <span class="n">stack</span> <span class="o">=</span> <span class="n">stack</span>
-    <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">iter_stack</span><span class="p">(</span><span class="n">sequence</span><span class="p">):</span>
-        <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
-    <span class="k">return</span> <span class="n">n</span><span class="p">,</span> <span class="n">stack</span>
-
-
-<span class="n">sum_</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">primitives</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we replace them old versions in the dictionary with the new versions and re-evaluate the expression.</p>
+<h4 id="Adding-to-an-empty-node.">Adding to an empty node.<a class="anchor-link" href="#Adding-to-an-empty-node.">&#182;</a></h4><p>If the current node is <code>[]</code> then you just return <code>[key value [] []]</code>:</p>
 
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">old_sum</span><span class="p">,</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">],</span> <span class="n">sum_</span>
-<span class="n">old_size</span><span class="p">,</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">D</span><span class="p">[</span><span class="s1">&#39;size&#39;</span><span class="p">],</span> <span class="n">size</span>
-</pre></div>
+<pre><code>BTree-add == [popop not] [[pop] dipd BTree-new] [R0] [R1] genrec
 
-</div>
-</div>
-</div>
+</code></pre>
+<p>Where <code>BTree-new</code> is:</p>
 
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>You can see that <code>size</code> and <code>sum</code> now execute in a single step.</p>
+<pre><code>value key BTree-new == [key value [] []]
+
+value key swap [[] []] cons cons
+key value      [[] []] cons cons
+key      [value [] []]      cons
+     [key value [] []]
+
+BTree-new == swap [[] []] cons cons</code></pre>
 
 </div>
 </div>
@@ -12029,7 +12056,20 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[23 18] average&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;BTree-new == swap [[] []] cons cons&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;&quot;v&quot; &quot;k&quot; BTree-new&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12046,35 +12086,14 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>                                  . [23 18] average
-                          [23 18] . average
-                          [23 18] . [sum 1.0 *] [size] cleave /
-              [23 18] [sum 1.0 *] . [size] cleave /
-       [23 18] [sum 1.0 *] [size] . cleave /
-       [23 18] [sum 1.0 *] [size] . [i] app2 [popd] dip /
-   [23 18] [sum 1.0 *] [size] [i] . app2 [popd] dip /
-[23 18] [[sum 1.0 *] [23 18]] [i] . infra first [[size] [23 18]] [i] infra first [popd] dip /
-              [23 18] [sum 1.0 *] . i [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                          [23 18] . sum 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                               41 . 1.0 * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                           41 1.0 . * [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                             41.0 . [[23 18]] swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                   41.0 [[23 18]] . swaack first [[size] [23 18]] [i] infra first [popd] dip /
-                   [23 18] [41.0] . first [[size] [23 18]] [i] infra first [popd] dip /
-                     [23 18] 41.0 . [[size] [23 18]] [i] infra first [popd] dip /
-    [23 18] 41.0 [[size] [23 18]] . [i] infra first [popd] dip /
-[23 18] 41.0 [[size] [23 18]] [i] . infra first [popd] dip /
-                   [23 18] [size] . i [41.0 [23 18]] swaack first [popd] dip /
-                          [23 18] . size [41.0 [23 18]] swaack first [popd] dip /
-                                2 . [41.0 [23 18]] swaack first [popd] dip /
-                 2 [41.0 [23 18]] . swaack first [popd] dip /
-                 [23 18] 41.0 [2] . first [popd] dip /
-                   [23 18] 41.0 2 . [popd] dip /
-            [23 18] 41.0 2 [popd] . dip /
-                     [23 18] 41.0 . popd 2 /
-                             41.0 . 2 /
-                           41.0 2 . /
-                             20.5 . 
+<pre>                . &#39;v&#39; &#39;k&#39; BTree-new
+            &#39;v&#39; . &#39;k&#39; BTree-new
+        &#39;v&#39; &#39;k&#39; . BTree-new
+        &#39;v&#39; &#39;k&#39; . swap [[] []] cons cons
+        &#39;k&#39; &#39;v&#39; . [[] []] cons cons
+&#39;k&#39; &#39;v&#39; [[] []] . cons cons
+&#39;k&#39; [&#39;v&#39; [] []] . cons
+[&#39;k&#39; &#39;v&#39; [] []] . 
 </pre>
 </div>
 </div>
@@ -12082,6 +12101,1418 @@ div#notebook {
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>(As an implementation detail, the <code>[[] []]</code> literal used in the definition of <code>BTree-new</code> will be reused to supply the <em>constant</em> tail for <em>all</em> new nodes produced by it.  This is one of those cases where you get amortized storage "for free" by using <a href="https://en.wikipedia.org/wiki/Persistent_data_structure">persistent datastructures</a>.  Because the tail, which is <code>((), ((), ()))</code> in Python, is immutable and embedded in the definition body for <code>BTree-new</code>, all new nodes can reuse it as their own tail without fear that some other code somewhere will change it.)</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="If-the-current-node-isn't-empty.">If the current node isn't empty.<a class="anchor-link" href="#If-the-current-node-isn't-empty.">&#182;</a></h4><p>We now have to derive <code>R0</code> and <code>R1</code>, consider:</p>
+
+<pre><code>[key_n value_n left right] value key R0 [BTree-add] R1
+
+</code></pre>
+<p>In this case, there are three possibilites: the key can be greater or less than or equal to the node's key.  In two of those cases we will need to apply a copy of <code>BTree-add</code>, so <code>R0</code> is pretty much out of the picture.</p>
+
+<pre><code>[R0] == []</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="A-predicate-to-compare-keys.">A predicate to compare keys.<a class="anchor-link" href="#A-predicate-to-compare-keys.">&#182;</a></h4><p>The first thing we need to do is compare the the key we're adding to see if it is greater than the node key and <code>branch</code> accordingly, although in this case it's easier to write a destructive predicate and then use <code>ifte</code> to apply it <code>nullary</code>:</p>
+
+<pre><code>[key_n value_n left right] value key [BTree-add] R1
+[key_n value_n left right] value key [BTree-add] [P &gt;] [T] [E] ifte
+
+[key_n value_n left right] value key [BTree-add] P                   &gt;
+[key_n value_n left right] value key [BTree-add] pop roll&gt; pop first &gt;
+[key_n value_n left right] value key                 roll&gt; pop first &gt;
+key [key_n value_n left right] value                 roll&gt; pop first &gt;
+key key_n                                                            &gt;
+Boolean
+
+P &gt; == pop roll&gt; pop first &gt;
+P &lt; == pop roll&gt; pop first &lt;
+P   == pop roll&gt; pop first</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[9]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;P == pop roll&gt; pop first&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[&quot;k&quot; &quot;v&quot; [] []] &quot;vv&quot; &quot;kk&quot; [0] P &gt;&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                              . [&#39;k&#39; &#39;v&#39; [] []] &#39;vv&#39; &#39;kk&#39; [0] P &gt;
+              [&#39;k&#39; &#39;v&#39; [] []] . &#39;vv&#39; &#39;kk&#39; [0] P &gt;
+         [&#39;k&#39; &#39;v&#39; [] []] &#39;vv&#39; . &#39;kk&#39; [0] P &gt;
+    [&#39;k&#39; &#39;v&#39; [] []] &#39;vv&#39; &#39;kk&#39; . [0] P &gt;
+[&#39;k&#39; &#39;v&#39; [] []] &#39;vv&#39; &#39;kk&#39; [0] . P &gt;
+[&#39;k&#39; &#39;v&#39; [] []] &#39;vv&#39; &#39;kk&#39; [0] . pop roll&gt; pop first &gt;
+    [&#39;k&#39; &#39;v&#39; [] []] &#39;vv&#39; &#39;kk&#39; . roll&gt; pop first &gt;
+    &#39;kk&#39; [&#39;k&#39; &#39;v&#39; [] []] &#39;vv&#39; . pop first &gt;
+         &#39;kk&#39; [&#39;k&#39; &#39;v&#39; [] []] . first &gt;
+                     &#39;kk&#39; &#39;k&#39; . &gt;
+                         True . 
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="If-the-key-we're-adding-is-greater-than-the-node's-key.">If the key we're adding is greater than the node's key.<a class="anchor-link" href="#If-the-key-we're-adding-is-greater-than-the-node's-key.">&#182;</a></h4><p>Here the parantheses are meant to signify that the right-hand side (RHS) is not literal, the code in the parentheses is meant to have been evaluated:</p>
+
+<pre><code>[key_n value_n left right] value key [BTree-add] T == [key_n value_n left (BTree-add key value right)]</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Use-infra-on-K.">Use <code>infra</code> on <code>K</code>.<a class="anchor-link" href="#Use-infra-on-K.">&#182;</a></h4><p>So how do we do this?  We know we're going to want to use <code>infra</code> on some function <code>K</code> that has the key and value to work with, as well as the quoted copy of <code>BTree-add</code> to apply somehow:</p>
+
+<pre><code>right left value_n key_n value key [BTree-add] K
+    ...
+right value key BTree-add left value_n key_n
+
+</code></pre>
+<p>Pretty easy:</p>
+
+<pre><code>right left value_n key_n value key [BTree-add] cons cons dipdd
+right left value_n key_n [value key BTree-add]           dipdd
+right value key BTree-add left value_n key_n
+
+</code></pre>
+<p>So:</p>
+
+<pre><code>K == cons cons dipdd
+
+</code></pre>
+<p>And:</p>
+
+<pre><code>[key_n value_n left right] [value key [BTree-add] K] infra
+
+</code></pre>
+<h4 id="Derive-T.">Derive <code>T</code>.<a class="anchor-link" href="#Derive-T.">&#182;</a></h4><p>So now we're at getting from this to this:</p>
+
+<pre><code>[key_n value_n left right]  value key [BTree-add] T
+    ...
+[key_n value_n left right] [value key [BTree-add] K] infra
+
+</code></pre>
+<p>And so <code>T</code> is just:</p>
+
+<pre><code>value key [BTree-add] T == [value key [BTree-add] K]                infra
+                      T == [                      K] cons cons cons infra</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[11]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;K == cons cons dipdd&#39;</span><span class="p">)</span>
+<span class="n">define</span><span class="p">(</span><span class="s1">&#39;T == [K] cons cons cons infra&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[12]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;&quot;r&quot; &quot;l&quot; &quot;v&quot; &quot;k&quot; &quot;vv&quot; &quot;kk&quot; [0] K&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                              . &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] K
+                          &#39;r&#39; . &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] K
+                      &#39;r&#39; &#39;l&#39; . &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] K
+                  &#39;r&#39; &#39;l&#39; &#39;v&#39; . &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] K
+              &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; . &#39;vv&#39; &#39;kk&#39; [0] K
+         &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; . &#39;kk&#39; [0] K
+    &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; . [0] K
+&#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] . K
+&#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] . cons cons dipdd
+&#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; [&#39;kk&#39; 0] . cons dipdd
+&#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; [&#39;vv&#39; &#39;kk&#39; 0] . dipdd
+                          &#39;r&#39; . &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; &#39;k&#39;
+                     &#39;r&#39; &#39;vv&#39; . &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; &#39;k&#39;
+                &#39;r&#39; &#39;vv&#39; &#39;kk&#39; . 0 &#39;l&#39; &#39;v&#39; &#39;k&#39;
+              &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 . &#39;l&#39; &#39;v&#39; &#39;k&#39;
+          &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; . &#39;v&#39; &#39;k&#39;
+      &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; . &#39;k&#39;
+  &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; &#39;k&#39; . 
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[13]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[&quot;k&quot; &quot;v&quot; &quot;l&quot; &quot;r&quot;] &quot;vv&quot; &quot;kk&quot; [0] T&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                                    . [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] T
+                  [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] . &#39;vv&#39; &#39;kk&#39; [0] T
+             [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; . &#39;kk&#39; [0] T
+        [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; . [0] T
+    [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] . T
+    [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] . [K] cons cons cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] [K] . cons cons cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [[0] K] . cons cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; [&#39;kk&#39; [0] K] . cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] [&#39;vv&#39; &#39;kk&#39; [0] K] . infra
+                    &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; . &#39;vv&#39; &#39;kk&#39; [0] K [] swaack
+               &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; . &#39;kk&#39; [0] K [] swaack
+          &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; . [0] K [] swaack
+      &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] . K [] swaack
+      &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] . cons cons dipdd [] swaack
+      &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; [&#39;kk&#39; 0] . cons dipdd [] swaack
+      &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; [&#39;vv&#39; &#39;kk&#39; 0] . dipdd [] swaack
+                                &#39;r&#39; . &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; &#39;k&#39; [] swaack
+                           &#39;r&#39; &#39;vv&#39; . &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; &#39;k&#39; [] swaack
+                      &#39;r&#39; &#39;vv&#39; &#39;kk&#39; . 0 &#39;l&#39; &#39;v&#39; &#39;k&#39; [] swaack
+                    &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 . &#39;l&#39; &#39;v&#39; &#39;k&#39; [] swaack
+                &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; . &#39;v&#39; &#39;k&#39; [] swaack
+            &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; . &#39;k&#39; [] swaack
+        &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; &#39;k&#39; . [] swaack
+     &#39;r&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;l&#39; &#39;v&#39; &#39;k&#39; [] . swaack
+      [&#39;k&#39; &#39;v&#39; &#39;l&#39; 0 &#39;kk&#39; &#39;vv&#39; &#39;r&#39;] . 
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="If-the-key-we're-adding-is-less-than-the-node's-key.">If the key we're adding is less than the node's key.<a class="anchor-link" href="#If-the-key-we're-adding-is-less-than-the-node's-key.">&#182;</a></h4><p>This is very very similar to the above:</p>
+
+<pre><code>[key_n value_n left right] value key [BTree-add] E
+[key_n value_n left right] value key [BTree-add] [P &lt;] [Te] [Ee] ifte
+
+</code></pre>
+<p>In this case <code>Te</code> works that same as <code>T</code> but on the left child tree instead of the right, so the only difference is that it must use <code>dipd</code> instead of <code>dipdd</code>:</p>
+
+<pre><code>Te == [cons cons dipd] cons cons cons infra
+
+</code></pre>
+<p>This suggests an alternate factorization:</p>
+
+<pre><code>ccons == cons cons
+T == [ccons dipdd] ccons cons infra
+Te == [ccons dipd] ccons cons infra
+
+</code></pre>
+<p>But whatever.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[14]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;Te == [cons cons dipd] cons cons cons infra&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[&quot;k&quot; &quot;v&quot; &quot;l&quot; &quot;r&quot;] &quot;vv&quot; &quot;kk&quot; [0] Te&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                                                 . [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] Te
+                               [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] . &#39;vv&#39; &#39;kk&#39; [0] Te
+                          [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; . &#39;kk&#39; [0] Te
+                     [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; . [0] Te
+                 [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] . Te
+                 [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] . [cons cons dipd] cons cons cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [0] [cons cons dipd] . cons cons cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;kk&#39; [[0] cons cons dipd] . cons cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; [&#39;kk&#39; [0] cons cons dipd] . cons infra
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] [&#39;vv&#39; &#39;kk&#39; [0] cons cons dipd] . infra
+                                 &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; . &#39;vv&#39; &#39;kk&#39; [0] cons cons dipd [] swaack
+                            &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; . &#39;kk&#39; [0] cons cons dipd [] swaack
+                       &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; . [0] cons cons dipd [] swaack
+                   &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; &#39;kk&#39; [0] . cons cons dipd [] swaack
+                   &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; &#39;vv&#39; [&#39;kk&#39; 0] . cons dipd [] swaack
+                   &#39;r&#39; &#39;l&#39; &#39;v&#39; &#39;k&#39; [&#39;vv&#39; &#39;kk&#39; 0] . dipd [] swaack
+                                         &#39;r&#39; &#39;l&#39; . &#39;vv&#39; &#39;kk&#39; 0 &#39;v&#39; &#39;k&#39; [] swaack
+                                    &#39;r&#39; &#39;l&#39; &#39;vv&#39; . &#39;kk&#39; 0 &#39;v&#39; &#39;k&#39; [] swaack
+                               &#39;r&#39; &#39;l&#39; &#39;vv&#39; &#39;kk&#39; . 0 &#39;v&#39; &#39;k&#39; [] swaack
+                             &#39;r&#39; &#39;l&#39; &#39;vv&#39; &#39;kk&#39; 0 . &#39;v&#39; &#39;k&#39; [] swaack
+                         &#39;r&#39; &#39;l&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;v&#39; . &#39;k&#39; [] swaack
+                     &#39;r&#39; &#39;l&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;v&#39; &#39;k&#39; . [] swaack
+                  &#39;r&#39; &#39;l&#39; &#39;vv&#39; &#39;kk&#39; 0 &#39;v&#39; &#39;k&#39; [] . swaack
+                   [&#39;k&#39; &#39;v&#39; 0 &#39;kk&#39; &#39;vv&#39; &#39;l&#39; &#39;r&#39;] . 
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Else-the-keys-must-be-equal.">Else the keys must be equal.<a class="anchor-link" href="#Else-the-keys-must-be-equal.">&#182;</a></h4><p>This means we must find:</p>
+
+<pre><code>[key_n value_n left right] value key [BTree-add] Ee
+    ...
+[key value left right]
+
+</code></pre>
+<p>This is another easy one:</p>
+
+<pre><code>Ee == pop swap roll&lt; rest rest cons cons
+
+[key_n value_n left right] value key [BTree-add] pop swap roll&lt; rest rest cons cons
+[key_n value_n left right] value key                 swap roll&lt; rest rest cons cons
+[key_n value_n left right] key value                      roll&lt; rest rest cons cons
+key value [key_n value_n left right]                            rest rest cons cons
+key value [              left right]                                      cons cons
+          [key   value   left right]</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;Ee == pop swap roll&lt; rest rest cons cons&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[&quot;k&quot; &quot;v&quot; &quot;l&quot; &quot;r&quot;] &quot;vv&quot; &quot;k&quot; [0] Ee&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>                               . [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;k&#39; [0] Ee
+             [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] . &#39;vv&#39; &#39;k&#39; [0] Ee
+        [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; . &#39;k&#39; [0] Ee
+    [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;k&#39; . [0] Ee
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;k&#39; [0] . Ee
+[&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;k&#39; [0] . pop swap roll&lt; rest rest cons cons
+    [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;vv&#39; &#39;k&#39; . swap roll&lt; rest rest cons cons
+    [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] &#39;k&#39; &#39;vv&#39; . roll&lt; rest rest cons cons
+    &#39;k&#39; &#39;vv&#39; [&#39;k&#39; &#39;v&#39; &#39;l&#39; &#39;r&#39;] . rest rest cons cons
+        &#39;k&#39; &#39;vv&#39; [&#39;v&#39; &#39;l&#39; &#39;r&#39;] . rest cons cons
+            &#39;k&#39; &#39;vv&#39; [&#39;l&#39; &#39;r&#39;] . cons cons
+            &#39;k&#39; [&#39;vv&#39; &#39;l&#39; &#39;r&#39;] . cons
+            [&#39;k&#39; &#39;vv&#39; &#39;l&#39; &#39;r&#39;] . 
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;E == [P &lt;] [Te] [Ee] ifte&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Now-we-can-define-BTree-add">Now we can define <code>BTree-add</code><a class="anchor-link" href="#Now-we-can-define-BTree-add">&#182;</a></h4>
+<pre><code>BTree-add == [popop not] [[pop] dipd BTree-new] [] [[P &gt;] [T] [E] ifte] genrec
+
+</code></pre>
+<p>Putting it all together:</p>
+
+<pre><code>BTree-new == swap [[] []] cons cons
+P == pop roll&gt; pop first
+T == [cons cons dipdd] cons cons cons infra
+Te == [cons cons dipd] cons cons cons infra
+Ee == pop swap roll&lt; rest rest cons cons
+E == [P &lt;] [Te] [Ee] ifte
+
+BTree-add == [popop not] [[pop] dipd BTree-new] [] [[P &gt;] [T] [E] ifte] genrec</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;BTree-add == [popop not] [[pop] dipd BTree-new] [] [[P &gt;] [T] [E] ifte] genrec&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[] 23 &quot;b&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Initial</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 23 [] []]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;b&quot; 23 [] []] 88 &quot;c&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Less than</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 23 [] [&#39;c&#39; 88 [] []]]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;b&quot; 23 [] []] 88 &quot;a&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Greater than</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 23 [&#39;a&#39; 88 [] []] []]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[23]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;b&quot; 23 [] []] 88 &quot;b&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Equal to</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 88 [] []]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[24]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[] 23 &quot;a&quot; BTree-add 88 &quot;b&quot; BTree-add 44 &quot;c&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Series.</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;a&#39; 23 [] [&#39;b&#39; 88 [] [&#39;c&#39; 44 [] []]]]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>We can use this to make a set-like datastructure by just setting values to e.g. 0 and ignoring them.  It's set-like in that duplicate items added to it will only occur once within it, and we can query it in <a href="https://en.wikipedia.org/wiki/Binary_search_tree#cite_note-2">$O(\log_2 N)$</a> time.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[25]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[] [3 9 5 2 8 6 7 8 4] [0 swap BTree-add] step&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[3 0 [2 0 [] []] [9 0 [5 0 [4 0 [] []] [8 0 [6 0 [] [7 0 [] []]] []]] []]]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[26]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;to_set == [] swap [0 swap BTree-add] step&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[27]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[3 9 5 2 8 6 7 8 4] to_set&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[3 0 [2 0 [] []] [9 0 [5 0 [4 0 [] []] [8 0 [6 0 [] [7 0 [] []]] []]] []]]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>And with that we can write a little program to remove duplicate items from a list.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[28]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;unique == [to_set [first] BTree-iter] cons run&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[29]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[3 9 3 5 2 9 8 8 8 6 2 7 8 4 3] unique&#39;</span><span class="p">)</span>  <span class="c1"># Filter duplicate items.</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[7 6 8 4 5 9 2 3]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="cmp-combinator"><code>cmp</code> combinator<a class="anchor-link" href="#cmp-combinator">&#182;</a></h1><p>Instead of all this mucking about with nested <code>ifte</code> let's just go whole hog and define <code>cmp</code> which takes two values and three quoted programs on the stack and runs one of the three depending on the results of comparing the two values:</p>
+
+<pre><code>   a b [G] [E] [L] cmp
+------------------------- a &gt; b
+        G
+
+   a b [G] [E] [L] cmp
+------------------------- a = b
+            E
+
+   a b [G] [E] [L] cmp
+------------------------- a &lt; b
+                L
+
+</code></pre>
+<p>We need a new non-destructive predicate <code>P</code>:</p>
+
+<pre><code>[key_n value_n left right] value key [BTree-add] P
+[key_n value_n left right] value key [BTree-add] over [Q] nullary
+[key_n value_n left right] value key [BTree-add] key  [Q] nullary
+[key_n value_n left right] value key [BTree-add] key   Q
+[key_n value_n left right] value key [BTree-add] key   popop popop first
+[key_n value_n left right] value key                         popop first
+[key_n value_n left right]                                         first
+ key_n
+[key_n value_n left right] value key [BTree-add] key  [Q] nullary
+[key_n value_n left right] value key [BTree-add] key key_n
+
+P == over [popop popop first] nullary
+
+</code></pre>
+<p>Here are the definitions again, pruned and renamed in some cases:</p>
+
+<pre><code>BTree-new == swap [[] []] cons cons
+P == over [popop popop first] nullary
+T&gt; == [cons cons dipdd] cons cons cons infra
+T&lt; == [cons cons dipd] cons cons cons infra
+E == pop swap roll&lt; rest rest cons cons
+
+</code></pre>
+<p>Using <code>cmp</code> to simplify <a href="#If-the-current-node-isn&#39;t-empty.">our code above at <code>R1</code></a>:</p>
+
+<pre><code>[key_n value_n left right] value key [BTree-add] R1
+[key_n value_n left right] value key [BTree-add] P [T&gt;] [E] [T&lt;] cmp
+
+</code></pre>
+<p>The line above becomes one of the three lines below:</p>
+
+<pre><code>[key_n value_n left right] value key [BTree-add] T&gt;
+[key_n value_n left right] value key [BTree-add] E
+[key_n value_n left right] value key [BTree-add] T&lt;
+
+</code></pre>
+<p>The definition is a little longer but, I think, more elegant and easier to understand:</p>
+
+<pre><code>BTree-add == [popop not] [[pop] dipd BTree-new] [] [P [T&gt;] [E] [T&lt;] cmp] genrec</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[30]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">joy.library</span> <span class="kn">import</span> <span class="n">FunctionWrapper</span>
+<span class="kn">from</span> <span class="nn">joy.utils.stack</span> <span class="kn">import</span> <span class="n">pushback</span>
+<span class="kn">from</span> <span class="nn">notebook_preamble</span> <span class="kn">import</span> <span class="n">D</span>
+
+
+<span class="nd">@FunctionWrapper</span>
+<span class="k">def</span> <span class="nf">cmp_</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">dictionary</span><span class="p">):</span>
+    <span class="n">L</span><span class="p">,</span> <span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="p">(</span><span class="n">G</span><span class="p">,</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">stack</span><span class="p">))))</span> <span class="o">=</span> <span class="n">stack</span>
+    <span class="n">expression</span> <span class="o">=</span> <span class="n">pushback</span><span class="p">(</span><span class="n">G</span> <span class="k">if</span> <span class="n">a</span> <span class="o">&gt;</span> <span class="n">b</span> <span class="k">else</span> <span class="n">L</span> <span class="k">if</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="n">b</span> <span class="k">else</span> <span class="n">E</span><span class="p">,</span> <span class="n">expression</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">stack</span><span class="p">,</span> <span class="n">expression</span><span class="p">,</span> <span class="n">dictionary</span>
+
+
+<span class="n">D</span><span class="p">[</span><span class="s1">&#39;cmp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cmp_</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[31]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s2">&quot;1 0 [&#39;G&#39;] [&#39;E&#39;] [&#39;L&#39;] cmp&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>&#39;G&#39;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[32]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s2">&quot;1 1 [&#39;G&#39;] [&#39;E&#39;] [&#39;L&#39;] cmp&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>&#39;E&#39;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[33]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s2">&quot;0 1 [&#39;G&#39;] [&#39;E&#39;] [&#39;L&#39;] cmp&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>&#39;L&#39;
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[34]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">joy.library</span> <span class="kn">import</span> <span class="n">DefinitionWrapper</span>
+
+
+<span class="n">DefinitionWrapper</span><span class="o">.</span><span class="n">add_definitions</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
+
+<span class="s1">P == over [popop popop first] nullary</span>
+<span class="s1">T&gt; == [cons cons dipdd] cons cons cons infra</span>
+<span class="s1">T&lt; == [cons cons dipd] cons cons cons infra</span>
+<span class="s1">E == pop swap roll&lt; rest rest cons cons</span>
+
+<span class="s1">BTree-add == [popop not] [[pop] dipd BTree-new] [] [P [T&gt;] [E] [T&lt;] cmp] genrec</span>
+
+<span class="s1">&#39;&#39;&#39;</span><span class="p">,</span> <span class="n">D</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[35]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[] 23 &quot;b&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Initial</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 23 [] []]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[36]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;b&quot; 23 [] []] 88 &quot;c&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Less than</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 23 [] [&#39;c&#39; 88 [] []]]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[37]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;b&quot; 23 [] []] 88 &quot;a&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Greater than</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 23 [&#39;a&#39; 88 [] []] []]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[38]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[&quot;b&quot; 23 [] []] 88 &quot;b&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Equal to</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;b&#39; 88 [] []]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[39]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[] 23 &quot;a&quot; BTree-add 88 &quot;b&quot; BTree-add 44 &quot;c&quot; BTree-add&#39;</span><span class="p">)</span>  <span class="c1"># Series.</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[&#39;a&#39; 23 [] [&#39;b&#39; 88 [] [&#39;c&#39; 44 [] []]]]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Factoring-and-naming">Factoring and naming<a class="anchor-link" href="#Factoring-and-naming">&#182;</a></h1><p>It may seem silly, but a big part of programming in Forth (and therefore in Joy) is the idea of small, highly-factored definitions.  If you choose names carefully the resulting definitions can take on a semantic role.</p>
+
+<pre><code>get-node-key == popop popop first
+remove-key-and-value-from-node == rest rest
+pack-key-and-value == cons cons
+prep-new-key-and-value == pop swap roll&lt;
+pack-and-apply == [pack-key-and-value] swoncat cons pack-key-and-value infra
+
+BTree-new == swap [[] []] pack-key-and-value
+P == over [get-node-key] nullary
+T&gt; == [dipdd] pack-and-apply
+T&lt; == [dipd] pack-and-apply
+E == prep-new-key-and-value remove-key-and-value-from-node pack-key-and-value</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="A-Version-of-BTree-iter-that-does-In-Order-Traversal">A Version of <code>BTree-iter</code> that does In-Order Traversal<a class="anchor-link" href="#A-Version-of-BTree-iter-that-does-In-Order-Traversal">&#182;</a></h1>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>If you look back to the <a href="#Node-case-[key-value-left-right]">non-empty case of the <code>BTree-iter</code> function</a> we can design a varient that first processes the left child, then the current node, then the right child.  This will allow us to traverse the tree in sort order.</p>
+
+<pre><code>BTree-iter-order == [not] [pop] [R0 [BTree-iter] R1] ifte
+
+</code></pre>
+<p>To define <code>R0</code> and <code>R1</code> it helps to look at them as they will appear when they run:</p>
+
+<pre><code>[key value left right] R0 [BTree-iter-order] R1</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Process-the-left-child.">Process the left child.<a class="anchor-link" href="#Process-the-left-child.">&#182;</a></h4><p>Staring at this for a bit suggests <code>dup third</code> to start:</p>
+
+<pre><code>[key value left right] R0        [BTree-iter-order] R1
+[key value left right] dup third [BTree-iter-order] R1
+[key value left right] left      [BTree-iter-order] R1
+
+</code></pre>
+<p>Now maybe:</p>
+
+<pre><code>[key value left right] left [BTree-iter-order] [cons dip] dupdip
+[key value left right] left [BTree-iter-order] cons dip [BTree-iter-order]
+[key value left right] [left BTree-iter-order]      dip [BTree-iter-order]
+left BTree-iter-order [key value left right]            [BTree-iter-order]</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Process-the-current-node.">Process the current node.<a class="anchor-link" href="#Process-the-current-node.">&#182;</a></h4><p>So far, so good.  Now we need to process the current node's values:</p>
+
+<pre><code>left BTree-iter-order [key value left right] [BTree-iter-order] [[F] dupdip] dip
+left BTree-iter-order [key value left right] [F] dupdip [BTree-iter-order]
+left BTree-iter-order [key value left right] F [key value left right] [BTree-iter-order]
+
+</code></pre>
+<p>If <code>F</code> needs items from the stack below the left stuff it should have <code>cons</code>'d them before beginning maybe?  For functions like <code>first</code> it works fine as-is.</p>
+
+<pre><code>left BTree-iter-order [key value left right] first [key value left right] [BTree-iter-order]
+left BTree-iter-order key [key value left right] [BTree-iter-order]</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Process-the-right-child.">Process the right child.<a class="anchor-link" href="#Process-the-right-child.">&#182;</a></h4><p>First ditch the rest of the node and get the right child:</p>
+
+<pre><code>left BTree-iter-order key [key value left right] [BTree-iter-order] [rest rest rest first] dip
+left BTree-iter-order key right [BTree-iter-order]
+
+</code></pre>
+<p>Then, of course, we just need <code>i</code> to run <code>BTree-iter-order</code> on the right side:</p>
+
+<pre><code>left BTree-iter-order key right [BTree-iter-order] i
+left BTree-iter-order key right BTree-iter-order</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Defining-BTree-iter-order">Defining <code>BTree-iter-order</code><a class="anchor-link" href="#Defining-BTree-iter-order">&#182;</a></h4><p>The result is a little awkward:</p>
+
+<pre><code>R1 == [cons dip] dupdip [[F] dupdip] dip [rest rest rest first] dip i
+
+</code></pre>
+<p>Let's do a little semantic factoring:</p>
+
+<pre><code>fourth == rest rest rest first
+
+proc_left == [cons dip] dupdip
+proc_current == [[F] dupdip] dip
+proc_right == [fourth] dip i
+
+BTree-iter-order == [not] [pop] [dup third] [proc_left proc_current proc_right] genrec
+
+</code></pre>
+<p>Now we can sort sequences.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[40]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;BTree-iter-order == [not] [pop] [dup third] [[cons dip] dupdip [[first] dupdip] dip [rest rest rest first] dip i] genrec&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[41]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[3 9 5 2 8 6 7 8 4] to_set BTree-iter-order&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>9 8 7 6 5 4 3 2
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Miscellaneous-Crap">Miscellaneous Crap<a class="anchor-link" href="#Miscellaneous-Crap">&#182;</a></h2>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Toy-with-it.">Toy with it.<a class="anchor-link" href="#Toy-with-it.">&#182;</a></h3><p>Let's reexamine:</p>
+
+<pre><code>[key value left right] R0 [BTree-iter-order] R1
+    ...
+left BTree-iter-order key value F right BTree-iter-order
+
+
+[key value left right] disenstacken swap
+ key value left right               swap
+ key value right left
+
+key value right left [BTree-iter-order] [cons dipdd] dupdip
+key value right left [BTree-iter-order] cons dipdd [BTree-iter-order]
+key value right [left BTree-iter-order]      dipdd [BTree-iter-order]
+left BTree-iter-order key value right              [BTree-iter-order]
+
+left BTree-iter-order key value   right [F] dip [BTree-iter-order]
+left BTree-iter-order key value F right         [BTree-iter-order] i
+left BTree-iter-order key value F right          BTree-iter-order
+
+</code></pre>
+<p>So:</p>
+
+<pre><code>R0 == disenstacken swap
+R1 == [cons dipdd [F] dip] dupdip i
+
+[key value left right] R0                [BTree-iter-order] R1
+[key value left right] disenstacken swap [BTree-iter-order] [cons dipdd [F] dip] dupdip i
+ key value right left                    [BTree-iter-order] [cons dipdd [F] dip] dupdip i
+
+ key value right left [BTree-iter-order] cons dipdd [F] dip [BTree-iter-order] i
+ key value right [left BTree-iter-order]      dipdd [F] dip [BTree-iter-order] i
+ left BTree-iter-order key value   right            [F] dip [BTree-iter-order] i
+ left BTree-iter-order key value F right                    [BTree-iter-order] i
+ left BTree-iter-order key value F right                     BTree-iter-order
+
+
+BTree-iter-order == [not] [pop] [disenstacken swap] [[cons dipdd [F] dip] dupdip i] genrec</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Refactor-cons-cons">Refactor <code>cons cons</code><a class="anchor-link" href="#Refactor-cons-cons">&#182;</a></h4>
+<pre><code>cons2 == cons cons
+
+</code></pre>
+<p>Refactoring:</p>
+
+<pre><code>BTree-new == swap [[] []] cons2
+T == [cons2 dipdd] cons2 cons infra
+Te == [cons2 dipd] cons2 cons infra
+Ee == pop swap roll&lt; rest rest cons2
+
+</code></pre>
+<p>It's used a lot because it's tied to the fact that there are two "data items" in each node.  This point to a more general factorization that would render a combinator that could work for other geometries of trees.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="A-General-Form-for-Trees">A General Form for Trees<a class="anchor-link" href="#A-General-Form-for-Trees">&#182;</a></h2><p>A general form for tree data with N children per node:</p>
+
+<pre><code>[[data] [child0] ... [childN-1]]
+
+</code></pre>
+<p>Suggests a general form of recursive iterator, but I have to go walk the dogs at the mo'.</p>
+
+</div>
+</div>
 </div>
     </div>
   </div>

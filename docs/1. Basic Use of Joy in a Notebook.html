@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Developing a Program</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>1. Basic Use of Joy in a Notebook</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11775,10 +11775,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Project-Euler,-first-problem:-&quot;Multiples-of-3-and-5&quot;"><a href="https://projecteuler.net/problem=1">Project Euler, first problem: "Multiples of 3 and 5"</a><a class="anchor-link" href="#Project-Euler,-first-problem:-&quot;Multiples-of-3-and-5&quot;">&#182;</a></h1>
-<pre><code>If we list all the natural numbers below 10 that are multiples of 3 or 5, we get 3, 5, 6 and 9. The sum of these multiples is 23.
-
-Find the sum of all the multiples of 3 or 5 below 1000.</code></pre>
+<h3 id="Preamble">Preamble<a class="anchor-link" href="#Preamble">&#182;</a></h3><p>First, import what we need.</p>
 
 </div>
 </div>
@@ -11788,7 +11785,10 @@ Find the sum of all the multiples of 3 or 5 below 1000.</code></pre>
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">notebook_preamble</span> <span class="kn">import</span> <span class="n">J</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">define</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">joy.joy</span> <span class="kn">import</span> <span class="n">run</span>
+<span class="kn">from</span> <span class="nn">joy.library</span> <span class="kn">import</span> <span class="n">initialize</span>
+<span class="kn">from</span> <span class="nn">joy.utils.stack</span> <span class="kn">import</span> <span class="n">stack_to_string</span>
+<span class="kn">from</span> <span class="nn">joy.utils.pretty_print</span> <span class="kn">import</span> <span class="n">TracePrinter</span>
 </pre></div>
 
 </div>
@@ -11800,7 +11800,7 @@ Find the sum of all the multiples of 3 or 5 below 1000.</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's create a predicate that returns <code>True</code> if a number is a multiple of 3 or 5 and <code>False</code> otherwise.</p>
+<p>Define a dictionary, an initial stack, and two helper functions to run Joy code and print results for us.</p>
 
 </div>
 </div>
@@ -11810,7 +11810,18 @@ Find the sum of all the multiples of 3 or 5 below 1000.</code></pre>
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;P == [3 % not] dupdip 5 % not or&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">D</span> <span class="o">=</span> <span class="n">initialize</span><span class="p">()</span>
+<span class="n">S</span> <span class="o">=</span> <span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">J</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="k">print</span> <span class="n">stack_to_string</span><span class="p">(</span><span class="n">run</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">D</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">V</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="n">tp</span> <span class="o">=</span> <span class="n">TracePrinter</span><span class="p">()</span>
+    <span class="n">run</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">tp</span><span class="o">.</span><span class="n">viewer</span><span class="p">)</span>
+    <span class="n">tp</span><span class="o">.</span><span class="n">print_</span><span class="p">()</span>
 </pre></div>
 
 </div>
@@ -11818,12 +11829,20 @@ Find the sum of all the multiples of 3 or 5 below 1000.</code></pre>
 </div>
 
 </div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Run-some-simple-programs">Run some simple programs<a class="anchor-link" href="#Run-some-simple-programs">&#182;</a></h3>
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;80 P&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;23 18 +&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11840,19 +11859,38 @@ Find the sum of all the multiples of 3 or 5 below 1000.</code></pre>
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>             . 80 P
-          80 . P
-          80 . [3 % not] dupdip 5 % not or
-80 [3 % not] . dupdip 5 % not or
-          80 . 3 % not 80 5 % not or
-        80 3 . % not 80 5 % not or
-           2 . not 80 5 % not or
-       False . 80 5 % not or
-    False 80 . 5 % not or
-  False 80 5 . % not or
-     False 0 . not or
-  False True . or
-        True . 
+<pre>41
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;45 30 gcd&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>15
 </pre>
 </div>
 </div>
@@ -11865,74 +11903,17 @@ Find the sum of all the multiples of 3 or 5 below 1000.</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Given the predicate function <code>P</code> a suitable program is:</p>
-
-<pre><code>PE1 == 1000 range [P] filter sum
-
-</code></pre>
-<p>This function generates a list of the integers from 0 to 999, filters
-that list by <code>P</code>, and then sums the result.</p>
-<p>Logically this is fine, but pragmatically we are doing more work than we
-should be; we generate one thousand integers but actually use less than
-half of them.  A better solution would be to generate just the multiples
-we want to sum, and to add them as we go rather than storing them and
-adding summing them at the end.</p>
-<p>At first I had the idea to use two counters and increase them by three
-and five, respectively.  This way we only generate the terms that we
-actually want to sum.  We have to proceed by incrementing the counter
-that is lower, or if they are equal, the three counter, and we have to
-take care not to double add numbers like 15 that are multiples of both
-three and five.</p>
-<p>This seemed a little clunky, so I tried a different approach.</p>
-<p>Consider the first few terms in the series:</p>
-
-<pre><code>3 5 6 9 10 12 15 18 20 21 ...
-
-</code></pre>
-<p>Subtract each number from the one after it (subtracting 0 from 3):</p>
-
-<pre><code>3 5 6 9 10 12 15 18 20 21 24 25 27 30 ...
-0 3 5 6  9 10 12 15 18 20 21 24 25 27 ...
--------------------------------------------
-3 2 1 3  1  2  3  3  2  1  3  1  2  3 ...
-
-</code></pre>
-<p>You get this lovely repeating palindromic sequence:</p>
-
-<pre><code>3 2 1 3 1 2 3
-
-</code></pre>
-<p>To make a counter that increments by factors of 3 and 5 you just add
-these differences to the counter one-by-one in a loop.</p>
-<p>To make use of this sequence to increment a counter and sum terms as we
-go we need a function that will accept the sum, the counter, and the next
-term to add, and that adds the term to the counter and a copy of the
-counter to the running sum.  This function will do that:</p>
-
-<pre><code>PE1.1 == + [+] dupdip</code></pre>
+<h3 id="With-Viewer">With Viewer<a class="anchor-link" href="#With-Viewer">&#182;</a></h3><p>A <code>viewer</code> records each step of the evaluation of a Joy program.  The <code>TracePrinter</code> has a facility for printing out a trace of the evaluation, one line per step.  Each step is aligned to the current interpreter position, signified by a period separating the stack on the left from the pending expression ("continuation") on the right.  I find these traces beautiful, like a kind of art.</p>
 
 </div>
 </div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;PE1.1 == + [+] dupdip&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;0 0 3 PE1.1&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;23 18 +&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11949,16 +11930,10 @@ counter to the running sum.  This function will do that:</p>
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>        . 0 0 3 PE1.1
-      0 . 0 3 PE1.1
-    0 0 . 3 PE1.1
-  0 0 3 . PE1.1
-  0 0 3 . + [+] dupdip
-    0 3 . [+] dupdip
-0 3 [+] . dupdip
-    0 3 . + 3
-      3 . 3
-    3 3 . 
+<pre>      . 23 18 +
+   23 . 18 +
+23 18 . +
+   41 . 
 </pre>
 </div>
 </div>
@@ -11972,7 +11947,7 @@ counter to the running sum.  This function will do that:</p>
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;0 0 [3 2 1 3 1 2 3] [PE1.1] step&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;45 30 gcd&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -11989,79 +11964,30 @@ counter to the running sum.  This function will do that:</p>
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>                            . 0 0 [3 2 1 3 1 2 3] [PE1.1] step
-                          0 . 0 [3 2 1 3 1 2 3] [PE1.1] step
-                        0 0 . [3 2 1 3 1 2 3] [PE1.1] step
-        0 0 [3 2 1 3 1 2 3] . [PE1.1] step
-0 0 [3 2 1 3 1 2 3] [PE1.1] . step
-              0 0 3 [PE1.1] . i [2 1 3 1 2 3] [PE1.1] step
-                      0 0 3 . PE1.1 [2 1 3 1 2 3] [PE1.1] step
-                      0 0 3 . + [+] dupdip [2 1 3 1 2 3] [PE1.1] step
-                        0 3 . [+] dupdip [2 1 3 1 2 3] [PE1.1] step
-                    0 3 [+] . dupdip [2 1 3 1 2 3] [PE1.1] step
-                        0 3 . + 3 [2 1 3 1 2 3] [PE1.1] step
-                          3 . 3 [2 1 3 1 2 3] [PE1.1] step
-                        3 3 . [2 1 3 1 2 3] [PE1.1] step
-          3 3 [2 1 3 1 2 3] . [PE1.1] step
-  3 3 [2 1 3 1 2 3] [PE1.1] . step
-              3 3 2 [PE1.1] . i [1 3 1 2 3] [PE1.1] step
-                      3 3 2 . PE1.1 [1 3 1 2 3] [PE1.1] step
-                      3 3 2 . + [+] dupdip [1 3 1 2 3] [PE1.1] step
-                        3 5 . [+] dupdip [1 3 1 2 3] [PE1.1] step
-                    3 5 [+] . dupdip [1 3 1 2 3] [PE1.1] step
-                        3 5 . + 5 [1 3 1 2 3] [PE1.1] step
-                          8 . 5 [1 3 1 2 3] [PE1.1] step
-                        8 5 . [1 3 1 2 3] [PE1.1] step
-            8 5 [1 3 1 2 3] . [PE1.1] step
-    8 5 [1 3 1 2 3] [PE1.1] . step
-              8 5 1 [PE1.1] . i [3 1 2 3] [PE1.1] step
-                      8 5 1 . PE1.1 [3 1 2 3] [PE1.1] step
-                      8 5 1 . + [+] dupdip [3 1 2 3] [PE1.1] step
-                        8 6 . [+] dupdip [3 1 2 3] [PE1.1] step
-                    8 6 [+] . dupdip [3 1 2 3] [PE1.1] step
-                        8 6 . + 6 [3 1 2 3] [PE1.1] step
-                         14 . 6 [3 1 2 3] [PE1.1] step
-                       14 6 . [3 1 2 3] [PE1.1] step
-             14 6 [3 1 2 3] . [PE1.1] step
-     14 6 [3 1 2 3] [PE1.1] . step
-             14 6 3 [PE1.1] . i [1 2 3] [PE1.1] step
-                     14 6 3 . PE1.1 [1 2 3] [PE1.1] step
-                     14 6 3 . + [+] dupdip [1 2 3] [PE1.1] step
-                       14 9 . [+] dupdip [1 2 3] [PE1.1] step
-                   14 9 [+] . dupdip [1 2 3] [PE1.1] step
-                       14 9 . + 9 [1 2 3] [PE1.1] step
-                         23 . 9 [1 2 3] [PE1.1] step
-                       23 9 . [1 2 3] [PE1.1] step
-               23 9 [1 2 3] . [PE1.1] step
-       23 9 [1 2 3] [PE1.1] . step
-             23 9 1 [PE1.1] . i [2 3] [PE1.1] step
-                     23 9 1 . PE1.1 [2 3] [PE1.1] step
-                     23 9 1 . + [+] dupdip [2 3] [PE1.1] step
-                      23 10 . [+] dupdip [2 3] [PE1.1] step
-                  23 10 [+] . dupdip [2 3] [PE1.1] step
-                      23 10 . + 10 [2 3] [PE1.1] step
-                         33 . 10 [2 3] [PE1.1] step
-                      33 10 . [2 3] [PE1.1] step
-                33 10 [2 3] . [PE1.1] step
-        33 10 [2 3] [PE1.1] . step
-            33 10 2 [PE1.1] . i [3] [PE1.1] step
-                    33 10 2 . PE1.1 [3] [PE1.1] step
-                    33 10 2 . + [+] dupdip [3] [PE1.1] step
-                      33 12 . [+] dupdip [3] [PE1.1] step
-                  33 12 [+] . dupdip [3] [PE1.1] step
-                      33 12 . + 12 [3] [PE1.1] step
-                         45 . 12 [3] [PE1.1] step
-                      45 12 . [3] [PE1.1] step
-                  45 12 [3] . [PE1.1] step
-          45 12 [3] [PE1.1] . step
-            45 12 3 [PE1.1] . i
-                    45 12 3 . PE1.1
-                    45 12 3 . + [+] dupdip
-                      45 15 . [+] dupdip
-                  45 15 [+] . dupdip
-                      45 15 . + 15
-                         60 . 15
-                      60 15 . 
+<pre>                                  . 45 30 gcd
+                               45 . 30 gcd
+                            45 30 . gcd
+                            45 30 . 1 [tuck modulus dup 0 &gt;] loop pop
+                          45 30 1 . [tuck modulus dup 0 &gt;] loop pop
+   45 30 1 [tuck modulus dup 0 &gt;] . loop pop
+     45 30 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
+                            45 30 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         30 45 30 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                            30 15 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         30 15 15 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                       30 15 15 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
+                       30 15 True . [tuck modulus dup 0 &gt;] loop pop
+30 15 True [tuck modulus dup 0 &gt;] . loop pop
+     30 15 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
+                            30 15 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         15 30 15 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                             15 0 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                           15 0 0 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         15 0 0 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
+                       15 0 False . [tuck modulus dup 0 &gt;] loop pop
+15 0 False [tuck modulus dup 0 &gt;] . loop pop
+                             15 0 . pop
+                               15 . 
 </pre>
 </div>
 </div>
@@ -12074,7 +12000,7 @@ counter to the running sum.  This function will do that:</p>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>So one <code>step</code> through all seven terms brings the counter to 15 and the total to 60.</p>
+<p>Here's a longer trace.</p>
 
 </div>
 </div>
@@ -12084,170 +12010,7 @@ counter to the running sum.  This function will do that:</p>
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="mi">1000</span> <span class="o">/</span> <span class="mi">15</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt output_prompt">Out[7]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>66</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="mi">66</span> <span class="o">*</span> <span class="mi">15</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt output_prompt">Out[8]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>990</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="mi">1000</span> <span class="o">-</span> <span class="mi">990</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt output_prompt">Out[9]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>10</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We only want the terms <em>less than</em> 1000.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="mi">999</span> <span class="o">-</span> <span class="mi">990</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt output_prompt">Out[10]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>9</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>That means we want to run the full list of numbers sixty-six times to get to 990 and then the first four numbers 3 2 1 3 to get to 999.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;PE1 == 0 0 66 [[3 2 1 3 1 2 3] [PE1.1] step] times [3 2 1 3] [PE1.1] step pop&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;PE1&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;96 27 gcd&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12264,7 +12027,46 @@ counter to the running sum.  This function will do that:</p>
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>233168
+<pre>                                  . 96 27 gcd
+                               96 . 27 gcd
+                            96 27 . gcd
+                            96 27 . 1 [tuck modulus dup 0 &gt;] loop pop
+                          96 27 1 . [tuck modulus dup 0 &gt;] loop pop
+   96 27 1 [tuck modulus dup 0 &gt;] . loop pop
+     96 27 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
+                            96 27 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         27 96 27 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                            27 15 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         27 15 15 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                       27 15 15 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
+                       27 15 True . [tuck modulus dup 0 &gt;] loop pop
+27 15 True [tuck modulus dup 0 &gt;] . loop pop
+     27 15 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
+                            27 15 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         15 27 15 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                            15 12 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         15 12 12 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                       15 12 12 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
+                       15 12 True . [tuck modulus dup 0 &gt;] loop pop
+15 12 True [tuck modulus dup 0 &gt;] . loop pop
+     15 12 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
+                            15 12 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         12 15 12 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                             12 3 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                           12 3 3 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                         12 3 3 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
+                        12 3 True . [tuck modulus dup 0 &gt;] loop pop
+ 12 3 True [tuck modulus dup 0 &gt;] . loop pop
+      12 3 [tuck modulus dup 0 &gt;] . i [tuck modulus dup 0 &gt;] loop pop
+                             12 3 . tuck modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                           3 12 3 . modulus dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                              3 0 . dup 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                            3 0 0 . 0 &gt; [tuck modulus dup 0 &gt;] loop pop
+                          3 0 0 0 . &gt; [tuck modulus dup 0 &gt;] loop pop
+                        3 0 False . [tuck modulus dup 0 &gt;] loop pop
+ 3 0 False [tuck modulus dup 0 &gt;] . loop pop
+                              3 0 . pop
+                                3 . 
 </pre>
 </div>
 </div>
@@ -12272,1006 +12074,6 @@ counter to the running sum.  This function will do that:</p>
 </div>
 </div>
 
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>This form uses no extra storage and produces no unused summands.  It's
-good but there's one more trick we can apply.  The list of seven terms
-takes up at least seven bytes.  But notice that all of the terms are less
-than four, and so each can fit in just two bits.  We could store all
-seven terms in just fourteen bits and use masking and shifts to pick out
-each term as we go.  This will use less space and save time loading whole
-integer terms from the list.</p>
-
-<pre><code>    3  2  1  3  1  2  3
-0b 11 10 01 11 01 10 11 == 14811</code></pre>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="mb">0b11100111011011</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt output_prompt">Out[13]:</div>
-
-
-
-
-<div class="output_text output_subarea output_execute_result">
-<pre>14811</pre>
-</div>
-
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;PE1.2 == [3 &amp; PE1.1] dupdip 2 &gt;&gt;&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;0 0 14811 PE1.2&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                      . 0 0 14811 PE1.2
-                    0 . 0 14811 PE1.2
-                  0 0 . 14811 PE1.2
-            0 0 14811 . PE1.2
-            0 0 14811 . [3 &amp; PE1.1] dupdip 2 &gt;&gt;
-0 0 14811 [3 &amp; PE1.1] . dupdip 2 &gt;&gt;
-            0 0 14811 . 3 &amp; PE1.1 14811 2 &gt;&gt;
-          0 0 14811 3 . &amp; PE1.1 14811 2 &gt;&gt;
-                0 0 3 . PE1.1 14811 2 &gt;&gt;
-                0 0 3 . + [+] dupdip 14811 2 &gt;&gt;
-                  0 3 . [+] dupdip 14811 2 &gt;&gt;
-              0 3 [+] . dupdip 14811 2 &gt;&gt;
-                  0 3 . + 3 14811 2 &gt;&gt;
-                    3 . 3 14811 2 &gt;&gt;
-                  3 3 . 14811 2 &gt;&gt;
-            3 3 14811 . 2 &gt;&gt;
-          3 3 14811 2 . &gt;&gt;
-             3 3 3702 . 
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[16]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;3 3 3702 PE1.2&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                     . 3 3 3702 PE1.2
-                   3 . 3 3702 PE1.2
-                 3 3 . 3702 PE1.2
-            3 3 3702 . PE1.2
-            3 3 3702 . [3 &amp; PE1.1] dupdip 2 &gt;&gt;
-3 3 3702 [3 &amp; PE1.1] . dupdip 2 &gt;&gt;
-            3 3 3702 . 3 &amp; PE1.1 3702 2 &gt;&gt;
-          3 3 3702 3 . &amp; PE1.1 3702 2 &gt;&gt;
-               3 3 2 . PE1.1 3702 2 &gt;&gt;
-               3 3 2 . + [+] dupdip 3702 2 &gt;&gt;
-                 3 5 . [+] dupdip 3702 2 &gt;&gt;
-             3 5 [+] . dupdip 3702 2 &gt;&gt;
-                 3 5 . + 5 3702 2 &gt;&gt;
-                   8 . 5 3702 2 &gt;&gt;
-                 8 5 . 3702 2 &gt;&gt;
-            8 5 3702 . 2 &gt;&gt;
-          8 5 3702 2 . &gt;&gt;
-             8 5 925 . 
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[17]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;0 0 14811 7 [PE1.2] times pop&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                      . 0 0 14811 7 [PE1.2] times pop
-                    0 . 0 14811 7 [PE1.2] times pop
-                  0 0 . 14811 7 [PE1.2] times pop
-            0 0 14811 . 7 [PE1.2] times pop
-          0 0 14811 7 . [PE1.2] times pop
-  0 0 14811 7 [PE1.2] . times pop
-    0 0 14811 [PE1.2] . i 6 [PE1.2] times pop
-            0 0 14811 . PE1.2 6 [PE1.2] times pop
-            0 0 14811 . [3 &amp; PE1.1] dupdip 2 &gt;&gt; 6 [PE1.2] times pop
-0 0 14811 [3 &amp; PE1.1] . dupdip 2 &gt;&gt; 6 [PE1.2] times pop
-            0 0 14811 . 3 &amp; PE1.1 14811 2 &gt;&gt; 6 [PE1.2] times pop
-          0 0 14811 3 . &amp; PE1.1 14811 2 &gt;&gt; 6 [PE1.2] times pop
-                0 0 3 . PE1.1 14811 2 &gt;&gt; 6 [PE1.2] times pop
-                0 0 3 . + [+] dupdip 14811 2 &gt;&gt; 6 [PE1.2] times pop
-                  0 3 . [+] dupdip 14811 2 &gt;&gt; 6 [PE1.2] times pop
-              0 3 [+] . dupdip 14811 2 &gt;&gt; 6 [PE1.2] times pop
-                  0 3 . + 3 14811 2 &gt;&gt; 6 [PE1.2] times pop
-                    3 . 3 14811 2 &gt;&gt; 6 [PE1.2] times pop
-                  3 3 . 14811 2 &gt;&gt; 6 [PE1.2] times pop
-            3 3 14811 . 2 &gt;&gt; 6 [PE1.2] times pop
-          3 3 14811 2 . &gt;&gt; 6 [PE1.2] times pop
-             3 3 3702 . 6 [PE1.2] times pop
-           3 3 3702 6 . [PE1.2] times pop
-   3 3 3702 6 [PE1.2] . times pop
-     3 3 3702 [PE1.2] . i 5 [PE1.2] times pop
-             3 3 3702 . PE1.2 5 [PE1.2] times pop
-             3 3 3702 . [3 &amp; PE1.1] dupdip 2 &gt;&gt; 5 [PE1.2] times pop
- 3 3 3702 [3 &amp; PE1.1] . dupdip 2 &gt;&gt; 5 [PE1.2] times pop
-             3 3 3702 . 3 &amp; PE1.1 3702 2 &gt;&gt; 5 [PE1.2] times pop
-           3 3 3702 3 . &amp; PE1.1 3702 2 &gt;&gt; 5 [PE1.2] times pop
-                3 3 2 . PE1.1 3702 2 &gt;&gt; 5 [PE1.2] times pop
-                3 3 2 . + [+] dupdip 3702 2 &gt;&gt; 5 [PE1.2] times pop
-                  3 5 . [+] dupdip 3702 2 &gt;&gt; 5 [PE1.2] times pop
-              3 5 [+] . dupdip 3702 2 &gt;&gt; 5 [PE1.2] times pop
-                  3 5 . + 5 3702 2 &gt;&gt; 5 [PE1.2] times pop
-                    8 . 5 3702 2 &gt;&gt; 5 [PE1.2] times pop
-                  8 5 . 3702 2 &gt;&gt; 5 [PE1.2] times pop
-             8 5 3702 . 2 &gt;&gt; 5 [PE1.2] times pop
-           8 5 3702 2 . &gt;&gt; 5 [PE1.2] times pop
-              8 5 925 . 5 [PE1.2] times pop
-            8 5 925 5 . [PE1.2] times pop
-    8 5 925 5 [PE1.2] . times pop
-      8 5 925 [PE1.2] . i 4 [PE1.2] times pop
-              8 5 925 . PE1.2 4 [PE1.2] times pop
-              8 5 925 . [3 &amp; PE1.1] dupdip 2 &gt;&gt; 4 [PE1.2] times pop
-  8 5 925 [3 &amp; PE1.1] . dupdip 2 &gt;&gt; 4 [PE1.2] times pop
-              8 5 925 . 3 &amp; PE1.1 925 2 &gt;&gt; 4 [PE1.2] times pop
-            8 5 925 3 . &amp; PE1.1 925 2 &gt;&gt; 4 [PE1.2] times pop
-                8 5 1 . PE1.1 925 2 &gt;&gt; 4 [PE1.2] times pop
-                8 5 1 . + [+] dupdip 925 2 &gt;&gt; 4 [PE1.2] times pop
-                  8 6 . [+] dupdip 925 2 &gt;&gt; 4 [PE1.2] times pop
-              8 6 [+] . dupdip 925 2 &gt;&gt; 4 [PE1.2] times pop
-                  8 6 . + 6 925 2 &gt;&gt; 4 [PE1.2] times pop
-                   14 . 6 925 2 &gt;&gt; 4 [PE1.2] times pop
-                 14 6 . 925 2 &gt;&gt; 4 [PE1.2] times pop
-             14 6 925 . 2 &gt;&gt; 4 [PE1.2] times pop
-           14 6 925 2 . &gt;&gt; 4 [PE1.2] times pop
-             14 6 231 . 4 [PE1.2] times pop
-           14 6 231 4 . [PE1.2] times pop
-   14 6 231 4 [PE1.2] . times pop
-     14 6 231 [PE1.2] . i 3 [PE1.2] times pop
-             14 6 231 . PE1.2 3 [PE1.2] times pop
-             14 6 231 . [3 &amp; PE1.1] dupdip 2 &gt;&gt; 3 [PE1.2] times pop
- 14 6 231 [3 &amp; PE1.1] . dupdip 2 &gt;&gt; 3 [PE1.2] times pop
-             14 6 231 . 3 &amp; PE1.1 231 2 &gt;&gt; 3 [PE1.2] times pop
-           14 6 231 3 . &amp; PE1.1 231 2 &gt;&gt; 3 [PE1.2] times pop
-               14 6 3 . PE1.1 231 2 &gt;&gt; 3 [PE1.2] times pop
-               14 6 3 . + [+] dupdip 231 2 &gt;&gt; 3 [PE1.2] times pop
-                 14 9 . [+] dupdip 231 2 &gt;&gt; 3 [PE1.2] times pop
-             14 9 [+] . dupdip 231 2 &gt;&gt; 3 [PE1.2] times pop
-                 14 9 . + 9 231 2 &gt;&gt; 3 [PE1.2] times pop
-                   23 . 9 231 2 &gt;&gt; 3 [PE1.2] times pop
-                 23 9 . 231 2 &gt;&gt; 3 [PE1.2] times pop
-             23 9 231 . 2 &gt;&gt; 3 [PE1.2] times pop
-           23 9 231 2 . &gt;&gt; 3 [PE1.2] times pop
-              23 9 57 . 3 [PE1.2] times pop
-            23 9 57 3 . [PE1.2] times pop
-    23 9 57 3 [PE1.2] . times pop
-      23 9 57 [PE1.2] . i 2 [PE1.2] times pop
-              23 9 57 . PE1.2 2 [PE1.2] times pop
-              23 9 57 . [3 &amp; PE1.1] dupdip 2 &gt;&gt; 2 [PE1.2] times pop
-  23 9 57 [3 &amp; PE1.1] . dupdip 2 &gt;&gt; 2 [PE1.2] times pop
-              23 9 57 . 3 &amp; PE1.1 57 2 &gt;&gt; 2 [PE1.2] times pop
-            23 9 57 3 . &amp; PE1.1 57 2 &gt;&gt; 2 [PE1.2] times pop
-               23 9 1 . PE1.1 57 2 &gt;&gt; 2 [PE1.2] times pop
-               23 9 1 . + [+] dupdip 57 2 &gt;&gt; 2 [PE1.2] times pop
-                23 10 . [+] dupdip 57 2 &gt;&gt; 2 [PE1.2] times pop
-            23 10 [+] . dupdip 57 2 &gt;&gt; 2 [PE1.2] times pop
-                23 10 . + 10 57 2 &gt;&gt; 2 [PE1.2] times pop
-                   33 . 10 57 2 &gt;&gt; 2 [PE1.2] times pop
-                33 10 . 57 2 &gt;&gt; 2 [PE1.2] times pop
-             33 10 57 . 2 &gt;&gt; 2 [PE1.2] times pop
-           33 10 57 2 . &gt;&gt; 2 [PE1.2] times pop
-             33 10 14 . 2 [PE1.2] times pop
-           33 10 14 2 . [PE1.2] times pop
-   33 10 14 2 [PE1.2] . times pop
-     33 10 14 [PE1.2] . i 1 [PE1.2] times pop
-             33 10 14 . PE1.2 1 [PE1.2] times pop
-             33 10 14 . [3 &amp; PE1.1] dupdip 2 &gt;&gt; 1 [PE1.2] times pop
- 33 10 14 [3 &amp; PE1.1] . dupdip 2 &gt;&gt; 1 [PE1.2] times pop
-             33 10 14 . 3 &amp; PE1.1 14 2 &gt;&gt; 1 [PE1.2] times pop
-           33 10 14 3 . &amp; PE1.1 14 2 &gt;&gt; 1 [PE1.2] times pop
-              33 10 2 . PE1.1 14 2 &gt;&gt; 1 [PE1.2] times pop
-              33 10 2 . + [+] dupdip 14 2 &gt;&gt; 1 [PE1.2] times pop
-                33 12 . [+] dupdip 14 2 &gt;&gt; 1 [PE1.2] times pop
-            33 12 [+] . dupdip 14 2 &gt;&gt; 1 [PE1.2] times pop
-                33 12 . + 12 14 2 &gt;&gt; 1 [PE1.2] times pop
-                   45 . 12 14 2 &gt;&gt; 1 [PE1.2] times pop
-                45 12 . 14 2 &gt;&gt; 1 [PE1.2] times pop
-             45 12 14 . 2 &gt;&gt; 1 [PE1.2] times pop
-           45 12 14 2 . &gt;&gt; 1 [PE1.2] times pop
-              45 12 3 . 1 [PE1.2] times pop
-            45 12 3 1 . [PE1.2] times pop
-    45 12 3 1 [PE1.2] . times pop
-      45 12 3 [PE1.2] . i pop
-              45 12 3 . PE1.2 pop
-              45 12 3 . [3 &amp; PE1.1] dupdip 2 &gt;&gt; pop
-  45 12 3 [3 &amp; PE1.1] . dupdip 2 &gt;&gt; pop
-              45 12 3 . 3 &amp; PE1.1 3 2 &gt;&gt; pop
-            45 12 3 3 . &amp; PE1.1 3 2 &gt;&gt; pop
-              45 12 3 . PE1.1 3 2 &gt;&gt; pop
-              45 12 3 . + [+] dupdip 3 2 &gt;&gt; pop
-                45 15 . [+] dupdip 3 2 &gt;&gt; pop
-            45 15 [+] . dupdip 3 2 &gt;&gt; pop
-                45 15 . + 15 3 2 &gt;&gt; pop
-                   60 . 15 3 2 &gt;&gt; pop
-                60 15 . 3 2 &gt;&gt; pop
-              60 15 3 . 2 &gt;&gt; pop
-            60 15 3 2 . &gt;&gt; pop
-              60 15 0 . pop
-                60 15 . 
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>And so we have at last:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[18]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;PE1 == 0 0 66 [14811 7 [PE1.2] times pop] times 14811 4 [PE1.2] times popop&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[19]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;PE1&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>233168
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Let's refactor.</p>
-
-<pre><code>  14811 7 [PE1.2] times pop
-  14811 4 [PE1.2] times pop
-  14811 n [PE1.2] times pop
-n 14811 swap [PE1.2] times pop</code></pre>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[20]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;PE1.3 == 14811 swap [PE1.2] times pop&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we can simplify the definition above:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[21]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[22]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;PE1&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>233168
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Here's our joy program all in one place.  It doesn't make so much sense, but if you have read through the above description of how it was derived I hope it's clear.</p>
-
-<pre><code>PE1.1 == + [+] dupdip
-PE1.2 == [3 &amp; PE1.1] dupdip 2 &gt;&gt;
-PE1.3 == 14811 swap [PE1.2] times pop
-PE1 == 0 0 66 [7 PE1.3] times 4 PE1.3 pop</code></pre>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Generator-Version">Generator Version<a class="anchor-link" href="#Generator-Version">&#182;</a></h1><p>It's a little clunky iterating sixty-six times though the seven numbers then four more.  In the <em>Generator Programs</em> notebook we derive a generator that can be repeatedly driven by the <code>x</code> combinator to produce a stream of the seven numbers repeating over and over again.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[23]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;PE1.terms == [0 swap [dup [pop 14811] [] branch [3 &amp;] dupdip 2 &gt;&gt;] dip rest cons]&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[24]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;PE1.terms 21 [x] times&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[0 swap [dup [pop 14811] [] branch [3 &amp;] dupdip 2 &gt;&gt;] dip rest cons] 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>We know from above that we need sixty-six times seven then four more terms to reach up to but not over one thousand.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[25]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;7 66 * 4 +&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>466
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Here-they-are...">Here they are...<a class="anchor-link" href="#Here-they-are...">&#182;</a></h3>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[26]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;PE1.terms 466 [x] times pop&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="...and-they-do-sum-to-999.">...and they do sum to 999.<a class="anchor-link" href="#...and-they-do-sum-to-999.">&#182;</a></h3>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[27]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[PE1.terms 466 [x] times pop] run sum&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>999
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we can use <code>PE1.1</code> to accumulate the terms as we go, and then <code>pop</code> the generator and the counter from the stack when we're done, leaving just the sum.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[28]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;0 0 PE1.terms 466 [x [PE1.1] dip] times popop&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>233168
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="A-little-further-analysis-renders-iteration-unnecessary.">A little further analysis renders iteration unnecessary.<a class="anchor-link" href="#A-little-further-analysis-renders-iteration-unnecessary.">&#182;</a></h1><p>Consider finding the sum of the positive integers less than or equal to ten.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[29]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[10 9 8 7 6 5 4 3 2 1] sum&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>55
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Instead of summing them, <a href="https://en.wikipedia.org/wiki/File:Animated_proof_for_the_formula_giving_the_sum_of_the_first_integers_1%2B2%2B...%2Bn.gif">observe</a>:</p>
-
-<pre><code>  10  9  8  7  6
-+  1  2  3  4  5
----- -- -- -- --
-  11 11 11 11 11
-
-  11 * 5 = 55
-
-</code></pre>
-<p>From the above example we can deduce that the sum of the first N positive integers is:</p>
-
-<pre><code>(N + 1) * N / 2 
-
-</code></pre>
-<p>(The formula also works for odd values of N, I'll leave that to you if you want to work it out or you can take my word for it.)</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[30]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;F == dup ++ * 2 floordiv&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[31]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;10 F&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>      . 10 F
-   10 . F
-   10 . dup ++ * 2 floordiv
-10 10 . ++ * 2 floordiv
-10 11 . * 2 floordiv
-  110 . 2 floordiv
-110 2 . floordiv
-   55 . 
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Generalizing-to-Blocks-of-Terms">Generalizing to Blocks of Terms<a class="anchor-link" href="#Generalizing-to-Blocks-of-Terms">&#182;</a></h2><p>We can apply the same reasoning to the PE1 problem.</p>
-<p>Between 0 and 990 inclusive there are sixty-six "blocks" of seven terms each, starting with:</p>
-
-<pre><code>[3 5 6 9 10 12 15]
-
-</code></pre>
-<p>And ending with:</p>
-
-<pre><code>[978 980 981 984 985 987 990]
-
-</code></pre>
-<p>If we reverse one of these two blocks and sum pairs...</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[32]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[3 5 6 9 10 12 15] reverse [978 980 981 984 985 987 990] zip&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[[978 15] [980 12] [981 10] [984 9] [985 6] [987 5] [990 3]]
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[33]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[3 5 6 9 10 12 15] reverse [978 980 981 984 985 987 990] zip [sum] map&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[993 992 991 993 991 992 993]
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>(Interesting that the sequence of seven numbers appears again in the rightmost digit of each term.)</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[34]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[ 3 5 6 9 10 12 15] reverse [978 980 981 984 985 987 990] zip [sum] map sum&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>6945
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Since there are sixty-six blocks and we are pairing them up, there must be thirty-three pairs, each of which sums to 6945.  We also have these additional unpaired terms between 990 and 1000:</p>
-
-<pre><code>993 995 996 999
-
-</code></pre>
-<p>So we can give the "sum of all the multiples of 3 or 5 below 1000" like so:</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[35]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;6945 33 * [993 995 996 999] cons sum&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>233168
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>It's worth noting, I think, that this same reasoning holds for any two numbers $n$ and $m$ the multiples of which we hope to sum.  The multiples would have a cycle of differences of length $k$ and so we could compute the sum of $Nk$ multiples as above.</p>
-<p>The sequence of differences will always be a palidrome.  Consider an interval spanning the least common multiple of $n$ and $m$:</p>
-
-<pre><code>|   |   |   |   |   |   |   |
-|      |      |      |      |
-
-</code></pre>
-<p>Here we have 4 and 7, and you can read off the sequence of differences directly from the diagram: 4 3 1 4 2 2 4 1 3 4.</p>
-<p>Geometrically, the actual values of $n$ and $m$ and their <em>lcm</em> don't matter, the pattern they make will always be symmetrical around its midpoint.  The same reasoning holds for multiples of more than two numbers.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="The-Simplest-Program">The Simplest Program<a class="anchor-link" href="#The-Simplest-Program">&#182;</a></h1>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Of course, the simplest joy program for the first Project Euler problem is just:</p>
-
-<pre><code>PE1 == 233168
-
-</code></pre>
-<p>Fin.</p>
-
-</div>
-</div>
 </div>
     </div>
   </div>
