@@ -54,11 +54,6 @@ stack of the implementation language, in this Joypy implementation they
 work instead by changing the pending expression, and intermediate state
 is put there.
 
-
-
-
-§ Basics of Joy
-
 As I study Joy I find that it is very aptly named.  It is clear, concise,
 and ameniable to advanced techniques for constructing bug-free software.
 
@@ -76,7 +71,7 @@ concisely and precisely express the meaning of the text.
 The time and attention of the programmer shifts from thinking about the
 language to thinking in the language, and the development process feels
 more like deriving mathematical truths than like writing ad-hoc
-solitions.
+solutions.
 
 I hope that this package is useful in the sense that it provides an
 additional joy interpreter (the binary in the archive from La Trobe seems
@@ -92,26 +87,60 @@ and a great deal of fascinating material mostly written by Von Thun on
 Joy and its deeper facets as well as how to program in it and several
 interesting aspects.  It's quite a treasure trove.
 
-Joy is stack-based.  There is a main stack that holds data items:
-numbers, strings, functions, and sequences which hold data items
-themselves.  All functions are considered to be unary, accepting a
-stack and returning a stack (including technically number, string, and
-sequence literals which are considered functions that return stacks
-with their value on the top.)
 
-A Joy expression is just a sequence of items.  The evaluation proceeds
-by putting all literals onto the main stack and executing functions as
-they are encountered, passing them the current main stack and replacing
-the main stack with the result returned.
+§ Installation
+
+From PyPI in the usual way, e.g.:
+
+    pip install joypy
+
+Or if you have downloaded the source, from the joypy directory:
+
+    python ./setup.py install
+
+Or you can run the module from the joypy directory (see below.)
+
+To start a crude REPL:
+
+    python -m joy
+
+
+§ Basics of Joy
+
+Joy is stack-based.  There is a main stack that holds data items:
+integers, floats, strings, functions, and sequences or quotes which hold
+data items themselves.
+
+    23 1.8 'a string' "another" dup [21 18 /] [1 [2 [3]]]
+
+A Joy expression is just a sequence of items, also called lists.
+Sequences intended as programs are called "quoted programs".  The
+evaluation proceeds by iterating through the terms in the expression,
+putting all literals onto the main stack and executing functions as they
+are encountered.  Functions receive the current stack and return the next
+stack.
 
 The main loop is very simple as most of the action happens through what
-are called "Combinators", which accept sequences on the stack and run
-them in various ways.  These combinators factor specific patterns that
-provide the effect of control-flow in other languages (such as ifte which
-is like if..then..else..) and strange and wonderful effects (such as
-cleave which is a simple concurrency combinator.)
+are called "combinators", which accept quoted programs on the stack and
+run them in various ways.  These combinators factor specific patterns
+that provide the effect of control-flow in other languages (such as ifte
+which is like if..then..else..)  Combinators receive the current
+expession in addition to the stack and return the next expression. As
+mentioned above, the combinators in Joypy work by changing the pending
+expression before returning it.
 
-Sequences intended as programs are called "quoted programs".
+In general, where otherwise unspecified, the semantics of Joypy are that
+of the underlying Python. That means, for example, that integers are
+unbounded (whatever your machine can handle), strings cannot be added to
+integers but can be multiplied, Boolean True and False are effectively
+identical to ints 1 and 0, empty sequences are considered False, etc.
+
+Nothing is done about Python exceptions currently, although it would be
+possible to capture the stack and expression just before the exception
+and build a robust and flexible error handler.  Because they are both
+just datastructures, you could immediately retry them under a debugger,
+or edit either or both of the stack and expression.  All state is in one
+or the other.
 
 § Literals and Simple Functions
 
