@@ -110,7 +110,7 @@ J('["tommy" 23 [] []] [first] BTree-iter')
 J('["tommy" 23 ["richard" 48 [] []] ["jenny" 18 [] []]] [first] BTree-iter')
 ```
 
-    'jenny' 'richard' 'tommy'
+    'tommy' 'richard' 'jenny'
 
 
 
@@ -118,7 +118,7 @@ J('["tommy" 23 ["richard" 48 [] []] ["jenny" 18 [] []]] [first] BTree-iter')
 J('["tommy" 23 ["richard" 48 [] []] ["jenny" 18 [] []]] [second] BTree-iter')
 ```
 
-    18 48 23
+    23 48 18
 
 
 # Adding Nodes to the BTree
@@ -758,7 +758,7 @@ define('BTree-iter-order == [not] [pop] [dup third] [[cons dip] dupdip [[first] 
 J('[3 9 5 2 8 6 7 8 4] to_set BTree-iter-order')
 ```
 
-    9 8 7 6 5 4 3 2
+    2 3 4 5 6 7 8 9
 
 
 ## Miscellaneous Crap
@@ -820,3 +820,80 @@ A general form for tree data with N children per node:
     [[data] [child0] ... [childN-1]]
 
 Suggests a general form of recursive iterator, but I have to go walk the dogs at the mo'.
+
+#### Just make `[F]` a parameter.
+We can generalize to a sort of pure form:
+
+    BTree-iter == [not] [pop] [[F]]            [R1] genrec
+               == [not] [pop] [[F] [BTree-iter] R1] ifte
+
+Putting `[F]` to the left as a given:
+
+     [F] unit [not] [pop] roll< [R1] genrec
+    [[F]]     [not] [pop] roll< [R1] genrec
+              [not] [pop] [[F]] [R1] genrec
+
+Let's us define a parameterized form:
+
+    BTree-iter == unit [not] [pop] roll< [R1] genrec
+
+So in the general case of non-empty nodes:
+
+    [key value left right] [F] [BTree-iter] R1
+
+We just define `R1` to do whatever it has to to process the node.  For example:
+
+    [key value left right] [F] [BTree-iter] R1
+        ...
+    key value F   left BTree-iter   right BTree-iter
+    left BTree-iter   key value F   right BTree-iter
+    left BTree-iter   right BTree-iter   key value F
+
+Pre-, ??-, post-order traversals.
+
+    [key value  left right] uncons uncons
+     key value [left right]
+
+For pre- and post-order we can use the `step` trick:
+
+    [left right] [BTree-iter] step
+        ...
+    left BTree-iter right BTree-iter
+
+We worked out one scheme for ?in-order? traversal above, but maybe we can do better?
+
+    [key value left right]              [F] [BTree-iter] [disenstacken] dipd
+    [key value left right] disenstacken [F] [BTree-iter]
+     key value left right               [F] [BTree-iter]
+
+    key value left right [F] [BTree-iter] R1.1
+
+Hmm...
+
+    key value left right              [F] [BTree-iter] tuck
+    key value left right [BTree-iter] [F] [BTree-iter] 
+
+
+    [key value left right]                          [F] [BTree-iter] [disenstacken [roll>] dip] dipd
+    [key value left right] disenstacken [roll>] dip [F] [BTree-iter]
+     key value left right               [roll>] dip [F] [BTree-iter]
+     key value left roll> right                     [F] [BTree-iter]
+     left key value right                           [F] [BTree-iter]
+
+    left            key value   right              [F] [BTree-iter] tuck foo
+    left            key value   right [BTree-iter] [F] [BTree-iter] foo
+        ...
+    left BTree-iter key value F right  BTree-iter
+
+We could just let `[R1]` be a parameter too, for maximum flexibility.
+
+#### Automatically deriving the recursion combinator for a data type?
+
+If I understand it correctly, the "Bananas..." paper talks about a way to build the processor function automatically from the description of the type.  I think if we came up with an elegant way for the Joy code to express that, it would be cool.  In Joypy the definitions can be circular because lookup happens at evaluation, not parsing.  E.g.:
+
+    A == ... B ...
+    B == ... A ...
+
+That's fine.  Circular datastructures can't be made though.
+
+

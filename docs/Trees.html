@@ -11977,7 +11977,7 @@ key left-keys right-keys
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>&#39;jenny&#39; &#39;richard&#39; &#39;tommy&#39;
+<pre>&#39;tommy&#39; &#39;richard&#39; &#39;jenny&#39;
 </pre>
 </div>
 </div>
@@ -12008,7 +12008,7 @@ key left-keys right-keys
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>18 48 23
+<pre>23 48 18
 </pre>
 </div>
 </div>
@@ -13416,7 +13416,7 @@ BTree-iter-order == [not] [pop] [dup third] [proc_left proc_current proc_right] 
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>9 8 7 6 5 4 3 2
+<pre>2 3 4 5 6 7 8 9
 </pre>
 </div>
 </div>
@@ -13510,6 +13510,94 @@ Ee == pop swap roll&lt; rest rest cons2
 
 </code></pre>
 <p>Suggests a general form of recursive iterator, but I have to go walk the dogs at the mo'.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="Just-make-[F]-a-parameter.">Just make <code>[F]</code> a parameter.<a class="anchor-link" href="#Just-make-[F]-a-parameter.">&#182;</a></h4><p>We can generalize to a sort of pure form:</p>
+
+<pre><code>BTree-iter == [not] [pop] [[F]]            [R1] genrec
+           == [not] [pop] [[F] [BTree-iter] R1] ifte
+
+</code></pre>
+<p>Putting <code>[F]</code> to the left as a given:</p>
+
+<pre><code> [F] unit [not] [pop] roll&lt; [R1] genrec
+[[F]]     [not] [pop] roll&lt; [R1] genrec
+          [not] [pop] [[F]] [R1] genrec
+
+</code></pre>
+<p>Let's us define a parameterized form:</p>
+
+<pre><code>BTree-iter == unit [not] [pop] roll&lt; [R1] genrec
+
+</code></pre>
+<p>So in the general case of non-empty nodes:</p>
+
+<pre><code>[key value left right] [F] [BTree-iter] R1
+
+</code></pre>
+<p>We just define <code>R1</code> to do whatever it has to to process the node.  For example:</p>
+
+<pre><code>[key value left right] [F] [BTree-iter] R1
+    ...
+key value F   left BTree-iter   right BTree-iter
+left BTree-iter   key value F   right BTree-iter
+left BTree-iter   right BTree-iter   key value F
+
+</code></pre>
+<p>Pre-, ??-, post-order traversals.</p>
+
+<pre><code>[key value  left right] uncons uncons
+ key value [left right]
+
+</code></pre>
+<p>For pre- and post-order we can use the <code>step</code> trick:</p>
+
+<pre><code>[left right] [BTree-iter] step
+    ...
+left BTree-iter right BTree-iter
+
+</code></pre>
+<p>We worked out one scheme for ?in-order? traversal above, but maybe we can do better?</p>
+
+<pre><code>[key value left right]              [F] [BTree-iter] [disenstacken] dipd
+[key value left right] disenstacken [F] [BTree-iter]
+ key value left right               [F] [BTree-iter]
+
+key value left right [F] [BTree-iter] R1.1
+
+</code></pre>
+<p>Hmm...</p>
+
+<pre><code>key value left right              [F] [BTree-iter] tuck
+key value left right [BTree-iter] [F] [BTree-iter] 
+
+
+[key value left right]                          [F] [BTree-iter] [disenstacken [roll&gt;] dip] dipd
+[key value left right] disenstacken [roll&gt;] dip [F] [BTree-iter]
+ key value left right               [roll&gt;] dip [F] [BTree-iter]
+ key value left roll&gt; right                     [F] [BTree-iter]
+ left key value right                           [F] [BTree-iter]
+
+left            key value   right              [F] [BTree-iter] tuck foo
+left            key value   right [BTree-iter] [F] [BTree-iter] foo
+    ...
+left BTree-iter key value F right  BTree-iter
+
+</code></pre>
+<p>We could just let <code>[R1]</code> be a parameter too, for maximum flexibility.</p>
+<h4 id="Automatically-deriving-the-recursion-combinator-for-a-data-type?">Automatically deriving the recursion combinator for a data type?<a class="anchor-link" href="#Automatically-deriving-the-recursion-combinator-for-a-data-type?">&#182;</a></h4><p>If I understand it correctly, the "Bananas..." paper talks about a way to build the processor function automatically from the description of the type.  I think if we came up with an elegant way for the Joy code to express that, it would be cool.  In Joypy the definitions can be circular because lookup happens at evaluation, not parsing.  E.g.:</p>
+
+<pre><code>A == ... B ...
+B == ... A ...
+
+</code></pre>
+<p>That's fine.  Circular datastructures can't be made though.</p>
 
 </div>
 </div>

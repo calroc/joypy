@@ -103,7 +103,7 @@ def repl(stack=(), dictionary=None):
   try:
     while True:
       print()
-      print('->', stack_to_string(stack))
+      print(stack_to_string(stack), '<-top')
       print()
       try:
         text = input('joy? ')

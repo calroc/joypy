@@ -62,7 +62,7 @@ After one application of `x` the quoted program contains `1` and `0` is below it
 J('[0 swap [dup ++] dip rest cons] x x x x x pop')
 ```
 
-    4 3 2 1 0
+    0 1 2 3 4
 
 
 ### `direco`
@@ -177,7 +177,7 @@ V('0 [dup ++] G x')
 J('1 [dup 1 <<] G x x x x x x x x x')
 ```
 
-    [512 swap [dup 1 <<] direco] 256 128 64 32 16 8 4 2 1
+    1 2 4 8 16 32 64 128 256 [512 swap [dup 1 <<] direco]
 
 
 # `n [x] times`
@@ -190,7 +190,7 @@ Let's define a word `n_range` that takes a starting integer and a count and leav
 J('23 [dup ++] G 5 [x] times pop')
 ```
 
-    27 26 25 24 23
+    23 24 25 26 27
 
 
 We can use `dip` to untangle `[dup ++] G` from the arguments.
@@ -200,7 +200,7 @@ We can use `dip` to untangle `[dup ++] G` from the arguments.
 J('23 5 [[dup ++] G] dip [x] times pop')
 ```
 
-    27 26 25 24 23
+    23 24 25 26 27
 
 
 Now that the givens (arguments) are on the left we have the definition we're looking for:
@@ -215,7 +215,7 @@ define('n_range == [[dup ++] G] dip [x] times pop')
 J('450 10 n_range')
 ```
 
-    459 458 457 456 455 454 453 452 451 450
+    450 451 452 453 454 455 456 457 458 459
 
 
 This is better just using the `times` combinator though...
@@ -225,7 +225,7 @@ This is better just using the `times` combinator though...
 J('450 9 [dup ++] times')
 ```
 
-    459 458 457 456 455 454 453 452 451 450
+    450 451 452 453 454 455 456 457 458 459
 
 
 # Generating Multiples of Three and Five
@@ -278,7 +278,7 @@ J('14811 [PE1.1] G')
 J('[14811 swap [PE1.1] direco] x')
 ```
 
-    [3702 swap [PE1.1] direco] 3
+    3 [3702 swap [PE1.1] direco]
 
 
 ...we get a generator that works for seven cycles before it reaches zero:
@@ -288,7 +288,7 @@ J('[14811 swap [PE1.1] direco] x')
 J('[14811 swap [PE1.1] direco] 7 [x] times')
 ```
 
-    [0 swap [PE1.1] direco] 3 2 1 3 1 2 3
+    3 2 1 3 1 2 3 [0 swap [PE1.1] direco]
 
 
 ### Reset at Zero
@@ -304,7 +304,7 @@ define('PE1.1.check == dup [pop 14811] [] branch')
 J('[14811 swap [PE1.1.check PE1.1] direco] 21 [x] times')
 ```
 
-    [0 swap [PE1.1.check PE1.1] direco] 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3
+    3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 [0 swap [PE1.1.check PE1.1] direco]
 
 
 ### Run 466 times
@@ -325,7 +325,7 @@ If we drive our generator 466 times and sum the stack we get 999.
 J('[14811 swap [PE1.1.check PE1.1] dip rest cons] 466 [x] times')
 ```
 
-    [57 swap [PE1.1.check PE1.1] dip rest cons] 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3
+    3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 1 2 3 3 2 1 3 [57 swap [PE1.1.check PE1.1] dip rest cons]
 
 
 
@@ -431,7 +431,7 @@ define('fib_gen == [1 1 fib]')
 J('fib_gen 10 [x] times')
 ```
 
-    [144 89 fib] 89 55 34 21 13 8 5 3 2 1
+    1 2 3 5 8 13 21 34 55 89 [144 89 fib]
 
 
 ### Project Euler Problem Two
@@ -498,7 +498,7 @@ Every third term is even.
 J('[1 0 fib] x x x')  # To start the sequence with 1 1 2 3 instead of 1 2 3.
 ```
 
-    [3 2 fib] 2 1 1
+    1 1 2 [3 2 fib]
 
 
 Drive the generator three times and `popop` the two odd terms.
@@ -508,7 +508,7 @@ Drive the generator three times and `popop` the two odd terms.
 J('[1 0 fib] x x x [popop] dipd')
 ```
 
-    [3 2 fib] 2
+    2 [3 2 fib]
 
 
 
@@ -521,7 +521,7 @@ define('PE2.2 == x x x [popop] dipd')
 J('[1 0 fib] 10 [PE2.2] times')
 ```
 
-    [1346269 832040 fib] 832040 196418 46368 10946 2584 610 144 34 8 2
+    2 8 34 144 610 2584 10946 46368 196418 832040 [1346269 832040 fib]
 
 
 Replace `x` with our new driver function `PE2.2` and start our `fib` generator at `1 0`.

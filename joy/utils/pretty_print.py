@@ -34,7 +34,7 @@ This is what does the formatting, e.g.:
 # smarter stuff.)
 from __future__ import print_function
 from traceback import print_exc
-from .stack import stack_to_string, iter_stack, list_to_stack
+from .stack import expression_to_string, stack_to_string
 
 
 class TracePrinter(object):
@@ -53,24 +53,16 @@ class TracePrinter(object):
     max_stack_length = 0
     lines = []
     for stack, expression in self.history:
-      stack, expression = self.strings_of_trace(stack, expression)
+      stack = stack_to_string(stack)
+      expression = expression_to_string(expression)
       n = len(stack)
       if n > max_stack_length:
         max_stack_length = n
       lines.append((n, '%s . %s' % (stack, expression)))
-    return [
-      (' ' * (max_stack_length - n) + line) # Prefix spaces to line up '.'s.
-      for n, line in lines
+    return [  # Prefix spaces to line up '.'s.
+      (' ' * (max_stack_length - length) + line)
+      for length, line in lines
       ]
-
-  @staticmethod
-  def strings_of_trace(stack, expression):
-    el = list(iter_stack(stack))
-    el.reverse()
-    return (
-      stack_to_string(list_to_stack(el)),
-      stack_to_string(expression)
-      )
 
   def print_(self):
     try:

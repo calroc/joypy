@@ -94,18 +94,33 @@ def stack_to_string(stack):
   '''
   Return a "pretty print" string for a stack.
 
-  Ideally the output of this should result in the same expression if
-  passed through tokenize() and parse(), but not yet.
+  The items are written right-to-left:
+
+  (top, (second, ...)) -> '... second top'
   '''
-  if not isinstance(stack, tuple):
-    return repr(stack)
-  if not stack: # shortcut
-    return ''
-  return ' '.join(map(_s, iter_stack(stack)))
+  f = lambda stack: reversed(list(iter_stack(stack)))
+  return _to_string(stack, f)
+
+
+def expression_to_string(expression, ltr=False):
+  '''
+  Return a "pretty print" string for a expression.
+
+  The items are written left-to-right:
+
+  (top, (second, ...)) -> 'top second ...'
+  '''
+  return _to_string(expression, iter_stack)
+
+
+def _to_string(stack, f):
+  if not isinstance(stack, tuple): return repr(stack)
+  if not stack: return ''  # shortcut
+  return ' '.join(map(_s, f(stack)))
 
 
 _s = lambda s: (
-  '[%s]' % stack_to_string(s)
+  '[%s]' % expression_to_string(s)
   if isinstance(s, tuple)
   else repr(s)
   )

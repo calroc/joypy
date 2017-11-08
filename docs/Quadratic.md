@@ -53,7 +53,7 @@ define('quadratic == over [[[neg] dupdip sqr 4] dipd * * - sqrt [+] [-] cleave] 
 J('3 1 1 quadratic')
 ```
 
-    -2.618033988749895 -0.3819660112501051
+    -0.3819660112501051 -2.618033988749895
 
 
 ### Simplify
@@ -76,7 +76,7 @@ define('quadratic == over [[[neg] dupdip sqr 4] dipd * * - sqrt pm] dip 2 * [tru
 J('3 1 1 quadratic')
 ```
 
-    -2.618033988749895 -0.3819660112501051
+    -0.3819660112501051 -2.618033988749895
 
 
 ### Define a "native" `pm` function.
