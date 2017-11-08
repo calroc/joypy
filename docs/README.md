@@ -1,5 +1,7 @@
 # Some Jupyter Notebooks and other material.
 
+All of the notebooks are also available as HTML and Markdown files (generated using nbconvert) so you can view them without running Jupyter.
+
 In order to run the [Jupyter Notebooks](https://jupyter.org/index.html) you need Jupyter (obviously) and you should install `Joypy`.  Here's an example using `virtualenv` from the `joypy/` directory:
 
     virtualenv --system-site-packages <DIRNAME>
