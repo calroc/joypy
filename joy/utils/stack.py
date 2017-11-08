@@ -43,14 +43,16 @@ And so on.
 
 We have two very simple functions to build up a stack from a Python
 iterable and also to iterate through a stack and yield its items
-one-by-one in order, and a function to generate string representations
+one-by-one in order, and two functions to generate string representations
 of stacks:
 
   list_to_stack()
 
   iter_stack()
 
-  stack_to_string()
+  expression_to_string()  (prints left-to-right)
+
+  stack_to_string()  (prints right-to-left)
 
 
 A word about the stack data structure.
