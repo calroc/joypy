@@ -1,0 +1,4 @@
+{
+  "argv": ["python", "-m", "joy_kernel", "-f", "{connection_file}"],
+  "display_name": "Joypy"
+}
