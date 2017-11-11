@@ -11775,6 +11775,15 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<p>Cf. <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.41.125">"Bananas, Lenses, &amp; Barbed Wire"</a></p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Hylomorphism"><a href="https://en.wikipedia.org/wiki/Hylomorphism_%28computer_science%29">Hylomorphism</a><a class="anchor-link" href="#Hylomorphism">&#182;</a></h1><p>A <a href="https://en.wikipedia.org/wiki/Hylomorphism_%28computer_science%29">hylomorphism</a> <code>H :: A -&gt; B</code> converts a value of type A into a value of type B by means of:</p>
 <ul>
 <li>A generator <code>G :: A -&gt; (A, B)</code></li>
@@ -11816,7 +11825,7 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>As a concrete example let's use a function that, given a positive integer, returns the sum of all positive integers less than that one.  (In this case the types A and B are both <code>int</code>.)</p>
+<h3 id="Finding-Triangular-Numbers">Finding <a href="https://en.wikipedia.org/wiki/Triangular_number">Triangular Numbers</a><a class="anchor-link" href="#Finding-Triangular-Numbers">&#182;</a></h3><p>As a concrete example let's use a function that, given a positive integer, returns the sum of all positive integers less than that one.  (In this case the types A and B are both <code>int</code>.)</p>
 <h3 id="With-range()-and-sum()">With <code>range()</code> and <code>sum()</code><a class="anchor-link" href="#With-range()-and-sum()">&#182;</a></h3>
 </div>
 </div>
@@ -11893,8 +11902,8 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">H</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">xrange</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
-<span class="n">H</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">range_sum</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+<span class="n">range_sum</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -13292,6 +13301,325 @@ range_sum == [0 &lt;=] [pop 0] [1 - dup] [dip +] genrec</code></pre>
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Factorial-Function-and-Paramorphisms">Factorial Function and Paramorphisms<a class="anchor-link" href="#Factorial-Function-and-Paramorphisms">&#182;</a></h1><p>A paramorphism <code>P :: B -&gt; A</code> is a recursion combinator that uses <code>dup</code> on intermediate values.</p>
+
+<pre><code>n swap [P] [pop] [[F] dupdip G] primrec
+
+</code></pre>
+<p>With</p>
+<ul>
+<li><code>n :: A</code> is the "identity" for <code>F</code> (like 1 for multiplication, 0 for addition)</li>
+<li><code>F :: (A, B) -&gt; A</code></li>
+<li><code>G :: B -&gt; B</code> generates the next <code>B</code> value.</li>
+<li>and lastly <code>P :: B -&gt; Bool</code> detects the end of the series.</li>
+</ul>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>For Factorial function (types <code>A</code> and <code>B</code> are both integer):</p>
+
+<pre><code>n == 1
+F == *
+G == --
+P == 1 &lt;=</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;factorial == 1 swap [1 &lt;=] [pop] [[*] dupdip --] primrec&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Try it with input 3 (omitting predicate):</p>
+
+<pre><code>3 1 swap [1 &lt;=] [pop] [[*] dupdip --] primrec
+1 3      [1 &lt;=] [pop] [[*] dupdip --] primrec
+
+1 3 [*] dupdip --
+1 3  * 3      --
+3      3      --
+3      2
+
+3 2 [*] dupdip --
+3 2  *  2      --
+6       2      --
+6       1
+
+6 1 [1 &lt;=] [pop] [[*] dupdip --] primrec
+
+6 1 pop
+6</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[16]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;3 factorial&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>6
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Derive-paramorphism-form-the-form-above.">Derive <code>paramorphism</code> form the form above.<a class="anchor-link" href="#Derive-paramorphism-form-the-form-above.">&#182;</a></h3>
+<pre><code>n swap [P] [pop] [[F] dupdip G] primrec
+
+n swap [P]       [pop]     [[F] dupdip G]                  primrec
+n [P] [swap] dip [pop]     [[F] dupdip G]                  primrec
+n [P] [[F] dupdip G]                [[swap] dip [pop]] dip primrec
+n [P] [F] [dupdip G]           cons [[swap] dip [pop]] dip primrec
+n [P] [F] [G] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
+
+paramorphism == [dupdip] swoncat cons [[swap] dip [pop]] dip primrec</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[17]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;paramorphism == [dupdip] swoncat cons [[swap] dip [pop]] dip primrec&#39;</span><span class="p">)</span>
+<span class="n">define</span><span class="p">(</span><span class="s1">&#39;factorial == 1 [1 &lt;=] [*] [--] paramorphism&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[18]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;3 factorial&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>6
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="tails"><code>tails</code><a class="anchor-link" href="#tails">&#182;</a></h1><p>An example of a paramorphism for lists given in the <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.41.125">"Bananas..." paper</a> is <code>tails</code> which returns the list of "tails" of a list.</p>
+
+<pre><code>[1 2 3] tails == [[] [3] [2 3]]
+
+</code></pre>
+<p>Using <code>paramorphism</code> we would write:</p>
+
+<pre><code>n == []
+F == rest swons
+G == rest
+P == not
+
+tails == [] [not] [rest swons] [rest] paramorphism</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[19]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;tails == [] [not] [rest swons] [rest] paramorphism&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[20]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[1 2 3] tails&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[[] [3] [2 3]]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[21]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;25 range tails [popop] infra [sum] map&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 210 231 253 276]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[22]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;25 range [range_sum] map&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>[276 253 231 210 190 171 153 136 120 105 91 78 66 55 45 36 28 21 15 10 6 3 1 0 0]
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Factoring-rest">Factoring <code>rest</code><a class="anchor-link" href="#Factoring-rest">&#182;</a></h3><p>Right before the recursion begins we have:</p>
+
+<pre><code>[] [1 2 3] [not] [pop] [[rest swons] dupdip rest] primrec
+
+</code></pre>
+<p>But we might prefer to factor <code>rest</code> in the quote:</p>
+
+<pre><code>[] [1 2 3] [not] [pop] [rest [swons] dupdip] primrec
+
+</code></pre>
+<p>There's no way to do that with the <code>paramorphism</code> combinator as defined.  We would have to write and use a slightly different recursion combinator that accepted an additional "preprocessor" function <code>[H]</code> and built:</p>
+
+<pre><code>n swap [P] [pop] [H [F] dupdip G] primrec
+
+</code></pre>
+<p>Or just write it out manually.  This is yet another place where the <em>sufficiently smart compiler</em> will one day automatically refactor the code.  We could write a <code>paramorphism</code> combinator that checked <code>[F]</code> and <code>[G]</code> for common prefix and extracted it.</p>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div>

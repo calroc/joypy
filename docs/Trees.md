@@ -668,6 +668,15 @@ J('[] 23 "a" BTree-add 88 "b" BTree-add 44 "c" BTree-add')  # Series.
     ['a' 23 [] ['b' 88 [] ['c' 44 [] []]]]
 
 
+### Specializing `cmp` for >= <= !=
+
+    a b [G] [E] [L] cmp
+    a b [GE] dup [L] cmp
+    a b [G] [LE] dup cmp
+    a b [NE] [E] over cmp
+
+But you wouldn't do this, you would just use `>=` or whatever.  The `cmp` combinator is useful when you have to do three different things depending on the >=< greater-than, equal-to, or less-than result of comparison.
+
 # Factoring and naming
 It may seem silly, but a big part of programming in Forth (and therefore in Joy) is the idea of small, highly-factored definitions.  If you choose names carefully the resulting definitions can take on a semantic role.
 

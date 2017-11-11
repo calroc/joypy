@@ -13257,6 +13257,22 @@ E == pop swap roll&lt; rest rest cons cons
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Specializing-cmp-for-&gt;=-&lt;=-!=">Specializing <code>cmp</code> for &gt;= &lt;= !=<a class="anchor-link" href="#Specializing-cmp-for-&gt;=-&lt;=-!=">&#182;</a></h3>
+<pre><code>a b [G] [E] [L] cmp
+a b [GE] dup [L] cmp
+a b [G] [LE] dup cmp
+a b [NE] [E] over cmp
+
+</code></pre>
+<p>But you wouldn't do this, you would just use <code>&gt;=</code> or whatever.  The <code>cmp</code> combinator is useful when you have to do three different things depending on the &gt;=&lt; greater-than, equal-to, or less-than result of comparison.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="Factoring-and-naming">Factoring and naming<a class="anchor-link" href="#Factoring-and-naming">&#182;</a></h1><p>It may seem silly, but a big part of programming in Forth (and therefore in Joy) is the idea of small, highly-factored definitions.  If you choose names carefully the resulting definitions can take on a semantic role.</p>
 
 <pre><code>get-node-key == popop popop first

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Factorial Function and Paramorphisms</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>0. This Implementation of Joy in Python</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11775,7 +11775,56 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Factorial-Function-and-Paramorphisms">Factorial Function and Paramorphisms<a class="anchor-link" href="#Factorial-Function-and-Paramorphisms">&#182;</a></h1>
+<h1 id="Joypy">Joypy<a class="anchor-link" href="#Joypy">&#182;</a></h1><h2 id="Joy-in-Python">Joy in Python<a class="anchor-link" href="#Joy-in-Python">&#182;</a></h2><p>This implementation is meant as a tool for exploring the programming model and method of Joy.  Python seems like a great implementation language for Joy for several reasons.</p>
+<p>We can lean on the Python immutable types for our basic semantics and types: ints, floats, strings, and tuples, which enforces functional purity.  We get garbage collection for free.  Compilation via Cython.  Glue language with loads of libraries.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Read-Eval-Print-Loop-(REPL)"><a href="https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop">Read-Eval-Print Loop (REPL)</a><a class="anchor-link" href="#Read-Eval-Print-Loop-(REPL)">&#182;</a></h3><p>The main way to interact with the Joy interpreter is through a simple <a href="https://en.wikipedia.org/wiki/Read%E2%80%93eval%E2%80%93print_loop">REPL</a> that you start by running the package:</p>
+
+<pre><code>$ python -m joy
+Joypy - Copyright © 2017 Simon Forman
+This program comes with ABSOLUTELY NO WARRANTY; for details type "warranty".
+This is free software, and you are welcome to redistribute it
+under certain conditions; type "sharing" for details.
+Type "words" to see a list of all words, and "[&lt;name&gt;] help" to print the
+docs for a word.
+
+
+ &lt;-top
+
+joy? _
+
+</code></pre>
+<p>The <code>&lt;-top</code> marker points to the top of the (initially empty) stack.  You can enter Joy notation at the prompt and a <a href="#The-TracePrinter.">trace of evaluation</a> will be printed followed by the stack and prompt again:</p>
+
+<pre><code>joy? 23 sqr 18 +
+       . 23 sqr 18 +
+    23 . sqr 18 +
+    23 . dup mul 18 +
+ 23 23 . mul 18 +
+   529 . 18 +
+529 18 . +
+   547 . 
+
+547 &lt;-top
+
+joy? </code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Stacks-(aka-list,-quote,-sequence,-etc.)">Stacks (aka list, quote, sequence, etc.)<a class="anchor-link" href="#Stacks-(aka-list,-quote,-sequence,-etc.)">&#182;</a></h1><p>In Joy, in addition to the types Boolean, integer, float, and string, there is a single sequence type represented by enclosing a sequence of terms in brackets <code>[...]</code>.  This sequence type is used to represent both the stack and the expression.  It is a <a href="https://en.wikipedia.org/wiki/Cons#Lists">cons list</a> made from Python tuples.</p>
+
 </div>
 </div>
 </div>
@@ -11784,10 +11833,82 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[1]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">from</span> <span class="nn">notebook_preamble</span> <span class="kn">import</span> <span class="n">J</span><span class="p">,</span> <span class="n">V</span><span class="p">,</span> <span class="n">define</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">joy.utils.stack</span>
+
+
+<span class="k">print</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getdoc</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stack</span><span class="p">)</span>
 </pre></div>
 
 </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>§ Stack
+
+
+When talking about Joy we use the terms &#34;stack&#34;, &#34;list&#34;, &#34;sequence&#34; and
+&#34;aggregate&#34; to mean the same thing: a simple datatype that permits
+certain operations such as iterating and pushing and popping values from
+(at least) one end.
+
+We use the venerable two-tuple recursive form of sequences where the
+empty tuple () is the empty stack and (head, rest) gives the recursive
+form of a stack with one or more items on it.
+
+  ()
+  (1, ())
+  (2, (1, ()))
+  (3, (2, (1, ())))
+  ...
+
+And so on.
+
+
+We have two very simple functions to build up a stack from a Python
+iterable and also to iterate through a stack and yield its items
+one-by-one in order, and two functions to generate string representations
+of stacks:
+
+  list_to_stack()
+
+  iter_stack()
+
+  expression_to_string()  (prints left-to-right)
+
+  stack_to_string()  (prints right-to-left)
+
+
+A word about the stack data structure.
+
+Python has very nice &#34;tuple packing and unpacking&#34; in its syntax which
+means we can directly &#34;unpack&#34; the expected arguments to a Joy function.
+
+For example:
+
+  def dup(stack):
+    head, tail = stack
+    return head, (head, tail)
+
+We replace the argument &#34;stack&#34; by the expected structure of the stack,
+in this case &#34;(head, tail)&#34;, and Python takes care of de-structuring the
+incoming argument and assigning values to the names.  Note that Python
+syntax doesn&#39;t require parentheses around tuples used in expressions
+where they would be redundant.
+</pre>
+</div>
+</div>
+
 </div>
 </div>
 
@@ -11796,7 +11917,8 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="loop-Form"><code>loop</code> Form<a class="anchor-link" href="#loop-Form">&#182;</a></h1>
+<h3 id="The-utility-functions-maintain-order.">The utility functions maintain order.<a class="anchor-link" href="#The-utility-functions-maintain-order.">&#182;</a></h3><p>The 0th item in the list will be on the top of the stack and <em>vise versa</em>.</p>
+
 </div>
 </div>
 </div>
@@ -11805,10 +11927,30 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;factorial == 1 swap dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">joy</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">list_to_stack</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
 </pre></div>
 
 </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[2]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>(1, (2, (3, ())))</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
@@ -11818,7 +11960,7 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;3 factorial&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="nb">list</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">iter_stack</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">())))))</span>
 </pre></div>
 
 </div>
@@ -11831,69 +11973,42 @@ div#notebook {
 
 <div class="output_area">
 
-<div class="prompt"></div>
+<div class="prompt output_prompt">Out[3]:</div>
 
 
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                                  . 3 factorial
-                                3 . factorial
-                                3 . 1 swap dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              3 1 . swap dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              1 3 . dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                            1 3 3 . 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                          1 3 3 1 . &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                         1 3 True . [[*] dupdip -- dup 1 &gt;] loop pop
- 1 3 True [[*] dupdip -- dup 1 &gt;] . loop pop
-                              1 3 . [*] dupdip -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                          1 3 [*] . dupdip -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              1 3 . * 3 -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                                3 . 3 -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              3 3 . -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              3 2 . dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                            3 2 2 . 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                          3 2 2 1 . &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                         3 2 True . [[*] dupdip -- dup 1 &gt;] loop pop
- 3 2 True [[*] dupdip -- dup 1 &gt;] . loop pop
-                              3 2 . [*] dupdip -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                          3 2 [*] . dupdip -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              3 2 . * 2 -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                                6 . 2 -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              6 2 . -- dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                              6 1 . dup 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                            6 1 1 . 1 &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                          6 1 1 1 . &gt; [[*] dupdip -- dup 1 &gt;] loop pop
-                        6 1 False . [[*] dupdip -- dup 1 &gt;] loop pop
-6 1 False [[*] dupdip -- dup 1 &gt;] . loop pop
-                              6 1 . pop
-                                6 . 
-</pre>
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>[1, 2, 3]</pre>
 </div>
+
 </div>
 
 </div>
 </div>
 
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>This requires reversing the sequence (or iterating backwards) otherwise:</p>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;P == dup 1 &gt;&#39;</span><span class="p">)</span>
-<span class="n">define</span><span class="p">(</span><span class="s1">&#39;factorial == 1 swap P [[*] dupdip -- P] loop pop&#39;</span><span class="p">)</span>
-</pre></div>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">stack</span> <span class="o">=</span> <span class="p">()</span>
 
-</div>
-</div>
-</div>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]:</span>
+    <span class="n">stack</span> <span class="o">=</span> <span class="n">n</span><span class="p">,</span> <span class="n">stack</span>
 
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;3 factorial&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">stack</span>
+<span class="k">print</span> <span class="nb">list</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">stack</span><span class="o">.</span><span class="n">iter_stack</span><span class="p">(</span><span class="n">stack</span><span class="p">))</span>
 </pre></div>
 
 </div>
@@ -11910,7 +12025,8 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>6
+<pre>(3, (2, (1, ())))
+[3, 2, 1]
 </pre>
 </div>
 </div>
@@ -11923,50 +12039,103 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>We have a form:</p>
+<h3 id="Purely-Functional-Datastructures.">Purely Functional Datastructures.<a class="anchor-link" href="#Purely-Functional-Datastructures.">&#182;</a></h3><p>Because Joy lists are made out of Python tuples they are immutable, so all Joy datastructures are <em><a href="https://en.wikipedia.org/wiki/Purely_functional_data_structure">purely functional</a></em>.</p>
 
-<pre><code>1 swap P [[*] dupdip -- P] loop pop
-n swap P [[A] dupdip B  P] loop pop
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="The-joy()-function.">The <code>joy()</code> function.<a class="anchor-link" href="#The-joy()-function.">&#182;</a></h1><h2 id="An-Interpreter">An Interpreter<a class="anchor-link" href="#An-Interpreter">&#182;</a></h2><p>The <code>joy()</code> function is extrememly simple.  It accepts a stack, an expression, and a dictionary, and it iterates through the expression putting values onto the stack and delegating execution to functions it looks up in the dictionary.</p>
+<p>Each function is passed the stack, expression, and dictionary and returns them.  Whatever the function returns becomes the new stack, expression, and dictionary.  (The dictionary is passed to enable e.g. writing words that let you enter new words into the dictionary at runtime, which nothing does yet and may be a bad idea, and the <code>help</code> command.)</p>
 
-</code></pre>
-<p>With</p>
-<ul>
-<li><code>n</code> is the "identity" for <code>A</code></li>
-<li><code>A :: (a, a) -&gt; a</code></li>
-<li><code>B :: a -&gt; a</code> generates the next value <code>a</code></li>
-<li>and lastly <code>P :: a -&gt; Bool</code> detects the end of the series.</li>
-</ul>
-<p>The form starts with some value on the stack and duplicates it.  One copy is combined with the current value by <code>A</code>, and the other is modified by <code>B</code> to generate the next value for the loop, which continues until <code>P</code> returns <code>False</code>.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">joy.joy</span>
 
-<pre><code>n [A] [B] [P] paramorphism
-...
-n swap P [[A] dupdip B P] loop pop
+<span class="k">print</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">joy</span><span class="o">.</span><span class="n">joy</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
 
 
+<div class="output_area">
 
-n  [A] [B] [P] concat
-n  [A] [B P] [dupdip] swoncat
-n  [A] [dupdip B P] cons
-n [[A] dupdip B P]
+<div class="prompt"></div>
 
-</code></pre>
-<p>Introduce the other <code>[P]</code>:</p>
 
-<pre><code>n swap P [[A] dupdip B P]                        loop pop
-n        [[A] dupdip B P] [swap P]           dip loop pop
-n        [[A] dupdip B P] [P] [swap] swoncat dip loop pop
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>def joy(stack, expression, dictionary, viewer=None):
+  &#39;&#39;&#39;
+  Evaluate the Joy expression on the stack.
+  &#39;&#39;&#39;
+  while expression:
 
-</code></pre>
-<p>Putting them together:</p>
+    if viewer: viewer(stack, expression)
 
-<pre><code>n [A] [B] [P] [concat [dupdip] swoncat cons] dipdup [swap] swoncat dip loop pop
-n [A] [B] [P]  concat [dupdip] swoncat cons [P] [swap] swoncat dip loop pop
-n [A] [B   P]         [dupdip] swoncat cons [P] [swap] swoncat dip loop pop
-n [A] [dupdip B P]                    cons [P] [swap] swoncat dip loop pop
-n [[A] dupdip B P] [P] [swap] swoncat dip loop pop
-n [[A] dupdip B P] [swap P]           dip loop pop
-n swap P [[A] dupdip B P] loop pop</code></pre>
+    term, expression = expression
+    if isinstance(term, Symbol):
+      term = dictionary[term]
+      stack, expression, dictionary = term(stack, expression, dictionary)
+    else:
+      stack = term, stack
 
+  if viewer: viewer(stack, expression)
+  return stack, expression, dictionary
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="View-function">View function<a class="anchor-link" href="#View-function">&#182;</a></h3><p>The <code>joy()</code> function accepts a "viewer" function which it calls on each iteration passing the current stack and expression just before evaluation.  This can be used for tracing, breakpoints, retrying after exceptions, or interrupting an evaluation and saving to disk or sending over the network to resume later.  The stack and expression together contain all the state of the computation at each step.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="The-TracePrinter.">The <code>TracePrinter</code>.<a class="anchor-link" href="#The-TracePrinter.">&#182;</a></h3><p>A <code>viewer</code> records each step of the evaluation of a Joy program.  The <code>TracePrinter</code> has a facility for printing out a trace of the evaluation, one line per step.  Each step is aligned to the current interpreter position, signified by a period separating the stack on the left from the pending expression ("continuation") on the right.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Continuation-Passing-Style"><a href="https://en.wikipedia.org/wiki/Continuation-passing_style">Continuation-Passing Style</a><a class="anchor-link" href="#Continuation-Passing-Style">&#182;</a></h3><p>One day I thought, What happens if you rewrite Joy to use <a href="https://en.wikipedia.org/wiki/Continuation-passing_style">CSP</a>?  I made all the functions accept and return the expression as well as the stack and found that all the combinators could be rewritten to work by modifying the expression rather than making recursive calls to the <code>joy()</code> function.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Parser">Parser<a class="anchor-link" href="#Parser">&#182;</a></h1>
 </div>
 </div>
 </div>
@@ -11975,21 +12144,9 @@ n swap P [[A] dupdip B P] loop pop</code></pre>
 <div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;paramorphism == [concat [dupdip] swoncat cons] dupdip [swap] swoncat dip loop pop&#39;</span><span class="p">)</span>
-<span class="n">define</span><span class="p">(</span><span class="s1">&#39;factorial == 1 [*] [--] [P] paramorphism&#39;</span><span class="p">)</span>
-</pre></div>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">joy.parser</span>
 
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;3 factorial&#39;</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getdoc</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">parser</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12006,58 +12163,19 @@ n swap P [[A] dupdip B P] loop pop</code></pre>
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>                                                . 3 factorial
-                                              3 . factorial
-                                              3 . 1 [*] [--] [P] paramorphism
-                                            3 1 . [*] [--] [P] paramorphism
-                                        3 1 [*] . [--] [P] paramorphism
-                                   3 1 [*] [--] . [P] paramorphism
-                               3 1 [*] [--] [P] . paramorphism
-                               3 1 [*] [--] [P] . [concat [dupdip] swoncat cons] dupdip [swap] swoncat dip loop pop
-3 1 [*] [--] [P] [concat [dupdip] swoncat cons] . dupdip [swap] swoncat dip loop pop
-                               3 1 [*] [--] [P] . concat [dupdip] swoncat cons [P] [swap] swoncat dip loop pop
-                                 3 1 [*] [-- P] . [dupdip] swoncat cons [P] [swap] swoncat dip loop pop
-                        3 1 [*] [-- P] [dupdip] . swoncat cons [P] [swap] swoncat dip loop pop
-                        3 1 [*] [-- P] [dupdip] . swap concat cons [P] [swap] swoncat dip loop pop
-                        3 1 [*] [dupdip] [-- P] . concat cons [P] [swap] swoncat dip loop pop
-                          3 1 [*] [dupdip -- P] . cons [P] [swap] swoncat dip loop pop
-                          3 1 [[*] dupdip -- P] . [P] [swap] swoncat dip loop pop
-                      3 1 [[*] dupdip -- P] [P] . [swap] swoncat dip loop pop
-               3 1 [[*] dupdip -- P] [P] [swap] . swoncat dip loop pop
-               3 1 [[*] dupdip -- P] [P] [swap] . swap concat dip loop pop
-               3 1 [[*] dupdip -- P] [swap] [P] . concat dip loop pop
-                 3 1 [[*] dupdip -- P] [swap P] . dip loop pop
-                                            3 1 . swap P [[*] dupdip -- P] loop pop
-                                            1 3 . P [[*] dupdip -- P] loop pop
-                                            1 3 . dup 1 &gt; [[*] dupdip -- P] loop pop
-                                          1 3 3 . 1 &gt; [[*] dupdip -- P] loop pop
-                                        1 3 3 1 . &gt; [[*] dupdip -- P] loop pop
-                                       1 3 True . [[*] dupdip -- P] loop pop
-                     1 3 True [[*] dupdip -- P] . loop pop
-                                            1 3 . [*] dupdip -- P [[*] dupdip -- P] loop pop
-                                        1 3 [*] . dupdip -- P [[*] dupdip -- P] loop pop
-                                            1 3 . * 3 -- P [[*] dupdip -- P] loop pop
-                                              3 . 3 -- P [[*] dupdip -- P] loop pop
-                                            3 3 . -- P [[*] dupdip -- P] loop pop
-                                            3 2 . P [[*] dupdip -- P] loop pop
-                                            3 2 . dup 1 &gt; [[*] dupdip -- P] loop pop
-                                          3 2 2 . 1 &gt; [[*] dupdip -- P] loop pop
-                                        3 2 2 1 . &gt; [[*] dupdip -- P] loop pop
-                                       3 2 True . [[*] dupdip -- P] loop pop
-                     3 2 True [[*] dupdip -- P] . loop pop
-                                            3 2 . [*] dupdip -- P [[*] dupdip -- P] loop pop
-                                        3 2 [*] . dupdip -- P [[*] dupdip -- P] loop pop
-                                            3 2 . * 2 -- P [[*] dupdip -- P] loop pop
-                                              6 . 2 -- P [[*] dupdip -- P] loop pop
-                                            6 2 . -- P [[*] dupdip -- P] loop pop
-                                            6 1 . P [[*] dupdip -- P] loop pop
-                                            6 1 . dup 1 &gt; [[*] dupdip -- P] loop pop
-                                          6 1 1 . 1 &gt; [[*] dupdip -- P] loop pop
-                                        6 1 1 1 . &gt; [[*] dupdip -- P] loop pop
-                                      6 1 False . [[*] dupdip -- P] loop pop
-                    6 1 False [[*] dupdip -- P] . loop pop
-                                            6 1 . pop
-                                              6 . 
+<pre>§ Converting text to a joy expression.
+
+This module exports a single function:
+
+  text_to_expression(text)
+
+As well as a single Symbol class and a single Exception type:
+
+  ParseError
+
+When supplied with a string this function returns a Python datastructure
+that represents the Joy datastructure described by the text expression.
+Any unbalanced square brackets will raise a ParseError.
 </pre>
 </div>
 </div>
@@ -12070,11 +12188,69 @@ n swap P [[A] dupdip B P] loop pop</code></pre>
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="primrec-Recursive-Form"><code>primrec</code> Recursive Form<a class="anchor-link" href="#primrec-Recursive-Form">&#182;</a></h1>
-<pre><code>n swap [P] [pop] [[A] dupdip B] primrec
+<p>The parser is extremely simple, the undocumented <code>re.Scanner</code> class does most of the tokenizing work and then you just build the tuple structure out of the tokens.  There's no Abstract Syntax Tree or anything like that.</p>
 
-</code></pre>
-<p>(Note that <code>P</code> is inverted from above, becoming <code>1 &lt;=</code>.  Also it no longer requires <code>dup</code> because in the <code>primrec</code> combinator it is executed with its own copy of the stack so it can consume items so long as it leaves a Boolean on top when it's finished.)</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="k">print</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">_parse</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>def _parse(tokens):
+  &#39;&#39;&#39;
+  Return a stack/list expression of the tokens.
+  &#39;&#39;&#39;
+  frame = []
+  stack = []
+  for tok in tokens:
+    if tok == &#39;[&#39;:
+      stack.append(frame)
+      frame = []
+      stack[-1].append(frame)
+    elif tok == &#39;]&#39;:
+      try:
+        frame = stack.pop()
+      except IndexError:
+        raise ParseError(&#39;One or more extra closing brackets.&#39;)
+      frame[-1] = list_to_stack(frame[-1])
+    else:
+      frame.append(tok)
+  if stack:
+    raise ParseError(&#39;One or more unclosed brackets.&#39;)
+  return list_to_stack(frame)
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>That's pretty much all there is to it.</p>
 
 </div>
 </div>
@@ -12084,10 +12260,30 @@ n swap P [[A] dupdip B P] loop pop</code></pre>
 <div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;factorial == 1 swap [1 &lt;=] [pop] [[*] dupdip --] primrec&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">joy</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">text_to_expression</span><span class="p">(</span><span class="s1">&#39;1 2 3 4 5&#39;</span><span class="p">)</span>  <span class="c1"># A simple sequence.</span>
 </pre></div>
 
 </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[8]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>(1, (2, (3, (4, (5, ())))))</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
@@ -12097,7 +12293,7 @@ n swap P [[A] dupdip B P] loop pop</code></pre>
 <div class="prompt input_prompt">In&nbsp;[9]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;3 factorial&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">joy</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">text_to_expression</span><span class="p">(</span><span class="s1">&#39;[1 2 3] 4 5&#39;</span><span class="p">)</span>  <span class="c1"># Three items, the first is a list with three items</span>
 </pre></div>
 
 </div>
@@ -12110,110 +12306,52 @@ n swap P [[A] dupdip B P] loop pop</code></pre>
 
 <div class="output_area">
 
-<div class="prompt"></div>
+<div class="prompt output_prompt">Out[9]:</div>
 
 
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                                                                                   . 3 factorial
-                                                                                 3 . factorial
-                                                                                 3 . 1 swap [1 &lt;=] [pop] [[*] dupdip --] primrec
-                                                                               3 1 . swap [1 &lt;=] [pop] [[*] dupdip --] primrec
-                                                                               1 3 . [1 &lt;=] [pop] [[*] dupdip --] primrec
-                                                                        1 3 [1 &lt;=] . [pop] [[*] dupdip --] primrec
-                                                                  1 3 [1 &lt;=] [pop] . [[*] dupdip --] primrec
-                                                  1 3 [1 &lt;=] [pop] [[*] dupdip --] . primrec
-                                                  1 3 [1 &lt;=] [pop] [[*] dupdip --] . [i] genrec
-                                              1 3 [1 &lt;=] [pop] [[*] dupdip --] [i] . genrec
-      1 3 [1 &lt;=] [pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . ifte
-1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [3 1] [1 &lt;=] . infra first choice i
-                                                                               1 3 . 1 &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] swaack first choice i
-                                                                             1 3 1 . &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] swaack first choice i
-                                                                           1 False . [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] swaack first choice i
-   1 False [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] . swaack first choice i
-   1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [False 1] . first choice i
-       1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] False . choice i
-                   1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . i
-                                                                               1 3 . [*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                           1 3 [*] . dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               1 3 . * 3 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                                 3 . 3 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               3 3 . -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               3 2 . [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                     3 2 [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] . i
-                                                                               3 2 . [1 &lt;=] [pop] [[*] dupdip --] [i] genrec
-                                                                        3 2 [1 &lt;=] . [pop] [[*] dupdip --] [i] genrec
-                                                                  3 2 [1 &lt;=] [pop] . [[*] dupdip --] [i] genrec
-                                                  3 2 [1 &lt;=] [pop] [[*] dupdip --] . [i] genrec
-                                              3 2 [1 &lt;=] [pop] [[*] dupdip --] [i] . genrec
-      3 2 [1 &lt;=] [pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . ifte
-3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [2 3] [1 &lt;=] . infra first choice i
-                                                                               3 2 . 1 &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] swaack first choice i
-                                                                             3 2 1 . &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] swaack first choice i
-                                                                           3 False . [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] swaack first choice i
-   3 False [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] . swaack first choice i
-   3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [False 3] . first choice i
-       3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] False . choice i
-                   3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . i
-                                                                               3 2 . [*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                           3 2 [*] . dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               3 2 . * 2 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                                 6 . 2 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               6 2 . -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               6 1 . [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                     6 1 [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] . i
-                                                                               6 1 . [1 &lt;=] [pop] [[*] dupdip --] [i] genrec
-                                                                        6 1 [1 &lt;=] . [pop] [[*] dupdip --] [i] genrec
-                                                                  6 1 [1 &lt;=] [pop] . [[*] dupdip --] [i] genrec
-                                                  6 1 [1 &lt;=] [pop] [[*] dupdip --] . [i] genrec
-                                              6 1 [1 &lt;=] [pop] [[*] dupdip --] [i] . genrec
-      6 1 [1 &lt;=] [pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . ifte
-6 1 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [1 6] [1 &lt;=] . infra first choice i
-                                                                               6 1 . 1 &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] swaack first choice i
-                                                                             6 1 1 . &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] swaack first choice i
-                                                                            6 True . [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] swaack first choice i
-    6 True [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] . swaack first choice i
-    6 1 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [True 6] . first choice i
-        6 1 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] True . choice i
-                                                                         6 1 [pop] . i
-                                                                               6 1 . pop
-                                                                                 6 . 
-</pre>
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>((1, (2, (3, ()))), (4, (5, ())))</pre>
 </div>
+
 </div>
 
 </div>
 </div>
 
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Derive-paramorphism-form-the-form-above.">Derive <code>paramorphism</code> form the form above.<a class="anchor-link" href="#Derive-paramorphism-form-the-form-above.">&#182;</a></h3>
-<pre><code>n swap [P]       [pop]     [[A] dupdip B]                  primrec
-n [P] [swap] dip [pop]     [[A] dupdip B]                  primrec
-n [P] [[A] dupdip B]                [[swap] dip [pop]] dip primrec
-n [P] [A] [dupdip B]           cons [[swap] dip [pop]] dip primrec
-n [P] [A] [B] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
-
-</code></pre>
-<p>(Note the order of arguments is different, <code>[P]</code> is no longer at the top of the stack.)</p>
-
-<pre><code>paramorphism == [dupdip] swoncat cons [[swap] dip [pop]] dip primrec</code></pre>
-
-</div>
-</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[10]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;paramorphism == [dupdip] swoncat cons [[swap] dip [pop]] dip primrec&#39;</span><span class="p">)</span>
-<span class="n">define</span><span class="p">(</span><span class="s1">&#39;factorial == 1 [1 &lt;=] [*] [--] paramorphism&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">joy</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">text_to_expression</span><span class="p">(</span><span class="s1">&#39;1 23 [&quot;four&quot; [-5.0] cons] 8888&#39;</span><span class="p">)</span>  <span class="c1"># A mixed bag. cons is</span>
+                                                                 <span class="c1"># a Symbol, no lookup at</span>
+                                                                 <span class="c1"># parse-time.  Haiku docs.</span>
 </pre></div>
 
 </div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[10]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>(1, (23, ((&#39;four&#39;, ((-5.0, ()), (cons, ()))), (8888, ()))))</pre>
+</div>
+
+</div>
+
 </div>
 </div>
 
@@ -12223,7 +12361,7 @@ n [P] [A] [B] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
 <div class="prompt input_prompt">In&nbsp;[11]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;3 factorial&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">joy</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">text_to_expression</span><span class="p">(</span><span class="s1">&#39;[][][][][]&#39;</span><span class="p">)</span>  <span class="c1"># Five empty lists.</span>
 </pre></div>
 
 </div>
@@ -12236,129 +12374,71 @@ n [P] [A] [B] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
 
 <div class="output_area">
 
-<div class="prompt"></div>
+<div class="prompt output_prompt">Out[11]:</div>
 
 
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                                                                                   . 3 factorial
-                                                                                 3 . factorial
-                                                                                 3 . 1 [1 &lt;=] [*] [--] paramorphism
-                                                                               3 1 . [1 &lt;=] [*] [--] paramorphism
-                                                                        3 1 [1 &lt;=] . [*] [--] paramorphism
-                                                                    3 1 [1 &lt;=] [*] . [--] paramorphism
-                                                               3 1 [1 &lt;=] [*] [--] . paramorphism
-                                                               3 1 [1 &lt;=] [*] [--] . [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
-                                                      3 1 [1 &lt;=] [*] [--] [dupdip] . swoncat cons [[swap] dip [pop]] dip primrec
-                                                      3 1 [1 &lt;=] [*] [--] [dupdip] . swap concat cons [[swap] dip [pop]] dip primrec
-                                                      3 1 [1 &lt;=] [*] [dupdip] [--] . concat cons [[swap] dip [pop]] dip primrec
-                                                        3 1 [1 &lt;=] [*] [dupdip --] . cons [[swap] dip [pop]] dip primrec
-                                                        3 1 [1 &lt;=] [[*] dupdip --] . [[swap] dip [pop]] dip primrec
-                                     3 1 [1 &lt;=] [[*] dupdip --] [[swap] dip [pop]] . dip primrec
-                                                                        3 1 [1 &lt;=] . [swap] dip [pop] [[*] dupdip --] primrec
-                                                                 3 1 [1 &lt;=] [swap] . dip [pop] [[*] dupdip --] primrec
-                                                                               3 1 . swap [1 &lt;=] [pop] [[*] dupdip --] primrec
-                                                                               1 3 . [1 &lt;=] [pop] [[*] dupdip --] primrec
-                                                                        1 3 [1 &lt;=] . [pop] [[*] dupdip --] primrec
-                                                                  1 3 [1 &lt;=] [pop] . [[*] dupdip --] primrec
-                                                  1 3 [1 &lt;=] [pop] [[*] dupdip --] . primrec
-                                                  1 3 [1 &lt;=] [pop] [[*] dupdip --] . [i] genrec
-                                              1 3 [1 &lt;=] [pop] [[*] dupdip --] [i] . genrec
-      1 3 [1 &lt;=] [pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . ifte
-1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [3 1] [1 &lt;=] . infra first choice i
-                                                                               1 3 . 1 &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] swaack first choice i
-                                                                             1 3 1 . &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] swaack first choice i
-                                                                           1 False . [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] swaack first choice i
-   1 False [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 3 1] . swaack first choice i
-   1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [False 1] . first choice i
-       1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] False . choice i
-                   1 3 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . i
-                                                                               1 3 . [*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                           1 3 [*] . dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               1 3 . * 3 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                                 3 . 3 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               3 3 . -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               3 2 . [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                     3 2 [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] . i
-                                                                               3 2 . [1 &lt;=] [pop] [[*] dupdip --] [i] genrec
-                                                                        3 2 [1 &lt;=] . [pop] [[*] dupdip --] [i] genrec
-                                                                  3 2 [1 &lt;=] [pop] . [[*] dupdip --] [i] genrec
-                                                  3 2 [1 &lt;=] [pop] [[*] dupdip --] . [i] genrec
-                                              3 2 [1 &lt;=] [pop] [[*] dupdip --] [i] . genrec
-      3 2 [1 &lt;=] [pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . ifte
-3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [2 3] [1 &lt;=] . infra first choice i
-                                                                               3 2 . 1 &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] swaack first choice i
-                                                                             3 2 1 . &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] swaack first choice i
-                                                                           3 False . [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] swaack first choice i
-   3 False [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 2 3] . swaack first choice i
-   3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [False 3] . first choice i
-       3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] False . choice i
-                   3 2 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . i
-                                                                               3 2 . [*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                           3 2 [*] . dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               3 2 . * 2 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                                 6 . 2 -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               6 2 . -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                                                               6 1 . [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i
-                                     6 1 [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] . i
-                                                                               6 1 . [1 &lt;=] [pop] [[*] dupdip --] [i] genrec
-                                                                        6 1 [1 &lt;=] . [pop] [[*] dupdip --] [i] genrec
-                                                                  6 1 [1 &lt;=] [pop] . [[*] dupdip --] [i] genrec
-                                                  6 1 [1 &lt;=] [pop] [[*] dupdip --] . [i] genrec
-                                              6 1 [1 &lt;=] [pop] [[*] dupdip --] [i] . genrec
-      6 1 [1 &lt;=] [pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] . ifte
-6 1 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [1 6] [1 &lt;=] . infra first choice i
-                                                                               6 1 . 1 &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] swaack first choice i
-                                                                             6 1 1 . &lt;= [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] swaack first choice i
-                                                                            6 True . [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] swaack first choice i
-    6 True [[pop] [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] 1 6] . swaack first choice i
-    6 1 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] [True 6] . first choice i
-        6 1 [[*] dupdip -- [[1 &lt;=] [pop] [[*] dupdip --] [i] genrec] i] [pop] True . choice i
-                                                                         6 1 [pop] . i
-                                                                               6 1 . pop
-                                                                                 6 . 
-</pre>
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>((), ((), ((), ((), ((), ())))))</pre>
 </div>
+
 </div>
 
 </div>
 </div>
 
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="tails"><code>tails</code><a class="anchor-link" href="#tails">&#182;</a></h1><p>An example of a paramorphism for lists given in the <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.41.125">"Bananas..." paper</a> is <code>tails</code> which returns the list of "tails" of a list.</p>
-
-<pre><code>[1 2 3] tails == [[] [3] [2 3]]
-
-</code></pre>
-<p>Using <code>paramorphism</code> we would write:</p>
-
-<pre><code>tails == [] [not] [rest swons] [rest] paramorphism</code></pre>
-
-</div>
-</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[12]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;tails == [] [not] [rest swons] [rest] paramorphism&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">joy</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">text_to_expression</span><span class="p">(</span><span class="s1">&#39;[[[[[]]]]]&#39;</span><span class="p">)</span>  <span class="c1"># Five nested lists.</span>
 </pre></div>
 
 </div>
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt output_prompt">Out[12]:</div>
+
+
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>((((((), ()), ()), ()), ()), ())</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="Library">Library<a class="anchor-link" href="#Library">&#182;</a></h1><p>The Joy library of functions (aka commands, or "words" after Forth usage) encapsulates all the actual functionality (no pun intended) of the Joy system.  There are simple functions such as addition <code>add</code> (or <code>+</code>, the library module supports aliases), and combinators which provide control-flow and higher-order operations.</p>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[13]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[1 2 3] tails&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">joy.library</span>
+
+<span class="k">print</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">library</span><span class="o">.</span><span class="n">initialize</span><span class="p">()))</span>
 </pre></div>
 
 </div>
@@ -12375,7 +12455,7 @@ n [P] [A] [B] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>[[] [3] [2 3]]
+<pre>!= % &amp; * *fraction *fraction0 + ++ - -- / &lt; &lt;&lt; &lt;= &lt;&gt; = &gt; &gt;= &gt;&gt; ? ^ add anamorphism and app1 app2 app3 average b binary branch choice clear cleave concat cons dinfrirst dip dipd dipdd disenstacken div down_to_zero dudipd dup dupd dupdip enstacken eq first flatten floordiv gcd ge genrec getitem gt help i id ifte infra le least_fraction loop lshift lt map min mod modulus mul ne neg not nullary or over pam parse pm pop popd popdd popop pow pred primrec product quoted range range_to_zero rem remainder remove rest reverse roll&lt; roll&gt; rolldown rollup rshift run second select sharing shunt size sqr sqrt stack step sub succ sum swaack swap swoncat swons ternary third times truediv truthy tuck unary uncons unit unquoted unstack void warranty while words x xor zip •
 </pre>
 </div>
 </div>
@@ -12388,17 +12468,7 @@ n [P] [A] [B] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="Factoring-rest">Factoring <code>rest</code><a class="anchor-link" href="#Factoring-rest">&#182;</a></h3><p>Right before the recursion begins we have:</p>
-
-<pre><code>[] [1 2 3] [not] [pop] [[rest swons] dupdip rest] primrec
-
-</code></pre>
-<p>But we might prefer to factor <code>rest</code> in the quote:</p>
-
-<pre><code>[] [1 2 3] [not] [pop] [rest [swons] dupdip] primrec
-
-</code></pre>
-<p>There's no way to do that with the <code>paramorphism</code> combinator as defined.  We would have to write and use a slightly different recursion combinator or just write it manually.  This is yet another place where the <em>sufficiently smart compiler</em> will one day automatically refactor the code.</p>
+<p>Many of the functions are defined in Python, like <code>dip</code>:</p>
 
 </div>
 </div>
@@ -12408,7 +12478,7 @@ n [P] [A] [B] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
 <div class="prompt input_prompt">In&nbsp;[14]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[] [1 2 3] [not] [pop] [rest [swons] dupdip] primrec&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="k">print</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">joy</span><span class="o">.</span><span class="n">library</span><span class="o">.</span><span class="n">dip</span><span class="p">)</span>
 </pre></div>
 
 </div>
@@ -12425,11 +12495,117 @@ n [P] [A] [B] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>[[] [3] [2 3]]
+<pre>def dip(stack, expression, dictionary):
+  (quote, (x, stack)) = stack
+  expression = x, expression
+  return stack, pushback(quote, expression), dictionary
+
 </pre>
 </div>
 </div>
 
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Some functions are defined in equations in terms of other functions.  When the interpreter executes a definition function that function just pushes its body expression onto the pending expression (the continuation) and returns control to the interpreter.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[15]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="k">print</span> <span class="n">joy</span><span class="o">.</span><span class="n">library</span><span class="o">.</span><span class="n">definitions</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>second == rest first
+third == rest rest first
+product == 1 swap [*] step
+swons == swap cons
+swoncat == swap concat
+flatten == [] swap [concat] step
+unit == [] cons
+quoted == [unit] dip
+unquoted == [i] dip
+enstacken == stack [clear] dip
+disenstacken == ? [uncons ?] loop pop
+? == dup truthy
+dinfrirst == dip infra first
+nullary == [stack] dinfrirst
+unary == [stack [pop] dip] dinfrirst
+binary == [stack [popop] dip] dinfrirst
+ternary == [stack [popop pop] dip] dinfrirst
+pam == [i] map
+run == [] swap infra
+sqr == dup mul
+size == 0 swap [pop ++] step
+cleave == [i] app2 [popd] dip
+average == [sum 1.0 *] [size] cleave /
+gcd == 1 [tuck modulus dup 0 &gt;] loop pop
+least_fraction == dup [gcd] infra [div] concat map
+*fraction == [uncons] dip uncons [swap] dip concat [*] infra [*] dip cons
+*fraction0 == concat [[swap] dip * [*] dip] infra
+down_to_zero == [0 &gt;] [dup --] while
+range_to_zero == unit [down_to_zero] infra
+anamorphism == [pop []] swap [dip swons] genrec
+range == [0 &lt;=] [1 - dup] anamorphism
+while == swap [nullary] cons dup dipd concat loop
+dudipd == dup dipd
+primrec == [i] genrec
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Currently, there's no function to add new definitions to the dictionary from "within" Joy code itself.  Adding new definitions remains a meta-interpreter action.  You have to do it yourself, in Python, and wash your hands afterward.</p>
+<p>It would be simple enough to define one, but it would open the door to <em>name binding</em> and break the idea that all state is captured in the stack and expression.  There's an implicit <em>standard dictionary</em> that defines the actual semantics of the syntactic stack and expression datastructures (which only contain symbols, not the actual functions.  Pickle some and see for yourself.)</p>
+<h4 id="&quot;There-should-be-only-one.&quot;">"There should be only one."<a class="anchor-link" href="#&quot;There-should-be-only-one.&quot;">&#182;</a></h4><p>Which brings me to talking about one of my hopes and dreams for this notation:  "There should be only one."  What I mean is that there should be one universal standard dictionary of commands, and all bespoke work done in a UI for purposes takes place by direct interaction and macros.  There would be a <em>Grand Refactoring</em> biannually (two years, not six months, that's semi-annually) where any new definitions factored out of the usage and macros of the previous time, along with new algorithms and such, were entered into the dictionary and posted to e.g. IPFS.</p>
+<p>Code should not burgeon wildly, as it does today.  The variety of code should map more-or-less to the well-factored variety of human computably-solvable problems.  There shouldn't be dozens of chat apps, JS frameworks, programming languages.  It's a waste of time, a <a href="https://en.wikipedia.org/wiki/Thundering_herd_problem">fractal "thundering herd" attack</a> on human mentality.</p>
+<h4 id="Literary-Code-Library">Literary Code Library<a class="anchor-link" href="#Literary-Code-Library">&#182;</a></h4><p>If you read over the other notebooks you'll see that developing code in Joy is a lot like doing simple mathematics, and the descriptions of the code resemble math papers.  The code also works the first time, no bugs.  If you have any experience programming at all, you are probably skeptical, as I was, but it seems to work: deriving code mathematically seems to lead to fewer errors.</p>
+<p>But my point now is that this great ratio of textual explanation to wind up with code that consists of a few equations and could fit on an index card is highly desirable.  Less code has fewer errors.  The structure of Joy engenders a kind of thinking that seems to be very effective for developing structured processes.</p>
+<p>There seems to be an elegance and power to the notation.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span>  
+</pre></div>
+
+</div>
 </div>
 </div>
 

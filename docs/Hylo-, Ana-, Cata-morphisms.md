@@ -1,4 +1,6 @@
 
+Cf. ["Bananas, Lenses, & Barbed Wire"](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.41.125)
+
 # [Hylomorphism](https://en.wikipedia.org/wiki/Hylomorphism_%28computer_science%29)
 A [hylomorphism](https://en.wikipedia.org/wiki/Hylomorphism_%28computer_science%29) `H :: A -> B` converts a value of type A into a value of type B by means of:
 
@@ -26,6 +28,7 @@ def hylomorphism(c, F, P, G):
     return H
 ```
 
+### Finding [Triangular Numbers](https://en.wikipedia.org/wiki/Triangular_number)
 As a concrete example let's use a function that, given a positive integer, returns the sum of all positive integers less than that one.  (In this case the types A and B are both `int`.)
 ### With `range()` and `sum()`
 
@@ -56,8 +59,8 @@ sum(r)
 
 
 ```python
-H = lambda n: sum(xrange(n))
-H(10)
+range_sum = lambda n: sum(range(n))
+range_sum(10)
 ```
 
 
@@ -1201,6 +1204,141 @@ V('10 range_sum')
                                                                                 36 9 . +
                                                                                   45 . 
 
+
+# Factorial Function and Paramorphisms
+A paramorphism `P :: B -> A` is a recursion combinator that uses `dup` on intermediate values.
+
+    n swap [P] [pop] [[F] dupdip G] primrec
+
+With
+- `n :: A` is the "identity" for `F` (like 1 for multiplication, 0 for addition)
+- `F :: (A, B) -> A`
+- `G :: B -> B` generates the next `B` value.
+- and lastly `P :: B -> Bool` detects the end of the series.
+
+For Factorial function (types `A` and `B` are both integer):
+
+    n == 1
+    F == *
+    G == --
+    P == 1 <=
+
+
+```python
+define('factorial == 1 swap [1 <=] [pop] [[*] dupdip --] primrec')
+```
+
+Try it with input 3 (omitting predicate):
+
+    3 1 swap [1 <=] [pop] [[*] dupdip --] primrec
+    1 3      [1 <=] [pop] [[*] dupdip --] primrec
+
+    1 3 [*] dupdip --
+    1 3  * 3      --
+    3      3      --
+    3      2
+
+    3 2 [*] dupdip --
+    3 2  *  2      --
+    6       2      --
+    6       1
+
+    6 1 [1 <=] [pop] [[*] dupdip --] primrec
+
+    6 1 pop
+    6
+
+
+```python
+J('3 factorial')
+```
+
+    6
+
+
+### Derive `paramorphism` form the form above.
+
+    n swap [P] [pop] [[F] dupdip G] primrec
+
+    n swap [P]       [pop]     [[F] dupdip G]                  primrec
+    n [P] [swap] dip [pop]     [[F] dupdip G]                  primrec
+    n [P] [[F] dupdip G]                [[swap] dip [pop]] dip primrec
+    n [P] [F] [dupdip G]           cons [[swap] dip [pop]] dip primrec
+    n [P] [F] [G] [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
+
+    paramorphism == [dupdip] swoncat cons [[swap] dip [pop]] dip primrec
+
+
+```python
+define('paramorphism == [dupdip] swoncat cons [[swap] dip [pop]] dip primrec')
+define('factorial == 1 [1 <=] [*] [--] paramorphism')
+```
+
+
+```python
+J('3 factorial')
+```
+
+    6
+
+
+# `tails`
+An example of a paramorphism for lists given in the ["Bananas..." paper](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.41.125) is `tails` which returns the list of "tails" of a list.
+
+    [1 2 3] tails == [[] [3] [2 3]]
+    
+Using `paramorphism` we would write:
+
+    n == []
+    F == rest swons
+    G == rest
+    P == not
+
+    tails == [] [not] [rest swons] [rest] paramorphism
+
+
+```python
+define('tails == [] [not] [rest swons] [rest] paramorphism')
+```
+
+
+```python
+J('[1 2 3] tails')
+```
+
+    [[] [3] [2 3]]
+
+
+
+```python
+J('25 range tails [popop] infra [sum] map')
+```
+
+    [1 3 6 10 15 21 28 36 45 55 66 78 91 105 120 136 153 171 190 210 231 253 276]
+
+
+
+```python
+J('25 range [range_sum] map')
+```
+
+    [276 253 231 210 190 171 153 136 120 105 91 78 66 55 45 36 28 21 15 10 6 3 1 0 0]
+
+
+### Factoring `rest`
+Right before the recursion begins we have:
+    
+    [] [1 2 3] [not] [pop] [[rest swons] dupdip rest] primrec
+    
+But we might prefer to factor `rest` in the quote:
+
+    [] [1 2 3] [not] [pop] [rest [swons] dupdip] primrec
+
+There's no way to do that with the `paramorphism` combinator as defined.  We would have to write and use a slightly different recursion combinator that accepted an additional "preprocessor" function `[H]` and built:
+
+    n swap [P] [pop] [H [F] dupdip G] primrec
+
+Or just write it out manually.  This is yet another place where the *sufficiently smart compiler* will one day automatically refactor the code.  We could write a `paramorphism` combinator that checked `[F]` and `[G]` for common prefix and extracted it.
 
 ## Appendix - Fun with Symbols
 
