@@ -32,6 +32,7 @@ ALIASES = (
   ('mod', ['%', 'rem', 'remainder', 'modulus']),
   ('eq', ['=']),
   ('ge', ['>=']),
+  ('getitem', ['pick', 'at']),
   ('gt', ['>']),
   ('le', ['<=']),
   ('lshift', ['<<']),
@@ -48,9 +49,25 @@ ALIASES = (
   )
 
 
+def add_aliases(D, A=ALIASES):
+  '''
+  Given a dict and a iterable of (name, [alias, ...]) pairs, create
+  additional entries in the dict mapping each alias to the named function
+  if it's in the dict.  Aliases for functions not in the dict are ignored.
+  '''
+  for name, aliases in A:
+    try:
+      F = D[name]
+    except KeyError:
+      continue
+    for alias in aliases:
+      D[alias] = F
+
+
 definitions = ('''\
 second == rest first
 third == rest rest first
+of == swap at
 product == 1 swap [*] step
 swons == swap cons
 swoncat == swap concat
@@ -111,16 +128,6 @@ primrec == [i] genrec
 #PE1.2 == [PE1.1] step
 #PE1 == 0 0 66 [[3 2 1 3 1 2 3] PE1.2] times [3 2 1 3] PE1.2 pop
 )
-
-
-def add_aliases(D, A=ALIASES):
-  for name, aliases in A:
-    try:
-      F = D[name]
-    except KeyError:
-      continue
-    for alias in aliases:
-      D[alias] = F
 
 
 class FunctionWrapper(object):
@@ -214,7 +221,6 @@ def parse((text, stack)):
   return expression, stack
 
 
-
 def first(((head, tail), stack)):
   '''first == uncons pop'''
   return head, stack
@@ -226,13 +232,70 @@ def rest(((head, tail), stack)):
 
 
 def truthy(stack):
+  '''Coerce the item on the top of the stack to its Boolean value.'''
   n, stack = stack
   return bool(n), stack
 
 
 def getitem(stack):
+  '''
+  getitem == drop first
+
+  Expects an integer and a quote on the stack and returns the item at the
+  nth position in the quote counting from 0.
+
+     [a b c d] 0 getitem
+  -------------------------
+              a
+
+  '''
   n, (Q, stack) = stack
   return pick(Q, n), stack
+
+
+def drop(stack):
+  '''
+  drop == [rest] times
+
+  Expects an integer and a quote on the stack and returns the quote with
+  n items removed off the top.
+
+     [a b c d] 2 drop
+  ----------------------
+         [c d]
+
+  '''
+  n, (Q, stack) = stack
+  while n > 0:
+    try:
+      _, Q = Q
+    except ValueError:
+      raise IndexError
+    n -= 1
+  return Q, stack
+
+
+def take(stack):
+  '''
+  Expects an integer and a quote on the stack and returns the quote with
+  just the top n items in reverse order (because that's easier and you can
+  use reverse if needed.)
+
+     [a b c d] 2 take
+  ----------------------
+         [b a]
+
+  '''
+  n, (Q, stack) = stack
+  x = ()
+  while n > 0:
+    try:
+      item, Q = Q
+    except ValueError:
+      raise IndexError
+    x = item, x
+    n -= 1
+  return x, stack
 
 
 def choice(stack):
@@ -278,9 +341,7 @@ def select(stack):
 
 
 def min_(S):
-  '''
-  Given a list find the minimum.
-  '''
+  '''Given a list find the minimum.'''
   tos, stack = S
   return min(iter_stack(tos)), stack
 
@@ -295,6 +356,15 @@ def sum_(S):
 
 
 def remove(S):
+  '''
+  Expects an item on the stack and a quote under it and removes that item
+  from the the quote.  The item is only removed once.
+
+     [1 2 3 1] 1 remove
+  ------------------------
+          [2 3 1]
+
+  '''
   (tos, (second, stack)) = S
   l = list(iter_stack(second))
   l.remove(tos)
@@ -473,22 +543,24 @@ def succ(S):
   return tos + 1, stack
 
 
+def pred(S):
+  '''Decrement TOS.'''
+  (tos, stack) = S
+  return tos - 1, stack
+
+
 def pm(stack):
   '''
   Plus or minus
 
-  a b pm == a b + a b -
+     a b pm
+  -------------
+     a+b a-b
 
   '''
   a, (b, stack) = stack
   p, m, = b + a, b - a
   return m, (p, stack)
-
-
-def pred(S):
-  '''Decrement TOS.'''
-  (tos, stack) = S
-  return tos - 1, stack
 
 
 def sqrt(a):
@@ -539,9 +611,6 @@ def _void(form):
 
 ##  transpose
 ##  sign
-##  at
-##  of
-##  drop
 ##  take
 
 
@@ -630,6 +699,15 @@ S_truthy = Symbol('truthy')
 
 
 def i(stack, expression, dictionary):
+  '''
+  The i combinator expects a quoted program on the stack and unpacks it
+  onto the pending expression for evaluation.
+
+     [Q] i
+  -----------
+      Q
+
+  '''
   quote, stack = stack
   return stack, pushback(quote, expression), dictionary
 
@@ -787,14 +865,10 @@ def branch(stack, expression, dictionary):
 
         False [F] [T] branch
      --------------------------
-              [F] i
-           -----------
                F
 
         True [F] [T] branch
      -------------------------
-              [T] i
-           -----------
                T
 
   '''
@@ -828,22 +902,46 @@ def ifte(stack, expression, dictionary):
 
 
 def dip(stack, expression, dictionary):
+  '''
+  The dip combinator expects a quoted program on the stack and below it
+  some item, it hoists the item into the expression and runs the program
+  on the rest of the stack.
+
+     ... x [Q] dip
+  -------------------
+       ... Q x
+
+  '''
   (quote, (x, stack)) = stack
-  expression = x, expression
+  expression = (x, expression)
   return stack, pushback(quote, expression), dictionary
 
 
 def dipd(S, expression, dictionary):
-  '''Like dip but expects two items.'''
+  '''
+  Like dip but expects two items.
+
+     ... y x [Q] dip
+  ---------------------
+       ... Q y x
+
+  '''
   (quote, (x, (y, stack))) = S
-  expression = y, (x, expression)
+  expression = (y, (x, expression))
   return stack, pushback(quote, expression), dictionary
 
 
 def dipdd(S, expression, dictionary):
-  '''Like dip but expects three items.'''
+  '''
+  Like dip but expects three items.
+
+     ... z y x [Q] dip
+  -----------------------
+       ... Q z y x
+
+  '''
   (quote, (x, (y, (z, stack)))) = S
-  expression = z, (y, (x, expression))
+  expression = (z, (y, (x, expression)))
   return stack, pushback(quote, expression), dictionary
 
 
@@ -870,7 +968,8 @@ def app2(S, expression, dictionary):
      -----------------------------------
         ... [y ...] [Q] . infra first
             [x ...] [Q]   infra first
-'''
+
+  '''
   (quote, (x, (y, stack))) = S
   expression = (S_infra, (S_first,
     ((x, stack), (quote, (S_infra, (S_first,
@@ -887,7 +986,8 @@ def app3(S, expression, dictionary):
         ... [z ...] [Q] . infra first
             [y ...] [Q]   infra first
             [x ...] [Q]   infra first
-'''
+
+  '''
   (quote, (x, (y, (z, stack)))) = S
   expression = (S_infra, (S_first,
     ((y, stack), (quote, (S_infra, (S_first,
@@ -952,11 +1052,10 @@ def times(stack, expression, dictionary):
   (quote, (n, stack)) = stack
   if n <= 0:
     return stack, expression, dictionary
-  stack = quote, stack
   n -= 1
   if n:
     expression = n, (quote, (S_times, expression))
-  expression = S_i, expression
+  expression = pushback(quote, expression)
   return stack, expression, dictionary
 
 
@@ -1088,6 +1187,7 @@ primitives = (
   SimpleFunctionWrapper(clear),
   SimpleFunctionWrapper(concat),
   SimpleFunctionWrapper(cons),
+  SimpleFunctionWrapper(drop),
   SimpleFunctionWrapper(dup),
   SimpleFunctionWrapper(dupd),
   SimpleFunctionWrapper(first),
@@ -1114,6 +1214,7 @@ primitives = (
   SimpleFunctionWrapper(sum_),
   SimpleFunctionWrapper(swaack),
   SimpleFunctionWrapper(swap),
+  SimpleFunctionWrapper(take),
   SimpleFunctionWrapper(truthy),
   SimpleFunctionWrapper(tuck),
   SimpleFunctionWrapper(uncons),
