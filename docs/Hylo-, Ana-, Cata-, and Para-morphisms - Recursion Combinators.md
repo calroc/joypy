@@ -405,6 +405,90 @@ An example of a catamorphism is the sum function.
 
     sum == 0 [+] catamorphism
 
+### "Fusion Law" for catas (UNFINISHED!!!)
+
+I'm not sure exactly how to translate the "Fusion Law" for catamorphisms into Joy.
+
+I know that a `map` composed with a cata can be expressed as a new cata:
+
+    [F] map b [B] cata == b [F B] cata
+
+But this isn't the one described in "Bananas...".  That's more like:
+
+A cata composed with some function can be expressed as some other cata:
+
+    b [B] catamorphism F == c [C] catamorphism
+
+Given:
+
+    b F == c
+
+    ...
+
+    B F == [F] dip C
+
+    ...
+
+    b[B]cata F == c[C]cata
+
+    F(B(head, tail)) == C(head, F(tail))
+
+    1 [2 3] B F         1 [2 3] F C
+
+
+    b F == c
+    B F == F C
+
+    b [B] catamorphism F == c [C] catamorphism
+    b [B] catamorphism F == b F [C] catamorphism
+
+    ...
+
+Or maybe,
+
+    [F] map b [B] cata == c [C] cata     ???
+
+    [F] map b [B] cata == b [F B] cata    I think this is generally true, unless F consumes stack items
+                                            instead of just transforming TOS.  Of course, there's always [F] unary.
+    b [F] unary [[F] unary B] cata
+
+    [10 *] map 0 swap [+] step == 0 swap [10 * +] step
+
+
+For example:
+
+    F == 10 *
+    b == 0
+    B == +
+    c == 0
+    C == F +
+    
+    b F    == c
+    0 10 * == 0
+
+    B F    == [F]    dip C
+    + 10 * == [10 *] dip F +
+    + 10 * == [10 *] dip 10 * +
+
+    n m + 10 * == 10(n+m)
+
+    n m [10 *] dip 10 * +
+    n 10 * m 10 * +
+    10n m 10 * +
+    10n 10m +
+    10n+10m
+
+    10n+10m = 10(n+m)
+
+Ergo:
+
+    0 [+] catamorphism 10 * == 0 [10 * +] catamorphism
+
+## The `step` combinator will usually be better to use than `catamorphism`.
+
+    sum == 0 swap [+] step
+    sum == 0 [+] catamorphism
+
 # anamorphism catamorphism == hylomorphism
 Here is (part of) the payoff.
 
@@ -1228,7 +1312,7 @@ For Factorial function (types `A` and `B` are both integer):
 define('factorial == 1 swap [1 <=] [pop] [[*] dupdip --] primrec')
 ```
 
-Try it with input 3 (omitting predicate):
+Try it with input 3 (omitting evaluation of predicate):
 
     3 1 swap [1 <=] [pop] [[*] dupdip --] primrec
     1 3      [1 <=] [pop] [[*] dupdip --] primrec
@@ -1256,7 +1340,7 @@ J('3 factorial')
     6
 
 
-### Derive `paramorphism` form the form above.
+### Derive `paramorphism` from the form above.
 
     n swap [P] [pop] [[F] dupdip G] primrec
 
@@ -1340,6 +1424,477 @@ There's no way to do that with the `paramorphism` combinator as defined.  We wou
 
 Or just write it out manually.  This is yet another place where the *sufficiently smart compiler* will one day automatically refactor the code.  We could write a `paramorphism` combinator that checked `[F]` and `[G]` for common prefix and extracted it.
 
+# Patterns of Recursion
+Our story so far...
+
+- A combiner `F :: (B, B) -> B`
+- A predicate `P :: A -> Bool` to detect the base case
+- A base case value `c :: B`
+
+
+### Hylo- Ana-, Cata-
+
+    w/ G :: A -> (A, B)
+
+    H == [P   ] [pop c ] [G          ] [dip F    ] genrec
+    A == [P   ] [pop []] [G          ] [dip swons] genrec
+    C == [[] =] [pop c ] [uncons swap] [dip F    ] genrec
+
+### Para-, ?-, ?-
+
+    w/ G :: B -> B
+
+    P == c  swap [P   ] [pop] [[F    ] dupdip G          ] primrec
+    ? == [] swap [P   ] [pop] [[swons] dupdip G          ] primrec
+    ? == c  swap [[] =] [pop] [[F    ] dupdip uncons swap] primrec
+
+
+# Four Generalizations
+There are at least four kinds of recursive combinator, depending on two choices.  The first choice is whether the combiner function should be evaluated during the recursion or pushed into the pending expression to be "collapsed" at the end.  The second choice is whether the combiner needs to operate on the current value of the datastructure or the generator's output.
+
+    H ==        [P] [pop c] [G             ] [dip F] genrec
+    H == c swap [P] [pop]   [G [F]    dip  ] [i]     genrec
+    H ==        [P] [pop c] [  [G] dupdip  ] [dip F] genrec
+    H == c swap [P] [pop]   [  [F] dupdip G] [i]     genrec
+
+Consider:
+
+    ... a G [H] dip F                w/ a G == a' b
+    ... c a G [F] dip H                 a G == b  a'
+    ... a [G] dupdip [H] dip F          a G == a'
+    ... c a [F] dupdip G H              a G == a'
+
+### 1
+
+    H == [P] [pop c] [G] [dip F] genrec
+
+Iterate n times.
+
+    ... a [P] [pop c] [G] [dip F] genrec
+    ... a  G [H] dip F
+    ... a' b [H] dip F
+    ... a' H b F
+    ... a'  G [H] dip F b F
+    ... a'' b [H] dip F b F
+    ... a'' H b F b F
+    ... a''  G [H] dip F b F b F
+    ... a''' b [H] dip F b F b F
+    ... a''' H b F b F b F
+    ... a''' pop c b F b F b F
+    ... c b F b F b F
+
+This form builds up a continuation that contains the intermediate results along with the pending combiner functions.  When the base case is reached the last term is replaced by the identity value c and the continuation "collapses" into the final result.
+
+### 2
+When you can start with the identity value c on the stack and the combiner can operate as you go, using the intermediate results immediately rather than queuing them up, use this form.  An important difference is that the generator function must return its results in the reverse order.
+
+    H == c swap [P] [pop] [G [F] dip] primrec
+
+    ... c a G [F] dip H
+    ... c b a' [F] dip H
+    ... c b F a' H
+    ... c b F a' G [F] dip H
+    ... c b F b a'' [F] dip H
+    ... c b F b F a'' H
+    ... c b F b F a'' G [F] dip H
+    ... c b F b F b a''' [F] dip H
+    ... c b F b F b F a''' H
+    ... c b F b F b F a''' pop
+    ... c b F b F b F
+
+The end line here is the same as for above, but only because we didn't evaluate `F` when it normally would have been.
+
+### 3
+If the combiner and the generator both need to work on the current value then `dup` must be used at some point, and the generator must produce one item instead of two (the b is instead the duplicate of a.)
+
+
+    H == [P] [pop c] [[G] dupdip] [dip F] genrec
+
+    ... a [G] dupdip [H] dip F
+    ... a  G a       [H] dip F
+    ... a'   a       [H] dip F
+    ... a' H a F
+    ... a' [G] dupdip [H] dip F a F
+    ... a'  G  a'     [H] dip F a F
+    ... a''    a'     [H] dip F a F
+    ... a'' H  a' F a F
+    ... a'' [G] dupdip [H] dip F a' F a F
+    ... a''  G  a''    [H] dip F a' F a F
+    ... a'''    a''    [H] dip F a' F a F
+    ... a''' H  a'' F a' F a F
+    ... a''' pop c  a'' F a' F a F
+    ...          c  a'' F a' F a F
+
+### 4
+And, last but not least, if you can combine as you go, starting with c, and the combiner needs to work on the current item this is the form:
+
+    W == c swap [P] [pop] [[F] dupdip G] primrec
+
+    ... a c swap [P] [pop] [[F] dupdip G] primrec
+    ... c a [P] [pop] [[F] dupdip G] primrec
+    ... c a [F] dupdip G W
+    ... c a  F a G W
+    ... c a  F a'  W
+    ... c a  F a'  [F] dupdip G W
+    ... c a  F a'   F  a'     G W
+    ... c a  F a'   F  a''      W
+    ... c a  F a'   F  a''      [F] dupdip G W
+    ... c a  F a'   F  a''       F  a''    G W
+    ... c a  F a'   F  a''       F  a'''     W
+    ... c a  F a'   F  a''       F  a'''     pop
+    ... c a  F a'   F  a''       F
+
+Each of the four variations above can be specialized to ana- and catamorphic forms.
+
+
+```python
+def WTFmorphism(c, F, P, G):
+    '''Return a hylomorphism function H.'''
+
+    def H(a, d=c):
+        if P(a):
+            result = d
+        else:
+            a, b = G(a)
+            result = H(a, F(d, b))
+        return result
+
+    return H
+```
+
+
+```python
+F = lambda a, b: a + b
+P = lambda n: n <= 1
+G = lambda n: (n - 1, n - 1)
+
+wtf = WTFmorphism(0, F, P, G)
+
+print wtf(5)
+```
+
+    10
+
+
+    H == [P   ] [pop c ] [G          ] [dip F    ] genrec
+
+
+```python
+DefinitionWrapper.add_definitions('''
+P == 1 <=
+Ga == -- dup
+Gb == --
+c == 0
+F == +
+''', D)
+```
+
+
+```python
+V('[1 2 3] [[] =] [pop []] [uncons swap] [dip swons] genrec')
+```
+
+                                                                                                                 . [1 2 3] [[] =] [pop []] [uncons swap] [dip swons] genrec
+                                                                                                         [1 2 3] . [[] =] [pop []] [uncons swap] [dip swons] genrec
+                                                                                                  [1 2 3] [[] =] . [pop []] [uncons swap] [dip swons] genrec
+                                                                                         [1 2 3] [[] =] [pop []] . [uncons swap] [dip swons] genrec
+                                                                           [1 2 3] [[] =] [pop []] [uncons swap] . [dip swons] genrec
+                                                               [1 2 3] [[] =] [pop []] [uncons swap] [dip swons] . genrec
+              [1 2 3] [[] =] [pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] . ifte
+    [1 2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [[1 2 3]] [[] =] . infra first choice i
+                                                                                                         [1 2 3] . [] = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [1 2 3]] swaack first choice i
+                                                                                                      [1 2 3] [] . = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [1 2 3]] swaack first choice i
+                                                                                                           False . [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [1 2 3]] swaack first choice i
+             False [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [1 2 3]] . swaack first choice i
+             [1 2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [False] . first choice i
+               [1 2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] False . choice i
+                              [1 2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] . i
+                                                                                                         [1 2 3] . uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons
+                                                                                                         1 [2 3] . swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons
+                                                                                                         [2 3] 1 . [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons
+                                                      [2 3] 1 [[[] =] [pop []] [uncons swap] [dip swons] genrec] . dip swons
+                                                                                                           [2 3] . [[] =] [pop []] [uncons swap] [dip swons] genrec 1 swons
+                                                                                                    [2 3] [[] =] . [pop []] [uncons swap] [dip swons] genrec 1 swons
+                                                                                           [2 3] [[] =] [pop []] . [uncons swap] [dip swons] genrec 1 swons
+                                                                             [2 3] [[] =] [pop []] [uncons swap] . [dip swons] genrec 1 swons
+                                                                 [2 3] [[] =] [pop []] [uncons swap] [dip swons] . genrec 1 swons
+                [2 3] [[] =] [pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] . ifte 1 swons
+        [2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [[2 3]] [[] =] . infra first choice i 1 swons
+                                                                                                           [2 3] . [] = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [2 3]] swaack first choice i 1 swons
+                                                                                                        [2 3] [] . = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [2 3]] swaack first choice i 1 swons
+                                                                                                           False . [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [2 3]] swaack first choice i 1 swons
+               False [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [2 3]] . swaack first choice i 1 swons
+               [2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [False] . first choice i 1 swons
+                 [2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] False . choice i 1 swons
+                                [2 3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] . i 1 swons
+                                                                                                           [2 3] . uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons 1 swons
+                                                                                                           2 [3] . swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons 1 swons
+                                                                                                           [3] 2 . [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons 1 swons
+                                                        [3] 2 [[[] =] [pop []] [uncons swap] [dip swons] genrec] . dip swons 1 swons
+                                                                                                             [3] . [[] =] [pop []] [uncons swap] [dip swons] genrec 2 swons 1 swons
+                                                                                                      [3] [[] =] . [pop []] [uncons swap] [dip swons] genrec 2 swons 1 swons
+                                                                                             [3] [[] =] [pop []] . [uncons swap] [dip swons] genrec 2 swons 1 swons
+                                                                               [3] [[] =] [pop []] [uncons swap] . [dip swons] genrec 2 swons 1 swons
+                                                                   [3] [[] =] [pop []] [uncons swap] [dip swons] . genrec 2 swons 1 swons
+                  [3] [[] =] [pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] . ifte 2 swons 1 swons
+            [3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [[3]] [[] =] . infra first choice i 2 swons 1 swons
+                                                                                                             [3] . [] = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [3]] swaack first choice i 2 swons 1 swons
+                                                                                                          [3] [] . = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [3]] swaack first choice i 2 swons 1 swons
+                                                                                                           False . [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [3]] swaack first choice i 2 swons 1 swons
+                 False [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [3]] . swaack first choice i 2 swons 1 swons
+                 [3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [False] . first choice i 2 swons 1 swons
+                   [3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] False . choice i 2 swons 1 swons
+                                  [3] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] . i 2 swons 1 swons
+                                                                                                             [3] . uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons 2 swons 1 swons
+                                                                                                            3 [] . swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons 2 swons 1 swons
+                                                                                                            [] 3 . [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons 2 swons 1 swons
+                                                         [] 3 [[[] =] [pop []] [uncons swap] [dip swons] genrec] . dip swons 2 swons 1 swons
+                                                                                                              [] . [[] =] [pop []] [uncons swap] [dip swons] genrec 3 swons 2 swons 1 swons
+                                                                                                       [] [[] =] . [pop []] [uncons swap] [dip swons] genrec 3 swons 2 swons 1 swons
+                                                                                              [] [[] =] [pop []] . [uncons swap] [dip swons] genrec 3 swons 2 swons 1 swons
+                                                                                [] [[] =] [pop []] [uncons swap] . [dip swons] genrec 3 swons 2 swons 1 swons
+                                                                    [] [[] =] [pop []] [uncons swap] [dip swons] . genrec 3 swons 2 swons 1 swons
+                   [] [[] =] [pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] . ifte 3 swons 2 swons 1 swons
+              [] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [[]] [[] =] . infra first choice i 3 swons 2 swons 1 swons
+                                                                                                              [] . [] = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] []] swaack first choice i 3 swons 2 swons 1 swons
+                                                                                                           [] [] . = [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] []] swaack first choice i 3 swons 2 swons 1 swons
+                                                                                                            True . [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] []] swaack first choice i 3 swons 2 swons 1 swons
+                   True [[pop []] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] []] . swaack first choice i 3 swons 2 swons 1 swons
+                   [] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] [True] . first choice i 3 swons 2 swons 1 swons
+                     [] [uncons swap [[[] =] [pop []] [uncons swap] [dip swons] genrec] dip swons] [pop []] True . choice i 3 swons 2 swons 1 swons
+                                                                                                     [] [pop []] . i 3 swons 2 swons 1 swons
+                                                                                                              [] . pop [] 3 swons 2 swons 1 swons
+                                                                                                                 . [] 3 swons 2 swons 1 swons
+                                                                                                              [] . 3 swons 2 swons 1 swons
+                                                                                                            [] 3 . swons 2 swons 1 swons
+                                                                                                            [] 3 . swap cons 2 swons 1 swons
+                                                                                                            3 [] . cons 2 swons 1 swons
+                                                                                                             [3] . 2 swons 1 swons
+                                                                                                           [3] 2 . swons 1 swons
+                                                                                                           [3] 2 . swap cons 1 swons
+                                                                                                           2 [3] . cons 1 swons
+                                                                                                           [2 3] . 1 swons
+                                                                                                         [2 3] 1 . swons
+                                                                                                         [2 3] 1 . swap cons
+                                                                                                         1 [2 3] . cons
+                                                                                                         [1 2 3] . 
+
+
+
+```python
+V('3 [P] [pop c] [Ga] [dip F] genrec')
+```
+
+                                                                   . 3 [P] [pop c] [Ga] [dip F] genrec
+                                                                 3 . [P] [pop c] [Ga] [dip F] genrec
+                                                             3 [P] . [pop c] [Ga] [dip F] genrec
+                                                     3 [P] [pop c] . [Ga] [dip F] genrec
+                                                3 [P] [pop c] [Ga] . [dip F] genrec
+                                        3 [P] [pop c] [Ga] [dip F] . genrec
+        3 [P] [pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] . ifte
+    3 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] [3] [P] . infra first choice i
+                                                                 3 . P [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 3] swaack first choice i
+                                                                 3 . 1 <= [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 3] swaack first choice i
+                                                               3 1 . <= [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 3] swaack first choice i
+                                                             False . [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 3] swaack first choice i
+    False [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 3] . swaack first choice i
+    3 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] [False] . first choice i
+      3 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] False . choice i
+                    3 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] . i
+                                                                 3 . Ga [[P] [pop c] [Ga] [dip F] genrec] dip F
+                                                                 3 . -- dup [[P] [pop c] [Ga] [dip F] genrec] dip F
+                                                                 2 . dup [[P] [pop c] [Ga] [dip F] genrec] dip F
+                                                               2 2 . [[P] [pop c] [Ga] [dip F] genrec] dip F
+                             2 2 [[P] [pop c] [Ga] [dip F] genrec] . dip F
+                                                                 2 . [P] [pop c] [Ga] [dip F] genrec 2 F
+                                                             2 [P] . [pop c] [Ga] [dip F] genrec 2 F
+                                                     2 [P] [pop c] . [Ga] [dip F] genrec 2 F
+                                                2 [P] [pop c] [Ga] . [dip F] genrec 2 F
+                                        2 [P] [pop c] [Ga] [dip F] . genrec 2 F
+        2 [P] [pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] . ifte 2 F
+    2 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] [2] [P] . infra first choice i 2 F
+                                                                 2 . P [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 2] swaack first choice i 2 F
+                                                                 2 . 1 <= [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 2] swaack first choice i 2 F
+                                                               2 1 . <= [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 2] swaack first choice i 2 F
+                                                             False . [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 2] swaack first choice i 2 F
+    False [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 2] . swaack first choice i 2 F
+    2 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] [False] . first choice i 2 F
+      2 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] False . choice i 2 F
+                    2 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] . i 2 F
+                                                                 2 . Ga [[P] [pop c] [Ga] [dip F] genrec] dip F 2 F
+                                                                 2 . -- dup [[P] [pop c] [Ga] [dip F] genrec] dip F 2 F
+                                                                 1 . dup [[P] [pop c] [Ga] [dip F] genrec] dip F 2 F
+                                                               1 1 . [[P] [pop c] [Ga] [dip F] genrec] dip F 2 F
+                             1 1 [[P] [pop c] [Ga] [dip F] genrec] . dip F 2 F
+                                                                 1 . [P] [pop c] [Ga] [dip F] genrec 1 F 2 F
+                                                             1 [P] . [pop c] [Ga] [dip F] genrec 1 F 2 F
+                                                     1 [P] [pop c] . [Ga] [dip F] genrec 1 F 2 F
+                                                1 [P] [pop c] [Ga] . [dip F] genrec 1 F 2 F
+                                        1 [P] [pop c] [Ga] [dip F] . genrec 1 F 2 F
+        1 [P] [pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] . ifte 1 F 2 F
+    1 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] [1] [P] . infra first choice i 1 F 2 F
+                                                                 1 . P [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 1] swaack first choice i 1 F 2 F
+                                                                 1 . 1 <= [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 1] swaack first choice i 1 F 2 F
+                                                               1 1 . <= [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 1] swaack first choice i 1 F 2 F
+                                                              True . [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 1] swaack first choice i 1 F 2 F
+     True [[pop c] [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] 1] . swaack first choice i 1 F 2 F
+     1 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] [True] . first choice i 1 F 2 F
+       1 [Ga [[P] [pop c] [Ga] [dip F] genrec] dip F] [pop c] True . choice i 1 F 2 F
+                                                         1 [pop c] . i 1 F 2 F
+                                                                 1 . pop c 1 F 2 F
+                                                                   . c 1 F 2 F
+                                                                   . 0 1 F 2 F
+                                                                 0 . 1 F 2 F
+                                                               0 1 . F 2 F
+                                                               0 1 . + 2 F
+                                                                 1 . 2 F
+                                                               1 2 . F
+                                                               1 2 . +
+                                                                 3 . 
+
+
+
+```python
+V('3 [P] [pop []] [Ga] [dip swons] genrec')
+```
+
+                                                                             . 3 [P] [pop []] [Ga] [dip swons] genrec
+                                                                           3 . [P] [pop []] [Ga] [dip swons] genrec
+                                                                       3 [P] . [pop []] [Ga] [dip swons] genrec
+                                                              3 [P] [pop []] . [Ga] [dip swons] genrec
+                                                         3 [P] [pop []] [Ga] . [dip swons] genrec
+                                             3 [P] [pop []] [Ga] [dip swons] . genrec
+        3 [P] [pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] . ifte
+    3 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] [3] [P] . infra first choice i
+                                                                           3 . P [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 3] swaack first choice i
+                                                                           3 . 1 <= [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 3] swaack first choice i
+                                                                         3 1 . <= [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 3] swaack first choice i
+                                                                       False . [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 3] swaack first choice i
+    False [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 3] . swaack first choice i
+    3 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] [False] . first choice i
+      3 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] False . choice i
+                     3 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] . i
+                                                                           3 . Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons
+                                                                           3 . -- dup [[P] [pop []] [Ga] [dip swons] genrec] dip swons
+                                                                           2 . dup [[P] [pop []] [Ga] [dip swons] genrec] dip swons
+                                                                         2 2 . [[P] [pop []] [Ga] [dip swons] genrec] dip swons
+                                  2 2 [[P] [pop []] [Ga] [dip swons] genrec] . dip swons
+                                                                           2 . [P] [pop []] [Ga] [dip swons] genrec 2 swons
+                                                                       2 [P] . [pop []] [Ga] [dip swons] genrec 2 swons
+                                                              2 [P] [pop []] . [Ga] [dip swons] genrec 2 swons
+                                                         2 [P] [pop []] [Ga] . [dip swons] genrec 2 swons
+                                             2 [P] [pop []] [Ga] [dip swons] . genrec 2 swons
+        2 [P] [pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] . ifte 2 swons
+    2 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] [2] [P] . infra first choice i 2 swons
+                                                                           2 . P [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 2] swaack first choice i 2 swons
+                                                                           2 . 1 <= [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 2] swaack first choice i 2 swons
+                                                                         2 1 . <= [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 2] swaack first choice i 2 swons
+                                                                       False . [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 2] swaack first choice i 2 swons
+    False [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 2] . swaack first choice i 2 swons
+    2 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] [False] . first choice i 2 swons
+      2 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] False . choice i 2 swons
+                     2 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] . i 2 swons
+                                                                           2 . Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons 2 swons
+                                                                           2 . -- dup [[P] [pop []] [Ga] [dip swons] genrec] dip swons 2 swons
+                                                                           1 . dup [[P] [pop []] [Ga] [dip swons] genrec] dip swons 2 swons
+                                                                         1 1 . [[P] [pop []] [Ga] [dip swons] genrec] dip swons 2 swons
+                                  1 1 [[P] [pop []] [Ga] [dip swons] genrec] . dip swons 2 swons
+                                                                           1 . [P] [pop []] [Ga] [dip swons] genrec 1 swons 2 swons
+                                                                       1 [P] . [pop []] [Ga] [dip swons] genrec 1 swons 2 swons
+                                                              1 [P] [pop []] . [Ga] [dip swons] genrec 1 swons 2 swons
+                                                         1 [P] [pop []] [Ga] . [dip swons] genrec 1 swons 2 swons
+                                             1 [P] [pop []] [Ga] [dip swons] . genrec 1 swons 2 swons
+        1 [P] [pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] . ifte 1 swons 2 swons
+    1 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] [1] [P] . infra first choice i 1 swons 2 swons
+                                                                           1 . P [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 1] swaack first choice i 1 swons 2 swons
+                                                                           1 . 1 <= [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 1] swaack first choice i 1 swons 2 swons
+                                                                         1 1 . <= [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 1] swaack first choice i 1 swons 2 swons
+                                                                        True . [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 1] swaack first choice i 1 swons 2 swons
+     True [[pop []] [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] 1] . swaack first choice i 1 swons 2 swons
+     1 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] [True] . first choice i 1 swons 2 swons
+       1 [Ga [[P] [pop []] [Ga] [dip swons] genrec] dip swons] [pop []] True . choice i 1 swons 2 swons
+                                                                  1 [pop []] . i 1 swons 2 swons
+                                                                           1 . pop [] 1 swons 2 swons
+                                                                             . [] 1 swons 2 swons
+                                                                          [] . 1 swons 2 swons
+                                                                        [] 1 . swons 2 swons
+                                                                        [] 1 . swap cons 2 swons
+                                                                        1 [] . cons 2 swons
+                                                                         [1] . 2 swons
+                                                                       [1] 2 . swons
+                                                                       [1] 2 . swap cons
+                                                                       2 [1] . cons
+                                                                       [2 1] . 
+
+
+
+```python
+V('[2 1] [[] =] [pop c ] [uncons swap] [dip F] genrec')
+```
+
+                                                                                                   . [2 1] [[] =] [pop c] [uncons swap] [dip F] genrec
+                                                                                             [2 1] . [[] =] [pop c] [uncons swap] [dip F] genrec
+                                                                                      [2 1] [[] =] . [pop c] [uncons swap] [dip F] genrec
+                                                                              [2 1] [[] =] [pop c] . [uncons swap] [dip F] genrec
+                                                                [2 1] [[] =] [pop c] [uncons swap] . [dip F] genrec
+                                                        [2 1] [[] =] [pop c] [uncons swap] [dip F] . genrec
+            [2 1] [[] =] [pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] . ifte
+    [2 1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] [[2 1]] [[] =] . infra first choice i
+                                                                                             [2 1] . [] = [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [2 1]] swaack first choice i
+                                                                                          [2 1] [] . = [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [2 1]] swaack first choice i
+                                                                                             False . [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [2 1]] swaack first choice i
+           False [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [2 1]] . swaack first choice i
+           [2 1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] [False] . first choice i
+             [2 1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] False . choice i
+                           [2 1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] . i
+                                                                                             [2 1] . uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F
+                                                                                             2 [1] . swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F
+                                                                                             [1] 2 . [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F
+                                               [1] 2 [[[] =] [pop c] [uncons swap] [dip F] genrec] . dip F
+                                                                                               [1] . [[] =] [pop c] [uncons swap] [dip F] genrec 2 F
+                                                                                        [1] [[] =] . [pop c] [uncons swap] [dip F] genrec 2 F
+                                                                                [1] [[] =] [pop c] . [uncons swap] [dip F] genrec 2 F
+                                                                  [1] [[] =] [pop c] [uncons swap] . [dip F] genrec 2 F
+                                                          [1] [[] =] [pop c] [uncons swap] [dip F] . genrec 2 F
+              [1] [[] =] [pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] . ifte 2 F
+        [1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] [[1]] [[] =] . infra first choice i 2 F
+                                                                                               [1] . [] = [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [1]] swaack first choice i 2 F
+                                                                                            [1] [] . = [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [1]] swaack first choice i 2 F
+                                                                                             False . [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [1]] swaack first choice i 2 F
+             False [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [1]] . swaack first choice i 2 F
+             [1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] [False] . first choice i 2 F
+               [1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] False . choice i 2 F
+                             [1] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] . i 2 F
+                                                                                               [1] . uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F 2 F
+                                                                                              1 [] . swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F 2 F
+                                                                                              [] 1 . [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F 2 F
+                                                [] 1 [[[] =] [pop c] [uncons swap] [dip F] genrec] . dip F 2 F
+                                                                                                [] . [[] =] [pop c] [uncons swap] [dip F] genrec 1 F 2 F
+                                                                                         [] [[] =] . [pop c] [uncons swap] [dip F] genrec 1 F 2 F
+                                                                                 [] [[] =] [pop c] . [uncons swap] [dip F] genrec 1 F 2 F
+                                                                   [] [[] =] [pop c] [uncons swap] . [dip F] genrec 1 F 2 F
+                                                           [] [[] =] [pop c] [uncons swap] [dip F] . genrec 1 F 2 F
+               [] [[] =] [pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] . ifte 1 F 2 F
+          [] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] [[]] [[] =] . infra first choice i 1 F 2 F
+                                                                                                [] . [] = [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] []] swaack first choice i 1 F 2 F
+                                                                                             [] [] . = [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] []] swaack first choice i 1 F 2 F
+                                                                                              True . [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] []] swaack first choice i 1 F 2 F
+               True [[pop c] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] []] . swaack first choice i 1 F 2 F
+               [] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] [True] . first choice i 1 F 2 F
+                 [] [uncons swap [[[] =] [pop c] [uncons swap] [dip F] genrec] dip F] [pop c] True . choice i 1 F 2 F
+                                                                                        [] [pop c] . i 1 F 2 F
+                                                                                                [] . pop c 1 F 2 F
+                                                                                                   . c 1 F 2 F
+                                                                                                   . 0 1 F 2 F
+                                                                                                 0 . 1 F 2 F
+                                                                                               0 1 . F 2 F
+                                                                                               0 1 . + 2 F
+                                                                                                 1 . 2 F
+                                                                                               1 2 . F
+                                                                                               1 2 . +
+                                                                                                 3 . 
+
+
 ## Appendix - Fun with Symbols
 
     |[ (c, F), (G, P) ]| == (|c, F|) • [(G, P)]
@@ -1352,10 +1907,543 @@ I think they are having slightly too much fun with the symbols.
 
 "Too much is always better than not enough."
 
+# Tree with node and list of trees.
 
-## The `step` combinator will usually be better to use than `catamorphism`.
+    tree = [] | [node [tree*]]
 
-    sum == 0 swap [+] step
-    sum == 0 [+] catamorphism
+### `treestep`
 
+    tree z [C] [N] treestep
+
+
+       [] z [C] [N] treestep
+    ---------------------------
+          z
+
+
+       [node [tree*]] z [C] [N] treestep
+    --------------------------------------- w/ K == z [C] [N] treestep
+           node N [tree*] [K] map C
+
+### Derive the recursive form.
+    K == [not] [pop z] [J] ifte
+
+
+           [node [tree*]] J
+    ------------------------------
+       node N [tree*] [K] map C
+
+
+    J == .. [N] .. [K] .. [C] ..
+
+    [node [tree*]] uncons [N] dip
+    node [[tree*]]        [N] dip
+    node N [[tree*]]
+
+    node N [[tree*]] i [K] map
+    node N  [tree*]    [K] map
+    node N  [K.tree*]
+
+    J == uncons [N] dip i [K] map [C] i
+
+    K == [not] [pop z] [uncons [N] dip i [K] map [C] i] ifte
+    K == [not] [pop z] [uncons [N] dip i]   [map [C] i] genrec
+
+### Extract the givens to parameterize the program.
+    [not] [pop z]                   [uncons [N] dip unquote] [map [C] i] genrec
+    [not] [z]         [pop] swoncat [uncons [N] dip unquote] [map [C] i] genrec
+    [not]  z     unit [pop] swoncat [uncons [N] dip unquote] [map [C] i] genrec
+    z [not] swap unit [pop] swoncat [uncons [N] dip unquote] [map [C] i] genrec
+      \............TS0............/
+    z TS0 [uncons [N] dip unquote]                      [map [C] i] genrec
+    z [uncons [N] dip unquote]                [TS0] dip [map [C] i] genrec
+    z [[N] dip unquote]      [uncons] swoncat [TS0] dip [map [C] i] genrec
+    z [N] [dip unquote] cons [uncons] swoncat [TS0] dip [map [C] i] genrec
+          \...........TS1.................../
+    z [N] TS1 [TS0] dip [map [C] i]                       genrec
+    z [N]               [map [C] i]            [TS1 [TS0] dip] dip      genrec
+    z [N]               [map  C   ]            [TS1 [TS0] dip] dip      genrec
+    z [N]                    [C] [map] swoncat [TS1 [TS0] dip] dip genrec
+    z [C] [N] swap               [map] swoncat [TS1 [TS0] dip] dip genrec
+
+         TS0 == [not] swap unit [pop] swoncat
+         TS1 == [dip i] cons [uncons] swoncat
+    treestep == swap [map] swoncat [TS1 [TS0] dip] dip genrec
+
+       [] 0 [C] [N] treestep
+    ---------------------------
+          0
+
+
+          [n [tree*]] 0 [sum +] [] treestep
+       --------------------------------------------------
+           n [tree*] [0 [sum +] [] treestep] map sum +
+
+
+```python
+DefinitionWrapper.add_definitions('''
+
+     TS0 == [not] swap unit [pop] swoncat
+     TS1 == [dip i] cons [uncons] swoncat
+treestep == swap [map] swoncat [TS1 [TS0] dip] dip genrec
+
+''', D)
+```
+
+
+```python
+V('[] 0 [sum +] [] treestep')
+```
+
+                                                                                                           . [] 0 [sum +] [] treestep
+                                                                                                        [] . 0 [sum +] [] treestep
+                                                                                                      [] 0 . [sum +] [] treestep
+                                                                                              [] 0 [sum +] . [] treestep
+                                                                                           [] 0 [sum +] [] . treestep
+                                                                                           [] 0 [sum +] [] . swap [map] swoncat [TS1 [TS0] dip] dip genrec
+                                                                                           [] 0 [] [sum +] . [map] swoncat [TS1 [TS0] dip] dip genrec
+                                                                                     [] 0 [] [sum +] [map] . swoncat [TS1 [TS0] dip] dip genrec
+                                                                                     [] 0 [] [sum +] [map] . swap concat [TS1 [TS0] dip] dip genrec
+                                                                                     [] 0 [] [map] [sum +] . concat [TS1 [TS0] dip] dip genrec
+                                                                                       [] 0 [] [map sum +] . [TS1 [TS0] dip] dip genrec
+                                                                       [] 0 [] [map sum +] [TS1 [TS0] dip] . dip genrec
+                                                                                                   [] 0 [] . TS1 [TS0] dip [map sum +] genrec
+                                                                                                   [] 0 [] . [dip i] cons [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                           [] 0 [] [dip i] . cons [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                           [] 0 [[] dip i] . [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                  [] 0 [[] dip i] [uncons] . swoncat [TS0] dip [map sum +] genrec
+                                                                                  [] 0 [[] dip i] [uncons] . swap concat [TS0] dip [map sum +] genrec
+                                                                                  [] 0 [uncons] [[] dip i] . concat [TS0] dip [map sum +] genrec
+                                                                                    [] 0 [uncons [] dip i] . [TS0] dip [map sum +] genrec
+                                                                              [] 0 [uncons [] dip i] [TS0] . dip [map sum +] genrec
+                                                                                                      [] 0 . TS0 [uncons [] dip i] [map sum +] genrec
+                                                                                                      [] 0 . [not] swap unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                [] 0 [not] . swap unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                [] [not] 0 . unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                [] [not] 0 . [] cons [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                             [] [not] 0 [] . cons [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                              [] [not] [0] . [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                        [] [not] [0] [pop] . swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                        [] [not] [0] [pop] . swap concat [uncons [] dip i] [map sum +] genrec
+                                                                                        [] [not] [pop] [0] . concat [uncons [] dip i] [map sum +] genrec
+                                                                                          [] [not] [pop 0] . [uncons [] dip i] [map sum +] genrec
+                                                                        [] [not] [pop 0] [uncons [] dip i] . [map sum +] genrec
+                                                            [] [not] [pop 0] [uncons [] dip i] [map sum +] . genrec
+         [] [not] [pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . ifte
+    [] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [[]] [not] . infra first choice i
+                                                                                                        [] . not [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] []] swaack first choice i
+                                                                                                      True . [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] []] swaack first choice i
+        True [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] []] . swaack first choice i
+        [] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [True] . first choice i
+          [] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] True . choice i
+                                                                                                [] [pop 0] . i
+                                                                                                        [] . pop 0
+                                                                                                           . 0
+                                                                                                         0 . 
+
+
+
+```python
+V('[23 []] 0 [sum +] [] treestep')
+```
+
+                                                                                                                     . [23 []] 0 [sum +] [] treestep
+                                                                                                             [23 []] . 0 [sum +] [] treestep
+                                                                                                           [23 []] 0 . [sum +] [] treestep
+                                                                                                   [23 []] 0 [sum +] . [] treestep
+                                                                                                [23 []] 0 [sum +] [] . treestep
+                                                                                                [23 []] 0 [sum +] [] . swap [map] swoncat [TS1 [TS0] dip] dip genrec
+                                                                                                [23 []] 0 [] [sum +] . [map] swoncat [TS1 [TS0] dip] dip genrec
+                                                                                          [23 []] 0 [] [sum +] [map] . swoncat [TS1 [TS0] dip] dip genrec
+                                                                                          [23 []] 0 [] [sum +] [map] . swap concat [TS1 [TS0] dip] dip genrec
+                                                                                          [23 []] 0 [] [map] [sum +] . concat [TS1 [TS0] dip] dip genrec
+                                                                                            [23 []] 0 [] [map sum +] . [TS1 [TS0] dip] dip genrec
+                                                                            [23 []] 0 [] [map sum +] [TS1 [TS0] dip] . dip genrec
+                                                                                                        [23 []] 0 [] . TS1 [TS0] dip [map sum +] genrec
+                                                                                                        [23 []] 0 [] . [dip i] cons [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                                [23 []] 0 [] [dip i] . cons [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                                [23 []] 0 [[] dip i] . [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                       [23 []] 0 [[] dip i] [uncons] . swoncat [TS0] dip [map sum +] genrec
+                                                                                       [23 []] 0 [[] dip i] [uncons] . swap concat [TS0] dip [map sum +] genrec
+                                                                                       [23 []] 0 [uncons] [[] dip i] . concat [TS0] dip [map sum +] genrec
+                                                                                         [23 []] 0 [uncons [] dip i] . [TS0] dip [map sum +] genrec
+                                                                                   [23 []] 0 [uncons [] dip i] [TS0] . dip [map sum +] genrec
+                                                                                                           [23 []] 0 . TS0 [uncons [] dip i] [map sum +] genrec
+                                                                                                           [23 []] 0 . [not] swap unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                     [23 []] 0 [not] . swap unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                     [23 []] [not] 0 . unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                     [23 []] [not] 0 . [] cons [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                  [23 []] [not] 0 [] . cons [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                   [23 []] [not] [0] . [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                             [23 []] [not] [0] [pop] . swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                             [23 []] [not] [0] [pop] . swap concat [uncons [] dip i] [map sum +] genrec
+                                                                                             [23 []] [not] [pop] [0] . concat [uncons [] dip i] [map sum +] genrec
+                                                                                               [23 []] [not] [pop 0] . [uncons [] dip i] [map sum +] genrec
+                                                                             [23 []] [not] [pop 0] [uncons [] dip i] . [map sum +] genrec
+                                                                 [23 []] [not] [pop 0] [uncons [] dip i] [map sum +] . genrec
+              [23 []] [not] [pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . ifte
+    [23 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [[23 []]] [not] . infra first choice i
+                                                                                                             [23 []] . not [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [23 []]] swaack first choice i
+                                                                                                               False . [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [23 []]] swaack first choice i
+            False [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [23 []]] . swaack first choice i
+            [23 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [False] . first choice i
+              [23 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] False . choice i
+                            [23 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . i
+                                                                                                             [23 []] . uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                             23 [[]] . [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                          23 [[]] [] . dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                  23 . [[]] i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                             23 [[]] . i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                  23 . [] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                               23 [] . [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                          23 [] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] . map sum +
+                                                                                                               23 [] . sum +
+                                                                                                               23 [] . 0 [+] catamorphism +
+                                                                                                             23 [] 0 . [+] catamorphism +
+                                                                                                         23 [] 0 [+] . catamorphism +
+                                                                                                         23 [] 0 [+] . [[] =] roll> [uncons swap] swap hylomorphism +
+                                                                                                  23 [] 0 [+] [[] =] . roll> [uncons swap] swap hylomorphism +
+                                                                                                  23 [] [[] =] 0 [+] . [uncons swap] swap hylomorphism +
+                                                                                    23 [] [[] =] 0 [+] [uncons swap] . swap hylomorphism +
+                                                                                    23 [] [[] =] 0 [uncons swap] [+] . hylomorphism +
+                                                                                    23 [] [[] =] 0 [uncons swap] [+] . [unit [pop] swoncat] dipd [dip] swoncat genrec +
+                                                               23 [] [[] =] 0 [uncons swap] [+] [unit [pop] swoncat] . dipd [dip] swoncat genrec +
+                                                                                                      23 [] [[] =] 0 . unit [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                      23 [] [[] =] 0 . [] cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                   23 [] [[] =] 0 [] . cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                    23 [] [[] =] [0] . [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                              23 [] [[] =] [0] [pop] . swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                              23 [] [[] =] [0] [pop] . swap concat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                              23 [] [[] =] [pop] [0] . concat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                23 [] [[] =] [pop 0] . [uncons swap] [+] [dip] swoncat genrec +
+                                                                                  23 [] [[] =] [pop 0] [uncons swap] . [+] [dip] swoncat genrec +
+                                                                              23 [] [[] =] [pop 0] [uncons swap] [+] . [dip] swoncat genrec +
+                                                                        23 [] [[] =] [pop 0] [uncons swap] [+] [dip] . swoncat genrec +
+                                                                        23 [] [[] =] [pop 0] [uncons swap] [+] [dip] . swap concat genrec +
+                                                                        23 [] [[] =] [pop 0] [uncons swap] [dip] [+] . concat genrec +
+                                                                          23 [] [[] =] [pop 0] [uncons swap] [dip +] . genrec +
+                              23 [] [[] =] [pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . ifte +
+                      23 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [[] 23] [[] =] . infra first choice i +
+                                                                                                               23 [] . [] = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] swaack first choice i +
+                                                                                                            23 [] [] . = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] swaack first choice i +
+                                                                                                             23 True . [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] swaack first choice i +
+                           23 True [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] . swaack first choice i +
+                           23 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [True 23] . first choice i +
+                                23 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] True . choice i +
+                                                                                                       23 [] [pop 0] . i +
+                                                                                                               23 [] . pop 0 +
+                                                                                                                  23 . 0 +
+                                                                                                                23 0 . +
+                                                                                                                  23 . 
+
+
+
+```python
+V('[23 [[2 []] [3 []]]] 0 [sum +] [] treestep')
+```
+
+                                                                                                                                                                      . [23 [[2 []] [3 []]]] 0 [sum +] [] treestep
+                                                                                                                                                 [23 [[2 []] [3 []]]] . 0 [sum +] [] treestep
+                                                                                                                                               [23 [[2 []] [3 []]]] 0 . [sum +] [] treestep
+                                                                                                                                       [23 [[2 []] [3 []]]] 0 [sum +] . [] treestep
+                                                                                                                                    [23 [[2 []] [3 []]]] 0 [sum +] [] . treestep
+                                                                                                                                    [23 [[2 []] [3 []]]] 0 [sum +] [] . swap [map] swoncat [TS1 [TS0] dip] dip genrec
+                                                                                                                                    [23 [[2 []] [3 []]]] 0 [] [sum +] . [map] swoncat [TS1 [TS0] dip] dip genrec
+                                                                                                                              [23 [[2 []] [3 []]]] 0 [] [sum +] [map] . swoncat [TS1 [TS0] dip] dip genrec
+                                                                                                                              [23 [[2 []] [3 []]]] 0 [] [sum +] [map] . swap concat [TS1 [TS0] dip] dip genrec
+                                                                                                                              [23 [[2 []] [3 []]]] 0 [] [map] [sum +] . concat [TS1 [TS0] dip] dip genrec
+                                                                                                                                [23 [[2 []] [3 []]]] 0 [] [map sum +] . [TS1 [TS0] dip] dip genrec
+                                                                                                                [23 [[2 []] [3 []]]] 0 [] [map sum +] [TS1 [TS0] dip] . dip genrec
+                                                                                                                                            [23 [[2 []] [3 []]]] 0 [] . TS1 [TS0] dip [map sum +] genrec
+                                                                                                                                            [23 [[2 []] [3 []]]] 0 [] . [dip i] cons [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                                                                    [23 [[2 []] [3 []]]] 0 [] [dip i] . cons [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                                                                    [23 [[2 []] [3 []]]] 0 [[] dip i] . [uncons] swoncat [TS0] dip [map sum +] genrec
+                                                                                                                           [23 [[2 []] [3 []]]] 0 [[] dip i] [uncons] . swoncat [TS0] dip [map sum +] genrec
+                                                                                                                           [23 [[2 []] [3 []]]] 0 [[] dip i] [uncons] . swap concat [TS0] dip [map sum +] genrec
+                                                                                                                           [23 [[2 []] [3 []]]] 0 [uncons] [[] dip i] . concat [TS0] dip [map sum +] genrec
+                                                                                                                             [23 [[2 []] [3 []]]] 0 [uncons [] dip i] . [TS0] dip [map sum +] genrec
+                                                                                                                       [23 [[2 []] [3 []]]] 0 [uncons [] dip i] [TS0] . dip [map sum +] genrec
+                                                                                                                                               [23 [[2 []] [3 []]]] 0 . TS0 [uncons [] dip i] [map sum +] genrec
+                                                                                                                                               [23 [[2 []] [3 []]]] 0 . [not] swap unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                         [23 [[2 []] [3 []]]] 0 [not] . swap unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                         [23 [[2 []] [3 []]]] [not] 0 . unit [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                         [23 [[2 []] [3 []]]] [not] 0 . [] cons [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                      [23 [[2 []] [3 []]]] [not] 0 [] . cons [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                       [23 [[2 []] [3 []]]] [not] [0] . [pop] swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                 [23 [[2 []] [3 []]]] [not] [0] [pop] . swoncat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                 [23 [[2 []] [3 []]]] [not] [0] [pop] . swap concat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                 [23 [[2 []] [3 []]]] [not] [pop] [0] . concat [uncons [] dip i] [map sum +] genrec
+                                                                                                                                   [23 [[2 []] [3 []]]] [not] [pop 0] . [uncons [] dip i] [map sum +] genrec
+                                                                                                                 [23 [[2 []] [3 []]]] [not] [pop 0] [uncons [] dip i] . [map sum +] genrec
+                                                                                                     [23 [[2 []] [3 []]]] [not] [pop 0] [uncons [] dip i] [map sum +] . genrec
+                                                  [23 [[2 []] [3 []]]] [not] [pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . ifte
+                           [23 [[2 []] [3 []]]] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [[23 [[2 []] [3 []]]]] [not] . infra first choice i
+                                                                                                                                                 [23 [[2 []] [3 []]]] . not [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [23 [[2 []] [3 []]]]] swaack first choice i
+                                                                                                                                                                False . [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [23 [[2 []] [3 []]]]] swaack first choice i
+                                                False [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [23 [[2 []] [3 []]]]] . swaack first choice i
+                                                [23 [[2 []] [3 []]]] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [False] . first choice i
+                                                  [23 [[2 []] [3 []]]] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] False . choice i
+                                                                [23 [[2 []] [3 []]]] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . i
+                                                                                                                                                 [23 [[2 []] [3 []]]] . uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                                                 23 [[[2 []] [3 []]]] . [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                                              23 [[[2 []] [3 []]]] [] . dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                                                                   23 . [[[2 []] [3 []]]] i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                                                 23 [[[2 []] [3 []]]] . i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                                                                   23 . [[2 []] [3 []]] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                                                                                   23 [[2 []] [3 []]] . [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +
+                                                                                              23 [[2 []] [3 []]] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] . map sum +
+    23 [] [[[3 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first] . infra sum +
+                                                                                                                                                                      . [[3 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                          [[3 []] 23] . [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                     [[3 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] . infra first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                            23 [3 []] . [not] [pop 0] [uncons [] dip i] [map sum +] genrec [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                      23 [3 []] [not] . [pop 0] [uncons [] dip i] [map sum +] genrec [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                              23 [3 []] [not] [pop 0] . [uncons [] dip i] [map sum +] genrec [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                            23 [3 []] [not] [pop 0] [uncons [] dip i] . [map sum +] genrec [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                23 [3 []] [not] [pop 0] [uncons [] dip i] [map sum +] . genrec [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                             23 [3 []] [not] [pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . ifte [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                 23 [3 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [[3 []] 23] [not] . infra first choice i [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                            23 [3 []] . not [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [3 []] 23] swaack first choice i [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                             23 False . [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [3 []] 23] swaack first choice i [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                        23 False [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [3 []] 23] . swaack first choice i [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                        23 [3 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [False 23] . first choice i [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                             23 [3 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] False . choice i [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                           23 [3 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . i [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                            23 [3 []] . uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                            23 3 [[]] . [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                         23 3 [[]] [] . dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                                 23 3 . [[]] i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                            23 3 [[]] . i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                                 23 3 . [] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                              23 3 [] . [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                         23 3 [] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] . map sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                              23 3 [] . sum + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                              23 3 [] . 0 [+] catamorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                            23 3 [] 0 . [+] catamorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                        23 3 [] 0 [+] . catamorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                        23 3 [] 0 [+] . [[] =] roll> [uncons swap] swap hylomorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                 23 3 [] 0 [+] [[] =] . roll> [uncons swap] swap hylomorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                 23 3 [] [[] =] 0 [+] . [uncons swap] swap hylomorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                   23 3 [] [[] =] 0 [+] [uncons swap] . swap hylomorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                   23 3 [] [[] =] 0 [uncons swap] [+] . hylomorphism + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                   23 3 [] [[] =] 0 [uncons swap] [+] . [unit [pop] swoncat] dipd [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                              23 3 [] [[] =] 0 [uncons swap] [+] [unit [pop] swoncat] . dipd [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                     23 3 [] [[] =] 0 . unit [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                     23 3 [] [[] =] 0 . [] cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                  23 3 [] [[] =] 0 [] . cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                   23 3 [] [[] =] [0] . [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                             23 3 [] [[] =] [0] [pop] . swoncat [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                             23 3 [] [[] =] [0] [pop] . swap concat [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                             23 3 [] [[] =] [pop] [0] . concat [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                               23 3 [] [[] =] [pop 0] . [uncons swap] [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                 23 3 [] [[] =] [pop 0] [uncons swap] . [+] [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                             23 3 [] [[] =] [pop 0] [uncons swap] [+] . [dip] swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                       23 3 [] [[] =] [pop 0] [uncons swap] [+] [dip] . swoncat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                       23 3 [] [[] =] [pop 0] [uncons swap] [+] [dip] . swap concat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                       23 3 [] [[] =] [pop 0] [uncons swap] [dip] [+] . concat genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                         23 3 [] [[] =] [pop 0] [uncons swap] [dip +] . genrec + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                             23 3 [] [[] =] [pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . ifte + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                   23 3 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [[] 3 23] [[] =] . infra first choice i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                              23 3 [] . [] = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 3 23] swaack first choice i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                           23 3 [] [] . = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 3 23] swaack first choice i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                            23 3 True . [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 3 23] swaack first choice i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                        23 3 True [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 3 23] . swaack first choice i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                        23 3 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [True 3 23] . first choice i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                               23 3 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] True . choice i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                      23 3 [] [pop 0] . i + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                              23 3 [] . pop 0 + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                                 23 3 . 0 + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                               23 3 0 . + [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                                 23 3 . [] swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                              23 3 [] . swaack first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                               [3 23] . first [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                                    3 . [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                                                                        3 [[2 []] 23] . [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] infra first [23] swaack sum +
+                                                                                                   3 [[2 []] 23] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] . infra first [23] swaack sum +
+                                                                                                                                                            23 [2 []] . [not] [pop 0] [uncons [] dip i] [map sum +] genrec [3] swaack first [23] swaack sum +
+                                                                                                                                                      23 [2 []] [not] . [pop 0] [uncons [] dip i] [map sum +] genrec [3] swaack first [23] swaack sum +
+                                                                                                                                              23 [2 []] [not] [pop 0] . [uncons [] dip i] [map sum +] genrec [3] swaack first [23] swaack sum +
+                                                                                                                            23 [2 []] [not] [pop 0] [uncons [] dip i] . [map sum +] genrec [3] swaack first [23] swaack sum +
+                                                                                                                23 [2 []] [not] [pop 0] [uncons [] dip i] [map sum +] . genrec [3] swaack first [23] swaack sum +
+                                                             23 [2 []] [not] [pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . ifte [3] swaack first [23] swaack sum +
+                                                 23 [2 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [[2 []] 23] [not] . infra first choice i [3] swaack first [23] swaack sum +
+                                                                                                                                                            23 [2 []] . not [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [2 []] 23] swaack first choice i [3] swaack first [23] swaack sum +
+                                                                                                                                                             23 False . [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [2 []] 23] swaack first choice i [3] swaack first [23] swaack sum +
+                                                        23 False [[pop 0] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [2 []] 23] . swaack first choice i [3] swaack first [23] swaack sum +
+                                                        23 [2 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] [False 23] . first choice i [3] swaack first [23] swaack sum +
+                                                             23 [2 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] [pop 0] False . choice i [3] swaack first [23] swaack sum +
+                                                                           23 [2 []] [uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum +] . i [3] swaack first [23] swaack sum +
+                                                                                                                                                            23 [2 []] . uncons [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                            23 2 [[]] . [] dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                         23 2 [[]] [] . dip i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                                 23 2 . [[]] i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                            23 2 [[]] . i [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                                 23 2 . [] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                              23 2 [] . [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] map sum + [3] swaack first [23] swaack sum +
+                                                                                                         23 2 [] [[not] [pop 0] [uncons [] dip i] [map sum +] genrec] . map sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                              23 2 [] . sum + [3] swaack first [23] swaack sum +
+                                                                                                                                                              23 2 [] . 0 [+] catamorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                                            23 2 [] 0 . [+] catamorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                                        23 2 [] 0 [+] . catamorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                                        23 2 [] 0 [+] . [[] =] roll> [uncons swap] swap hylomorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                                 23 2 [] 0 [+] [[] =] . roll> [uncons swap] swap hylomorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                                 23 2 [] [[] =] 0 [+] . [uncons swap] swap hylomorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                   23 2 [] [[] =] 0 [+] [uncons swap] . swap hylomorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                   23 2 [] [[] =] 0 [uncons swap] [+] . hylomorphism + [3] swaack first [23] swaack sum +
+                                                                                                                                   23 2 [] [[] =] 0 [uncons swap] [+] . [unit [pop] swoncat] dipd [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                              23 2 [] [[] =] 0 [uncons swap] [+] [unit [pop] swoncat] . dipd [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                                     23 2 [] [[] =] 0 . unit [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                                     23 2 [] [[] =] 0 . [] cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                                  23 2 [] [[] =] 0 [] . cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                                   23 2 [] [[] =] [0] . [pop] swoncat [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                             23 2 [] [[] =] [0] [pop] . swoncat [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                             23 2 [] [[] =] [0] [pop] . swap concat [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                             23 2 [] [[] =] [pop] [0] . concat [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                               23 2 [] [[] =] [pop 0] . [uncons swap] [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                                 23 2 [] [[] =] [pop 0] [uncons swap] . [+] [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                             23 2 [] [[] =] [pop 0] [uncons swap] [+] . [dip] swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                       23 2 [] [[] =] [pop 0] [uncons swap] [+] [dip] . swoncat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                       23 2 [] [[] =] [pop 0] [uncons swap] [+] [dip] . swap concat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                       23 2 [] [[] =] [pop 0] [uncons swap] [dip] [+] . concat genrec + [3] swaack first [23] swaack sum +
+                                                                                                                         23 2 [] [[] =] [pop 0] [uncons swap] [dip +] . genrec + [3] swaack first [23] swaack sum +
+                                                                             23 2 [] [[] =] [pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . ifte + [3] swaack first [23] swaack sum +
+                                                                   23 2 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [[] 2 23] [[] =] . infra first choice i + [3] swaack first [23] swaack sum +
+                                                                                                                                                              23 2 [] . [] = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 2 23] swaack first choice i + [3] swaack first [23] swaack sum +
+                                                                                                                                                           23 2 [] [] . = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 2 23] swaack first choice i + [3] swaack first [23] swaack sum +
+                                                                                                                                                            23 2 True . [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 2 23] swaack first choice i + [3] swaack first [23] swaack sum +
+                                                                        23 2 True [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 2 23] . swaack first choice i + [3] swaack first [23] swaack sum +
+                                                                        23 2 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [True 2 23] . first choice i + [3] swaack first [23] swaack sum +
+                                                                               23 2 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] True . choice i + [3] swaack first [23] swaack sum +
+                                                                                                                                                      23 2 [] [pop 0] . i + [3] swaack first [23] swaack sum +
+                                                                                                                                                              23 2 [] . pop 0 + [3] swaack first [23] swaack sum +
+                                                                                                                                                                 23 2 . 0 + [3] swaack first [23] swaack sum +
+                                                                                                                                                               23 2 0 . + [3] swaack first [23] swaack sum +
+                                                                                                                                                                 23 2 . [3] swaack first [23] swaack sum +
+                                                                                                                                                             23 2 [3] . swaack first [23] swaack sum +
+                                                                                                                                                             3 [2 23] . first [23] swaack sum +
+                                                                                                                                                                  3 2 . [23] swaack sum +
+                                                                                                                                                             3 2 [23] . swaack sum +
+                                                                                                                                                             23 [2 3] . sum +
+                                                                                                                                                             23 [2 3] . 0 [+] catamorphism +
+                                                                                                                                                           23 [2 3] 0 . [+] catamorphism +
+                                                                                                                                                       23 [2 3] 0 [+] . catamorphism +
+                                                                                                                                                       23 [2 3] 0 [+] . [[] =] roll> [uncons swap] swap hylomorphism +
+                                                                                                                                                23 [2 3] 0 [+] [[] =] . roll> [uncons swap] swap hylomorphism +
+                                                                                                                                                23 [2 3] [[] =] 0 [+] . [uncons swap] swap hylomorphism +
+                                                                                                                                  23 [2 3] [[] =] 0 [+] [uncons swap] . swap hylomorphism +
+                                                                                                                                  23 [2 3] [[] =] 0 [uncons swap] [+] . hylomorphism +
+                                                                                                                                  23 [2 3] [[] =] 0 [uncons swap] [+] . [unit [pop] swoncat] dipd [dip] swoncat genrec +
+                                                                                                             23 [2 3] [[] =] 0 [uncons swap] [+] [unit [pop] swoncat] . dipd [dip] swoncat genrec +
+                                                                                                                                                    23 [2 3] [[] =] 0 . unit [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                                    23 [2 3] [[] =] 0 . [] cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                                 23 [2 3] [[] =] 0 [] . cons [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                                  23 [2 3] [[] =] [0] . [pop] swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                            23 [2 3] [[] =] [0] [pop] . swoncat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                            23 [2 3] [[] =] [0] [pop] . swap concat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                            23 [2 3] [[] =] [pop] [0] . concat [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                              23 [2 3] [[] =] [pop 0] . [uncons swap] [+] [dip] swoncat genrec +
+                                                                                                                                23 [2 3] [[] =] [pop 0] [uncons swap] . [+] [dip] swoncat genrec +
+                                                                                                                            23 [2 3] [[] =] [pop 0] [uncons swap] [+] . [dip] swoncat genrec +
+                                                                                                                      23 [2 3] [[] =] [pop 0] [uncons swap] [+] [dip] . swoncat genrec +
+                                                                                                                      23 [2 3] [[] =] [pop 0] [uncons swap] [+] [dip] . swap concat genrec +
+                                                                                                                      23 [2 3] [[] =] [pop 0] [uncons swap] [dip] [+] . concat genrec +
+                                                                                                                        23 [2 3] [[] =] [pop 0] [uncons swap] [dip +] . genrec +
+                                                                            23 [2 3] [[] =] [pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . ifte +
+                                                                 23 [2 3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [[2 3] 23] [[] =] . infra first choice i +
+                                                                                                                                                             23 [2 3] . [] = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [2 3] 23] swaack first choice i +
+                                                                                                                                                          23 [2 3] [] . = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [2 3] 23] swaack first choice i +
+                                                                                                                                                             23 False . [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [2 3] 23] swaack first choice i +
+                                                                        23 False [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [2 3] 23] . swaack first choice i +
+                                                                        23 [2 3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [False 23] . first choice i +
+                                                                             23 [2 3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] False . choice i +
+                                                                                           23 [2 3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . i +
+                                                                                                                                                             23 [2 3] . uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip + +
+                                                                                                                                                             23 2 [3] . swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip + +
+                                                                                                                                                             23 [3] 2 . [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip + +
+                                                                                                               23 [3] 2 [[[] =] [pop 0] [uncons swap] [dip +] genrec] . dip + +
+                                                                                                                                                               23 [3] . [[] =] [pop 0] [uncons swap] [dip +] genrec 2 + +
+                                                                                                                                                        23 [3] [[] =] . [pop 0] [uncons swap] [dip +] genrec 2 + +
+                                                                                                                                                23 [3] [[] =] [pop 0] . [uncons swap] [dip +] genrec 2 + +
+                                                                                                                                  23 [3] [[] =] [pop 0] [uncons swap] . [dip +] genrec 2 + +
+                                                                                                                          23 [3] [[] =] [pop 0] [uncons swap] [dip +] . genrec 2 + +
+                                                                              23 [3] [[] =] [pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . ifte 2 + +
+                                                                     23 [3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [[3] 23] [[] =] . infra first choice i 2 + +
+                                                                                                                                                               23 [3] . [] = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [3] 23] swaack first choice i 2 + +
+                                                                                                                                                            23 [3] [] . = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [3] 23] swaack first choice i 2 + +
+                                                                                                                                                             23 False . [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [3] 23] swaack first choice i 2 + +
+                                                                          23 False [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [3] 23] . swaack first choice i 2 + +
+                                                                          23 [3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [False 23] . first choice i 2 + +
+                                                                               23 [3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] False . choice i 2 + +
+                                                                                             23 [3] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . i 2 + +
+                                                                                                                                                               23 [3] . uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip + 2 + +
+                                                                                                                                                              23 3 [] . swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip + 2 + +
+                                                                                                                                                              23 [] 3 . [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip + 2 + +
+                                                                                                                23 [] 3 [[[] =] [pop 0] [uncons swap] [dip +] genrec] . dip + 2 + +
+                                                                                                                                                                23 [] . [[] =] [pop 0] [uncons swap] [dip +] genrec 3 + 2 + +
+                                                                                                                                                         23 [] [[] =] . [pop 0] [uncons swap] [dip +] genrec 3 + 2 + +
+                                                                                                                                                 23 [] [[] =] [pop 0] . [uncons swap] [dip +] genrec 3 + 2 + +
+                                                                                                                                   23 [] [[] =] [pop 0] [uncons swap] . [dip +] genrec 3 + 2 + +
+                                                                                                                           23 [] [[] =] [pop 0] [uncons swap] [dip +] . genrec 3 + 2 + +
+                                                                               23 [] [[] =] [pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] . ifte 3 + 2 + +
+                                                                       23 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [[] 23] [[] =] . infra first choice i 3 + 2 + +
+                                                                                                                                                                23 [] . [] = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] swaack first choice i 3 + 2 + +
+                                                                                                                                                             23 [] [] . = [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] swaack first choice i 3 + 2 + +
+                                                                                                                                                              23 True . [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] swaack first choice i 3 + 2 + +
+                                                                            23 True [[pop 0] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [] 23] . swaack first choice i 3 + 2 + +
+                                                                            23 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] [True 23] . first choice i 3 + 2 + +
+                                                                                 23 [] [uncons swap [[[] =] [pop 0] [uncons swap] [dip +] genrec] dip +] [pop 0] True . choice i 3 + 2 + +
+                                                                                                                                                        23 [] [pop 0] . i 3 + 2 + +
+                                                                                                                                                                23 [] . pop 0 3 + 2 + +
+                                                                                                                                                                   23 . 0 3 + 2 + +
+                                                                                                                                                                 23 0 . 3 + 2 + +
+                                                                                                                                                               23 0 3 . + 2 + +
+                                                                                                                                                                 23 3 . 2 + +
+                                                                                                                                                               23 3 2 . + +
+                                                                                                                                                                 23 5 . +
+                                                                                                                                                                   28 . 
+
+
+
+```python
+J('[23 [[2 [[23 [[2 []] [3 []]]][23 [[2 []] [3 []]]]]] [3 [[23 [[2 []] [3 []]]][23 [[2 []] [3 []]]]]]]] 0 [sum +] [] treestep')
+```
+
+    140
+
+
+
+```python
+J('[] [] [unit cons] [23 +] treestep')
+```
+
+    []
+
+
+
+```python
+J('[23 []] [] [unit cons] [23 +] treestep')
+```
+
+    [46 []]
+
+
+
+```python
+J('[23 [[2 []] [3 []]]] [] [unit cons] [23 +] treestep')
+```
+
+    [46 [[25 []] [26 []]]]
+
+
+
+```python
+define('treemap == [] [unit cons] roll< treestep')
+```
+
+
+```python
+J('[23 [[2 []] [3 []]]] [23 +] treemap')
+```
+
+    [46 [[25 []] [26 []]]]
 

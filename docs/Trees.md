@@ -65,19 +65,30 @@ Wow. So:
 
     R1 == [rest rest] dip step
 
+#### Putting it together
+We have:
+
+    BTree-iter == [not] [pop] [[F] dupdip] [[rest rest] dip step] genrec
+
+When I was reading this over I realized `rest rest` could go in `R0`:
+
+    BTree-iter == [not] [pop] [[F] dupdip rest rest] [step] genrec
+
+(And `[step] genrec` is such a cool and suggestive combinator!)
+
 #### Parameterizing the `F` per-node processing function.
 
-    [F] BTree-iter == [not] [pop] [[F] dupdip] [[rest rest] dip step] genrec
+    [F] BTree-iter == [not] [pop] [[F] dupdip rest rest] [step] genrec
 
 Working backward:
 
-    [not] [pop] [[F] dupdip]            [[rest rest] dip step] genrec
-    [not] [pop] [F]       [dupdip] cons [[rest rest] dip step] genrec
-    [F] [not] [pop] roll< [dupdip] cons [[rest rest] dip step] genrec
+    [not] [pop] [[F] dupdip rest rest]            [step] genrec
+    [not] [pop] [F]       [dupdip rest rest] cons [step] genrec
+    [F] [not] [pop] roll< [dupdip rest rest] cons [step] genrec
 
 Ergo:
 
-    BTree-iter == [not] [pop] roll< [dupdip] cons [[rest rest] dip step] genrec
+    BTree-iter == [not] [pop] roll< [dupdip rest rest] cons [step] genrec
 
 
 ```python
@@ -86,7 +97,7 @@ from notebook_preamble import J, V, define
 
 
 ```python
-define('BTree-iter == [not] [pop] roll< [dupdip] cons [[rest rest] dip step] genrec')
+define('BTree-iter == [not] [pop] roll< [dupdip rest rest] cons [step] genrec')
 ```
 
 
@@ -668,15 +679,6 @@ J('[] 23 "a" BTree-add 88 "b" BTree-add 44 "c" BTree-add')  # Series.
     ['a' 23 [] ['b' 88 [] ['c' 44 [] []]]]
 
 
-### Specializing `cmp` for >= <= !=
-
-    a b [G] [E] [L] cmp
-    a b [GE] dup [L] cmp
-    a b [G] [LE] dup cmp
-    a b [NE] [E] over cmp
-
-But you wouldn't do this, you would just use `>=` or whatever.  The `cmp` combinator is useful when you have to do three different things depending on the >=< greater-than, equal-to, or less-than result of comparison.
-
 # Factoring and naming
 It may seem silly, but a big part of programming in Forth (and therefore in Joy) is the idea of small, highly-factored definitions.  If you choose names carefully the resulting definitions can take on a semantic role.
 
@@ -770,6 +772,432 @@ J('[3 9 5 2 8 6 7 8 4] to_set BTree-iter-order')
     2 3 4 5 6 7 8 9
 
 
+# Getting values by key
+Let's derive a function that accepts a tree and a key and returns the value associated with that key.
+
+       tree key BTree-get
+    ------------------------
+            value
+
+#### The base case `[]`
+As before, the stopping predicate just has to detect the empty list:
+
+    BTree-get == [pop not] [E] [R0] [R1] genrec
+
+But what do we do if the key isn't in the tree?  In Python we might raise a `KeyError` but I'd like to avoid exceptions in Joy if possible, and here I think it's possible.  (Division by zero is an example of where I think it's probably better to let Python crash Joy.  Sometimes the machinery fails and you have to "stop the line", methinks.)
+
+Let's pass the buck to the caller by making the base case a given, you have to decide for yourself what `[E]` should be.
+
+
+       tree key [E] BTree-get
+    ---------------------------- key in tree
+               value
+
+       tree key [E] BTree-get
+    ---------------------------- key not in tree
+             tree key E
+
+Now we define:
+
+    BTree-get == [pop not] swap [R0] [R1] genrec
+
+Note that this `BTree-get` creates a slightly different function than itself and *that function* does the actual recursion.  This kind of higher-level programming is unusual in most languages but natural in Joy.
+
+    tree key [E] [pop not] swap [R0] [R1] genrec
+    tree key [pop not] [E] [R0] [R1] genrec
+
+The anonymous specialized recursive function that will do the real work.
+
+    [pop not] [E] [R0] [R1] genrec
+
+#### Node case `[key value left right]`
+Now we need to figure out `R0` and `R1`: 
+
+    [key value left right] key R0 [BTree-get] R1
+
+We want to compare the search key with the key in the node, and if they are the same return the value and if they differ then recurse on one of the child nodes.  So it's very similar to the above funtion, with `[R0] == []` and `R1 == P [T>] [E] [T<] cmp`:
+
+    [key value left right] key [BTree-get] P [T>] [E] [T<] cmp
+
+So:
+
+    get-node-key == pop popop first
+    P == over [get-node-key] nullary
+
+The only difference is that `get-node-key` does one less `pop` because there's no value to discard.  Now we have to derive the branches:
+
+    [key_n value_n left right] key [BTree-get] T>
+    [key_n value_n left right] key [BTree-get] E
+    [key_n value_n left right] key [BTree-get] T<
+
+The cases of `T>` and `T<` are similar to above but instead of using `infra` we have to discard the rest of the structure:
+
+    [key_n value_n left right] key [BTree-get] T> == right key BTree-get
+    [key_n value_n left right] key [BTree-get] T< == left key BTree-get
+
+So:
+    
+    T> == [fourth] dipd i
+    T< == [third] dipd i
+
+E.g.:
+
+    [key_n value_n left right]        key [BTree-get] [fourth] dipd i
+    [key_n value_n left right] fourth key [BTree-get]               i
+                        right         key [BTree-get]               i
+                        right         key  BTree-get
+
+And:
+
+    [key_n value_n left right] key [BTree-get] E == value_n
+
+    E == popop second
+
+So:
+
+    fourth == rest rest rest first
+    get-node-key == pop popop first
+    P == over [get-node-key] nullary
+    T> == [fourth] dipd i
+    T< == [third] dipd i
+    E == popop second
+
+    BTree-get == [pop not] swap [] [P [T>] [E] [T<] cmp] genrec
+
+
+```python
+# I don't want to deal with name conflicts with the above so I'm inlining everything here.
+# The original Joy system has "hide" which is a meta-command which allows you to use named
+# definitions that are only in scope for a given definition.  I don't want to implement
+# that (yet) so...
+
+
+define('''
+BTree-get == [pop not] swap [] [
+  over [pop popop first] nullary
+  [[rest rest rest first] dipd i]
+  [popop second]
+  [[third] dipd i]
+  cmp
+  ] genrec
+''')
+```
+
+
+```python
+J('[] "gary" [popop "err"] BTree-get')
+```
+
+    'err'
+
+
+
+```python
+J('["gary" 23 [] []] "gary" [popop "err"] BTree-get')
+```
+
+    23
+
+
+
+```python
+J('''
+
+    [] [[0 'a'] [1 'b'] [2 'c']] [i BTree-add] step
+
+    'c' [popop 'not found'] BTree-get
+
+''')
+```
+
+    2
+
+
+# TODO: BTree-delete
+
+Then, once we have add, get, and delete we can see about abstracting them.
+
+       tree key [E] BTree-delete
+    ---------------------------- key in tree
+           tree
+
+       tree key [E] BTree-delete
+    ---------------------------- key not in tree
+             tree key E
+
+So:
+
+    BTree-delete == [pop not] [] [R0] [R1] genrec
+
+And:
+
+    [n_key n_value left right] key R0              [BTree-get] R1
+    [n_key n_value left right] key [dup first] dip [BTree-get] R1
+    [n_key n_value left right] n_key key           [BTree-get] R1
+    [n_key n_value left right] n_key key           [BTree-get] roll> [T>] [E] [T<] cmp
+    [n_key n_value left right] [BTree-get] n_key key                 [T>] [E] [T<] cmp
+
+    BTree-delete == [pop not] swap [[dup first] dip] [roll> [T>] [E] [T<] cmp] genrec
+
+    [n_key n_value left right] [BTree-get] T>
+    [n_key n_value left right] [BTree-get] E
+    [n_key n_value left right] [BTree-get] T<
+
+    [n_key n_value left right] [BTree-get] 
+    [n_key n_value left right] [BTree-get] E
+    [n_key n_value left right] [BTree-get] T<
+
+# Tree with node and list of trees.
+Let's consider a tree structure, similar to one described ["Why functional programming matters" by John Hughes](https://www.cs.kent.ac.uk/people/staff/dat/miranda/whyfp90.pdf), that consists of a node value and a sequence of zero or more child trees.  (The asterisk is meant to indicate the [Kleene star](https://en.wikipedia.org/wiki/Kleene_star).)
+
+    tree = [] | [node [tree*]]
+
+### `treestep`
+In the spirit of `step` we are going to define a combinator `treestep` which expects a tree and three additional items: a base-case value `z`, and two quoted programs `[C]` and `[N]`.
+
+    tree z [C] [N] treestep
+
+If the current tree node is empty then just leave `z` on the stack in lieu:
+
+       [] z [C] [N] treestep
+    ---------------------------
+          z
+
+Otherwise, evaluate `N` on the node value, `map` the whole function (abbreviated here as `k`) over the child trees recursively, and then combine the result with `C`.
+
+       [node [tree*]] z [C] [N] treestep
+    --------------------------------------- w/ K == z [C] [N] treestep
+           node N [tree*] [K] map C
+
+### Derive the recursive form.
+Since this is a recursive function, we can begin to derive it by finding the `ifte` stage that `genrec` will produce.  The predicate and base-case functions are trivial, so we just have to derive `J`.
+
+    K == [not] [pop z] [J] ifte
+
+The behavior of `J` is to accept a (non-empty) tree node and arrive at the desired outcome.
+
+           [node [tree*]] J
+    ------------------------------
+       node N [tree*] [K] map C
+
+So `J` will have some form like:
+
+    J == .. [N] .. [K] .. [C] ..
+
+Let's dive in.  First, unquote the node and `dip` `N`.
+
+    [node [tree*]] i [N] dip
+     node [tree*]    [N] dip
+    node N [tree*]
+
+Next, `map` `K` over teh child trees and combine with `C`.
+
+    node N [tree*] [K] map C
+    node N [tree*] [K] map C
+    node N [K.tree*]       C
+
+So:
+
+    J == i [N] dip [K] map C
+
+Plug it in and convert to `genrec`:
+
+    K == [not] [pop z] [i [N] dip [K] map C] ifte
+    K == [not] [pop z] [i [N] dip]   [map C] genrec
+
+### Extract the givens to parameterize the program.
+
+    [not] [pop z] [i [N] dip]   [map C] genrec
+
+    [not] [pop z]                   [i [N] dip] [map C] genrec
+    [not] [z]         [pop] swoncat [i [N] dip] [map C] genrec
+    [not]  z     unit [pop] swoncat [i [N] dip] [map C] genrec
+    z [not] swap unit [pop] swoncat [i [N] dip] [map C] genrec
+      \  .........TS0............./
+       \/
+    z TS0 [i [N] dip]                       [map C] genrec
+    z     [i [N] dip]             [TS0] dip [map C] genrec
+    z       [[N] dip] [i] swoncat [TS0] dip [map C] genrec
+    z  [N] [dip] cons [i] swoncat [TS0] dip [map C] genrec
+           \  ......TS1........./
+            \/
+    z [N] TS1 [TS0] dip [map C]                      genrec
+    z [N]               [map C]  [TS1 [TS0] dip] dip genrec
+    z [N] [C]      [map] swoncat [TS1 [TS0] dip] dip genrec
+    z [C] [N] swap [map] swoncat [TS1 [TS0] dip] dip genrec
+
+The givens are all to the left so we have our definition.
+
+### Define `treestep`
+         TS0 == [not] swap unit [pop] swoncat
+         TS1 == [dip] cons [i] swoncat
+    treestep == swap [map] swoncat [TS1 [TS0] dip] dip genrec
+
+
+```python
+DefinitionWrapper.add_definitions('''
+
+     TS0 == [not] swap unit [pop] swoncat
+     TS1 == [dip] cons [i] swoncat
+treestep == swap [map] swoncat [TS1 [TS0] dip] dip genrec
+
+''', D)
+```
+
+       [] 0 [C] [N] treestep
+    ---------------------------
+          0
+
+
+          [n [tree*]] 0 [sum +] [] treestep
+       --------------------------------------------------
+           n [tree*] [0 [sum +] [] treestep] map sum +
+
+
+```python
+J('[] 0 [sum +] [] treestep')
+```
+
+    0
+
+
+
+```python
+J('[23 []] 0 [sum +] [] treestep')
+```
+
+    23
+
+
+
+```python
+J('[23 [[2 []] [3 []]]] 0 [sum +] [] treestep')
+```
+
+    28
+
+
+## A slight modification.
+Let's simplify the tree datastructure definition slightly by just letting the children be the `rest` of the tree:
+
+    tree = [] | [node tree*]
+
+The `J` function changes slightly.
+
+            [node tree*] J
+    ------------------------------
+       node N [tree*] [K] map C
+
+
+    [node tree*] uncons [N] dip [K] map C
+    node [tree*]        [N] dip [K] map C
+    node N [tree*]              [K] map C
+    node N [tree*]              [K] map C
+    node N [K.tree*]                    C
+
+    J == uncons [N] dip [K] map C
+
+    K == [not] [pop z] [uncons [N] dip] [map C] genrec
+
+
+
+```python
+define('TS1 == [dip] cons [uncons] swoncat')  # We only need to redefine one word.
+```
+
+
+```python
+J('[23 [2] [3]] 0 [sum +] [] treestep')
+```
+
+    28
+
+
+
+```python
+J('[23 [2 [8] [9]] [3] [4 []]] 0 [sum +] [] treestep')
+```
+
+    49
+
+
+I think these trees seem a little easier to read.
+
+## Redefining our BTree in terms of this form.
+
+    BTree = [] | [[key value] left right]
+
+What kind of functions can we write for this with our `treestep`?  The pattern for processing a non-empty node is:
+
+    node N [tree*] [K] map C
+
+Plugging in our BTree structure:
+
+    [key value] N [left right] [K] map C
+
+
+    [key value] uncons pop [left right] [K] map i
+    key [value]        pop [left right] [K] map i
+    key                    [left right] [K] map i
+    key                    [lkey rkey ]         i
+    key                     lkey rkey
+
+
+
+```python
+J('[[3 0] [[2 0] [] []] [[9 0] [[5 0] [[4 0] [] []] [[8 0] [[6 0] [] [[7 0] [] []]] []]] []]]   23 [i] [uncons pop] treestep')
+```
+
+    3 23 23
+
+
+Doesn't work because `map` extracts the `first` item of whatever its mapped function produces.  We have to return a list, rather than depositing our results directly on the stack.
+
+
+    [key value] N     [left right] [K] map C
+
+    [key value] first [left right] [K] map flatten cons
+    key               [left right] [K] map flatten cons
+    key               [[lk] [rk] ]         flatten cons
+    key               [ lk   rk  ]                 cons
+                      [key  lk   rk  ]
+
+So:
+
+    [] [flatten cons] [first] treestep
+
+
+```python
+J('[[3 0] [[2 0] [] []] [[9 0] [[5 0] [[4 0] [] []] [[8 0] [[6 0] [] [[7 0] [] []]] []]] []]]   [] [flatten cons] [first] treestep')
+```
+
+    [3 2 9 5 4 8 6 7]
+
+
+There we go.
+#### In-order traversal with `treestep`.
+
+From here:
+
+    key [[lk] [rk]] C
+    key [[lk] [rk]] i
+    key  [lk] [rk] roll<
+    [lk] [rk] key swons concat
+    [lk] [key rk]       concat
+    [lk   key rk]
+
+So:
+
+    [] [i roll< swons concat] [first] treestep
+
+
+```python
+J('[[3 0] [[2 0] [] []] [[9 0] [[5 0] [[4 0] [] []] [[8 0] [[6 0] [] [[7 0] [] []]] []]] []]]   [] [i roll< swons concat] [uncons pop] treestep')
+```
+
+    [2 3 4 5 6 7 8 9]
+
+
 ## Miscellaneous Crap
 
 ### Toy with it.
@@ -829,6 +1257,14 @@ A general form for tree data with N children per node:
     [[data] [child0] ... [childN-1]]
 
 Suggests a general form of recursive iterator, but I have to go walk the dogs at the mo'.
+
+For a given structure, you would have a structure of operator functions and sort of merge them and run them, possibly in a different order (pre- post- in- y'know).  The `Cn` functions could all be the same and use the `step` trick if the children nodes are all of the right kind.  If they are heterogeneous then we need a way to get the different `Cn` into the structure in the right order.  If I understand correctly, the "Bananas..." paper shows how to do this automatically from a type description.  They present, if I have it right, a tiny machine that accepts [some sort of algebraic data type description and returns a function that can recusre over it](https://en.wikipedia.org/wiki/Catamorphism#General_case), I think.
+
+       [data.. [c0] [c1] ... [cN]] [F C0 C1 ... CN] infil
+    --------------------------------------------------------
+       data F [c0] C0 [c1] C1 ... [cN] CN
+       
+       
 
 #### Just make `[F]` a parameter.
 We can generalize to a sort of pure form:
