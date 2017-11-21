@@ -1146,6 +1146,7 @@ builtins = (
   BinaryBuiltinWrapper(operator.truediv),
   BinaryBuiltinWrapper(operator.xor),
 
+  UnaryBuiltinWrapper(abs),
   UnaryBuiltinWrapper(operator.neg),
   UnaryBuiltinWrapper(operator.not_),
   UnaryBuiltinWrapper(sqrt),
