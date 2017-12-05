@@ -20,6 +20,26 @@
 #
 from joy.library import initialize
 from joy.joy import repl
+from joy.library import DefinitionWrapper
+
+
+D = initialize()
+DefinitionWrapper.add_definitions('''
+
+
+
+
+
+
+     TS0 == [not] swap unit [pop] swoncat
+     TS1 == [dip] cons [uncons] swoncat
+treestep == swap [map] swoncat [TS1 [TS0] dip] dip genrec
+
+Q == [tuck / + 2 /] unary
+eps == [sqr - abs] nullary
+K == [<] [popop swap pop] [popd [Q eps] dip] primrec
+''', D)
+
 
 print '''\
 Joypy - Copyright © 2017 Simon Forman
@@ -29,4 +49,5 @@ under certain conditions; type "sharing" for details.
 Type "words" to see a list of all words, and "[<name>] help" to print the
 docs for a word.
 '''
-stack = repl(dictionary=initialize())
+stack = repl(dictionary=D)
+

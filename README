@@ -51,7 +51,7 @@ changing the pending expression that the interpreter is about to execute.
 In concrete terms, the combinators could work by making recursive calls
 to the interpreter and all intermediate state would be held in the call
 stack of the implementation language, in this Joypy implementation they
-work instead by changing the pending expression, and intermediate state
+work instead by changing the pending expression and intermediate state
 is put there.
 
 As I study Joy I find that it is very aptly named.  It is clear, concise,
