@@ -100,6 +100,7 @@ range == [0 <=] [1 - dup] anamorphism
 while == swap [nullary] cons dup dipd concat loop
 dudipd == dup dipd
 primrec == [i] genrec
+step_zero == 0 roll> step
 '''
 
 ##Zipper
@@ -133,14 +134,20 @@ primrec == [i] genrec
 class FunctionWrapper(object):
   '''
   Allow functions to have a nice repr().
+
+  At some point it's likely this class and its subclasses would gain
+  machinery to support type checking and inference.
   '''
 
   def __init__(self, f):
     self.f = f
-    self.name = f.__name__.rstrip('_')
+    self.name = f.__name__.rstrip('_')  # Don't shadow builtins.
     self.__doc__ = f.__doc__ or str(f)
 
   def __call__(self, stack, expression, dictionary):
+    '''
+    Functions in general receive and return all three.
+    '''
     return self.f(stack, expression, dictionary)
 
   def __repr__(self):
@@ -148,12 +155,18 @@ class FunctionWrapper(object):
 
 
 class SimpleFunctionWrapper(FunctionWrapper):
+  '''
+  Wrap functions that take and return just a stack.
+  '''
 
   def __call__(self, stack, expression, dictionary):
     return self.f(stack), expression, dictionary
 
 
 class BinaryBuiltinWrapper(FunctionWrapper):
+  '''
+  Wrap functions that take two arguments and return a single result.
+  '''
 
   def __call__(self, stack, expression, dictionary):
     (a, (b, stack)) = stack
@@ -162,6 +175,9 @@ class BinaryBuiltinWrapper(FunctionWrapper):
 
 
 class UnaryBuiltinWrapper(FunctionWrapper):
+  '''
+  Wrap functions that take one argument and return a single result.
+  '''
 
   def __call__(self, stack, expression, dictionary):
     (a, stack) = stack
@@ -171,7 +187,7 @@ class UnaryBuiltinWrapper(FunctionWrapper):
 
 class DefinitionWrapper(FunctionWrapper):
   '''
-  Allow functions to have a nice repr().
+  Provide implementation of defined functions, and some helper methods.
   '''
 
   def __init__(self, name, body_text, doc=None):
@@ -338,6 +354,12 @@ def select(stack):
   (flag, (choices, stack)) = stack
   (else_, (then, _)) = choices
   return then if flag else else_, stack
+
+
+def max_(S):
+  '''Given a list find the maximum.'''
+  tos, stack = S
+  return max(iter_stack(tos)), stack
 
 
 def min_(S):
@@ -561,6 +583,12 @@ def pm(stack):
   a, (b, stack) = stack
   p, m, = b + a, b - a
   return m, (p, stack)
+
+
+def floor(n):
+  return int(math.floor(n))
+
+floor.__doc__ = math.floor.__doc__
 
 
 def sqrt(a):
@@ -1147,6 +1175,7 @@ builtins = (
   BinaryBuiltinWrapper(operator.xor),
 
   UnaryBuiltinWrapper(abs),
+  UnaryBuiltinWrapper(floor),
   UnaryBuiltinWrapper(operator.neg),
   UnaryBuiltinWrapper(operator.not_),
   UnaryBuiltinWrapper(sqrt),
@@ -1194,6 +1223,7 @@ primitives = (
   SimpleFunctionWrapper(first),
   SimpleFunctionWrapper(getitem),
   SimpleFunctionWrapper(id_),
+  SimpleFunctionWrapper(max_),
   SimpleFunctionWrapper(min_),
   SimpleFunctionWrapper(over),
   SimpleFunctionWrapper(parse),

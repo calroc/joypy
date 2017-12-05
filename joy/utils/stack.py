@@ -104,7 +104,7 @@ def stack_to_string(stack):
   return _to_string(stack, f)
 
 
-def expression_to_string(expression, ltr=False):
+def expression_to_string(expression):
   '''
   Return a "pretty print" string for a expression.
 
