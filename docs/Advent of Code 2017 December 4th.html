@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head><meta charset="utf-8" />
-<title>Advent of Code 2017 December 2nd</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
+<title>Advent of Code 2017 December 4th</title><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
 
 <style type="text/css">
@@ -11775,20 +11775,14 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="Advent-of-Code-2017">Advent of Code 2017<a class="anchor-link" href="#Advent-of-Code-2017">&#182;</a></h1><h2 id="December-2nd">December 2nd<a class="anchor-link" href="#December-2nd">&#182;</a></h2><p>For each row, determine the difference between the largest value and the smallest value; the checksum is the sum of all of these differences.</p>
-<p>For example, given the following spreadsheet:</p>
-
-<pre><code>5 1 9 5
-7 5 3
-2 4 6 8
-
-</code></pre>
+<h1 id="Advent-of-Code-2017">Advent of Code 2017<a class="anchor-link" href="#Advent-of-Code-2017">&#182;</a></h1><h2 id="December-4th">December 4th<a class="anchor-link" href="#December-4th">&#182;</a></h2><p>To ensure security, a valid passphrase must contain no duplicate words.</p>
+<p>For example:</p>
 <ul>
-<li>The first row's largest and smallest values are 9 and 1, and their difference is 8.</li>
-<li>The second row's largest and smallest values are 7 and 3, and their difference is 4.</li>
-<li>The third row's difference is 6.</li>
+<li>aa bb cc dd ee is valid.</li>
+<li>aa bb cc dd aa is not valid - the word aa appears more than once.</li>
+<li>aa bb cc dd aaa is valid - aa and aaa count as different words.</li>
 </ul>
-<p>In this example, the spreadsheet's checksum would be 8 + 4 + 6 = 18.</p>
+<p>The system's full passphrase list is available as your puzzle input. How many passphrases are valid?</p>
 
 </div>
 </div>
@@ -11813,13 +11807,13 @@ div#notebook {
 <p>I'll assume the input is a Joy sequence of sequences of integers.</p>
 
 <pre><code>[[5 1 9 5]
- [7 5 3]
+ [7 5 4 3]
  [2 4 6 8]]
 
 </code></pre>
 <p>So, obviously, the initial form will be a <code>step</code> function:</p>
 
-<pre><code>AoC2017.2 == 0 swap [F +] step</code></pre>
+<pre><code>AoC2017.4 == 0 swap [F +] step</code></pre>
 
 </div>
 </div>
@@ -11828,7 +11822,17 @@ div#notebook {
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>This function <code>F</code> must get the <code>max</code> and <code>min</code> of a row of numbers and subtract.  We can define a helper function <code>maxmin</code> which does this:</p>
+
+<pre><code>F == [size] [unique size] cleave =</code></pre>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>The <code>step_zero</code> combinator includes the <code>0 swap</code> that would normally open one of these definitions:</p>
 
 </div>
 </div>
@@ -11838,82 +11842,66 @@ div#notebook {
 <div class="prompt input_prompt">In&nbsp;[2]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;maxmin == [max] [min] cleave&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[step_zero] help&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
 </div>
 </div>
 
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area">
+
+<div class="prompt"></div>
+
+
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>0 roll&gt; step
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+
+<pre><code>AoC2017.4 == [F +] step_zero</code></pre>
+
+</div>
+</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[1 2 3] maxmin&#39;</span><span class="p">)</span>
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;AoC2017.4 == [[size] [unique size] cleave = +] step_zero&#39;</span><span class="p">)</span>
 </pre></div>
 
 </div>
 </div>
 </div>
 
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>3 1
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Then <code>F</code> just does that then subtracts the min from the max:</p>
-
-<pre><code>F == maxmin -
-
-</code></pre>
-<p>So:</p>
-
-</div>
-</div>
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;AoC2017.2 == [maxmin - +] step_zero&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
-<div class="inner_cell">
-    <div class="input_area">
 <div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
 
 <span class="s1">[[5 1 9 5]</span>
-<span class="s1"> [7 5 3]</span>
-<span class="s1"> [2 4 6 8]] AoC2017.2</span>
+<span class="s1"> [7 5 4 3]</span>
+<span class="s1"> [2 4 6 8]] AoC2017.4</span>
 
 <span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
 </pre></div>
@@ -11932,543 +11920,7 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>18
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>...find the only two numbers in each row where one evenly divides the other - that is, where the result of the division operation is a whole number. They would like you to find those numbers on each line, divide them, and add up each line's result.</p>
-<p>For example, given the following spreadsheet:</p>
-
-<pre><code>5 9 2 8
-9 4 7 3
-3 8 6 5
-
-</code></pre>
-<ul>
-<li>In the first row, the only two numbers that evenly divide are 8 and 2; the result of this division is 4.</li>
-<li>In the second row, the two numbers are 9 and 3; the result is 3.</li>
-<li>In the third row, the result is 2.</li>
-</ul>
-<p>In this example, the sum of the results would be 4 + 3 + 2 = 9.</p>
-<p>What is the sum of each row's result in your puzzle input?</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[5 9 2 8] sort reverse&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[9 8 5 2]
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[9 8 5 2] uncons [swap [divmod] cons] dupdip&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[8 5 2] [9 divmod] [8 5 2]
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-
-<pre><code>[9 8 5 2] uncons [swap [divmod] cons F] dupdip G
-  [8 5 2]            [9 divmod]      F [8 5 2] G</code></pre>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">V</span><span class="p">(</span><span class="s1">&#39;[8 5 2] [9 divmod] [uncons swap] dip dup [i not] dip&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>                                      . [8 5 2] [9 divmod] [uncons swap] dip dup [i not] dip
-                              [8 5 2] . [9 divmod] [uncons swap] dip dup [i not] dip
-                   [8 5 2] [9 divmod] . [uncons swap] dip dup [i not] dip
-     [8 5 2] [9 divmod] [uncons swap] . dip dup [i not] dip
-                              [8 5 2] . uncons swap [9 divmod] dup [i not] dip
-                              8 [5 2] . swap [9 divmod] dup [i not] dip
-                              [5 2] 8 . [9 divmod] dup [i not] dip
-                   [5 2] 8 [9 divmod] . dup [i not] dip
-        [5 2] 8 [9 divmod] [9 divmod] . [i not] dip
-[5 2] 8 [9 divmod] [9 divmod] [i not] . dip
-                   [5 2] 8 [9 divmod] . i not [9 divmod]
-                              [5 2] 8 . 9 divmod not [9 divmod]
-                            [5 2] 8 9 . divmod not [9 divmod]
-                            [5 2] 1 1 . not [9 divmod]
-                        [5 2] 1 False . [9 divmod]
-             [5 2] 1 False [9 divmod] . 
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="Tricky">Tricky<a class="anchor-link" href="#Tricky">&#182;</a></h2><p>Let's think.</p>
-<p>Given a <em>sorted</em> sequence (from highest to lowest) we want to</p>
-<ul>
-<li>for head, tail in sequence<ul>
-<li>for term in tail:<ul>
-<li>check if the head % term == 0<ul>
-<li>if so compute head / term and terminate loop</li>
-<li>else continue</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="So-we-want-a-loop-I-think">So we want a <code>loop</code> I think<a class="anchor-link" href="#So-we-want-a-loop-I-think">&#182;</a></h3>
-<pre><code>[a b c d] True [Q] loop
-[a b c d] Q    [Q] loop
-
-</code></pre>
-<p><code>Q</code> should either leave the result and False, or the <code>rest</code> and True.</p>
-
-<pre><code>   [a b c d] Q
------------------
-    result 0
-
-   [a b c d] Q
------------------
-    [b c d] 1</code></pre>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>This suggests that <code>Q</code> should start with:</p>
-
-<pre><code>[a b c d] uncons dup roll&lt;
-[b c d] [b c d] a
-
-</code></pre>
-<p>Now we just have to <code>pop</code> it if we don't need it.</p>
-
-<pre><code>[b c d] [b c d] a [P] [T] [cons] app2 popdd [E] primrec
-[b c d] [b c d] [a P] [a T]                 [E] primrec
-
-</code></pre>
-<hr>
-
-<pre><code>w/ Q == [% not] [T] [F] primrec
-
-        [a b c d] uncons
-        a [b c d] tuck
-[b c d] a [b c d] uncons
-[b c d] a b [c d] roll&gt;
-[b c d] [c d] a b Q
-[b c d] [c d] a b [% not] [T] [F] primrec
-
-[b c d] [c d] a b T
-[b c d] [c d] a b / roll&gt; popop 0
-
-[b c d] [c d] a b F                   Q
-[b c d] [c d] a b pop swap uncons ... Q
-[b c d] [c d] a       swap uncons ... Q
-[b c d] a [c d]            uncons ... Q
-[b c d] a c [d]                   roll&gt; Q
-[b c d] [d] a c Q
-
-Q == [% not] [/ roll&gt; popop 0] [pop swap uncons roll&gt;] primrec
-
-uncons tuck uncons roll&gt; Q</code></pre>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[9]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[8 5 3 2] 9 [swap] [% not] [cons] app2 popdd&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>[8 5 3 2] [9 swap] [9 % not]
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<hr>
-
-<pre><code>        [a b c d] uncons
-        a [b c d] tuck
-[b c d] a [b c d] [not] [popop 1] [Q] ifte
-
-[b c d] a [] popop 1
-[b c d] 1
-
-[b c d] a [b c d] Q 
-
-
-   a [...] Q
----------------
-   result 0
-
-   a [...] Q
----------------
-       1
-
-
-w/ Q == [first % not] [first / 0] [rest [not] [popop 1]] [ifte]
-
-
-
-a [b c d] [first % not] [first / 0] [rest [not] [popop 1]] [ifte]
-a [b c d]  first % not
-a b % not
-a%b not
-bool(a%b)
-
-a [b c d] [first % not] [first / 0] [rest [not] [popop 1]] [ifte]
-a [b c d]                first / 0
-a b / 0
-a/b 0
-
-a [b c d] [first % not] [first / 0] [rest [not] [popop 1]]   [ifte]
-a [b c d]                            rest [not] [popop 1] [Q] ifte
-a [c d]                                   [not] [popop 1] [Q] ifte
-a [c d]                                   [not] [popop 1] [Q] ifte
-
-a [c d] [not] [popop 1] [Q] ifte
-a [c d]  not
-
-a [] popop 1
-1
-
-a [c d] Q
-
-
-uncons tuck [first % not] [first / 0] [rest [not] [popop 1]] [ifte]</code></pre>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="I-finally-sat-down-with-a-piece-of-paper-and-blocked-it-out.">I finally sat down with a piece of paper and blocked it out.<a class="anchor-link" href="#I-finally-sat-down-with-a-piece-of-paper-and-blocked-it-out.">&#182;</a></h3><p>First, I made a function <code>G</code> that expects a number and a sequence of candidates and return the result or zero:</p>
-
-<pre><code>   n [...] G
----------------
-    result
-
-   n [...] G
----------------
-       0
-
-</code></pre>
-<p>It's a recursive function that conditionally executes the recursive part of its recursive branch</p>
-
-<pre><code>[Pg] [E] [R1 [Pi] [T]] [ifte] genrec
-
-</code></pre>
-<p>The recursive branch is the else-part of the inner <code>ifte</code>:</p>
-
-<pre><code>G == [Pg] [E] [R1 [Pi] [T]]   [ifte] genrec
-  == [Pg] [E] [R1 [Pi] [T] [G] ifte] ifte
-
-</code></pre>
-<p>But this is in hindsight.  Going forward I derived:</p>
-
-<pre><code>G == [first % not]
-     [first /]
-     [rest [not] [popop 0]]
-     [ifte] genrec
-
-</code></pre>
-<p>The predicate detects if the <code>n</code> can be evenly divided by the <code>first</code> item in the list.  If so, the then-part returns the result.  Otherwise, we have:</p>
-
-<pre><code>n [m ...] rest [not] [popop 0] [G] ifte
-n [...]        [not] [popop 0] [G] ifte
-
-</code></pre>
-<p>This <code>ifte</code> guards against empty sequences and returns zero in that case, otherwise it executes <code>G</code>.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;G == [first % not] [first /] [rest [not] [popop 0]] [ifte] genrec&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we need a word that uses <code>G</code> on each (head, tail) pair of a sequence until it finds a (non-zero) result.  It's going to be designed to work on a stack that has some candidate <code>n</code>, a sequence of possible divisors, and a result that is zero to signal to continue (a non-zero value implies that it is the discovered result):</p>
-
-<pre><code>   n [...] p find-result
----------------------------
-          result
-
-</code></pre>
-<p>It applies <code>G</code> using <code>nullary</code> because if it fails with one candidate it needs the list to get the next one (the list is otherwise consumed by <code>G</code>.)</p>
-
-<pre><code>find-result == [0 &gt;] [roll&gt; popop] [roll&lt; popop uncons [G] nullary] primrec
-
-n [...] p [0 &gt;] [roll&gt; popop] [roll&lt; popop uncons [G] nullary] primrec
-
-</code></pre>
-<p>The base-case is trivial, return the (non-zero) result.  The recursive branch...</p>
-
-<pre><code>n [...] p roll&lt; popop uncons [G] nullary find-result
-[...] p n       popop uncons [G] nullary find-result
-[...]                 uncons [G] nullary find-result
-m [..]                       [G] nullary find-result
-m [..] p                                 find-result
-
-</code></pre>
-<p>The puzzle states that the input is well-formed, meaning that we can expect a result before the row sequence empties and so do not need to guard the <code>uncons</code>.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[11]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;find-result == [0 &gt;] [roll&gt; popop] [roll&lt; popop uncons [G] nullary] primrec&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[14]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;[11 9 8 7 3 2] 0 tuck find-result&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>3.0
-</pre>
-</div>
-</div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>In order to get the thing started, we need to <code>sort</code> the list in descending order, then prime the <code>find-result</code> function with a dummy candidate value and zero ("continue") flag.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[12]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;prep-row == sort reverse 0 tuck&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div>
-<div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Now we can define our program.</p>
-
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[13]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">define</span><span class="p">(</span><span class="s1">&#39;AoC20017.2.extra == [prep-row find-result +] step_zero&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In&nbsp;[15]:</div>
-<div class="inner_cell">
-    <div class="input_area">
-<div class=" highlight hl-ipython2"><pre><span></span><span class="n">J</span><span class="p">(</span><span class="s1">&#39;&#39;&#39;</span>
-
-<span class="s1">[[5 9 2 8]</span>
-<span class="s1"> [9 4 7 3]</span>
-<span class="s1"> [3 8 6 5]] AoC20017.2.extra</span>
-
-<span class="s1">&#39;&#39;&#39;</span><span class="p">)</span>
-</pre></div>
-
-</div>
-</div>
-</div>
-
-<div class="output_wrapper">
-<div class="output">
-
-
-<div class="output_area">
-
-<div class="prompt"></div>
-
-
-<div class="output_subarea output_stream output_stdout output_text">
-<pre>9.0
+<pre>2
 </pre>
 </div>
 </div>

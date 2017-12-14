@@ -145,7 +145,84 @@ J('[9 1 2 1 2 1 2 9] AoC2017.1')
     9
 
 
+
+```python
+J('[9 1 2 1 2 1 2 9] AoC2017.1')
+```
+
+    9
+
+
           pair_up == dup uncons swap unit concat zip
     total_matches == 0 swap [i [=] [pop +] [popop] ifte] step
 
         AoC2017.1 == pair_up total_matches
+
+Now the paired digit is "halfway" round.
+
+    [a b c d] dup size 2 / [drop] [take reverse] cleave concat zip
+
+
+```python
+J('[1 2 3 4] dup size 2 / [drop] [take reverse] cleave concat zip')
+```
+
+    [[3 1] [4 2] [1 3] [2 4]]
+
+
+I realized that each pair is repeated...
+
+
+```python
+J('[1 2 3 4] dup size 2 / [drop] [take reverse] cleave  zip')
+```
+
+    [1 2 3 4] [[1 3] [2 4]]
+
+
+
+```python
+define('AoC2017.1.extra == dup size 2 / [drop] [take reverse] cleave  zip swap pop total_matches 2 *')
+```
+
+
+```python
+J('[1 2 1 2] AoC2017.1.extra')
+```
+
+    6
+
+
+
+```python
+J('[1 2 2 1] AoC2017.1.extra')
+```
+
+    0
+
+
+
+```python
+J('[1 2 3 4 2 5] AoC2017.1.extra')
+```
+
+    4
+
+
+# Refactor FTW
+
+With Joy a great deal of the heuristics from Forth programming carry over nicely.  For example, refactoring into small, well-scoped commands with mnemonic names...
+
+             rotate_seq == uncons swap unit concat
+                pair_up == dup rotate_seq zip
+           add_if_match == [=] [pop +] [popop] ifte
+          total_matches == [i add_if_match] step_zero
+
+              AoC2017.1 == pair_up total_matches
+
+           half_of_size == dup size 2 /
+               split_at == [drop] [take reverse] cleave
+          pair_up.extra == half_of_size split_at zip swap pop
+
+        AoC2017.1.extra == pair_up.extra total_matches 2 *
+
