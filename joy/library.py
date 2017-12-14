@@ -393,6 +393,20 @@ def remove(S):
   return list_to_stack(l), stack
 
 
+def unique(S):
+  '''Given a list remove duplicate items.'''
+  tos, stack = S
+  I = list(iter_stack(tos))
+  list_to_stack(sorted(set(I), key=I.index))
+  return list_to_stack(sorted(set(I), key=I.index)), stack
+
+
+def sort_(S):
+  '''Given a list return it sorted.'''
+  tos, stack = S
+  return list_to_stack(sorted(iter_stack(tos))), stack
+
+
 def cons(S):
   '''
   The cons operator expects a list on top of the stack and the potential
@@ -589,6 +603,14 @@ def floor(n):
   return int(math.floor(n))
 
 floor.__doc__ = math.floor.__doc__
+
+
+def divmod_(S):
+  a, (b, stack) = S
+  d, m = divmod(a, b)
+  return d, (m, stack)
+
+divmod_.__doc__ = divmod.__doc__
 
 
 def sqrt(a):
@@ -1217,6 +1239,7 @@ primitives = (
   SimpleFunctionWrapper(clear),
   SimpleFunctionWrapper(concat),
   SimpleFunctionWrapper(cons),
+  SimpleFunctionWrapper(divmod_),
   SimpleFunctionWrapper(drop),
   SimpleFunctionWrapper(dup),
   SimpleFunctionWrapper(dupd),
@@ -1240,6 +1263,7 @@ primitives = (
   SimpleFunctionWrapper(rollup),
   SimpleFunctionWrapper(select),
   SimpleFunctionWrapper(shunt),
+  SimpleFunctionWrapper(sort_),
   SimpleFunctionWrapper(stack_),
   SimpleFunctionWrapper(succ),
   SimpleFunctionWrapper(sum_),
@@ -1249,6 +1273,7 @@ primitives = (
   SimpleFunctionWrapper(truthy),
   SimpleFunctionWrapper(tuck),
   SimpleFunctionWrapper(uncons),
+  SimpleFunctionWrapper(unique),
   SimpleFunctionWrapper(unstack),
   SimpleFunctionWrapper(unstack),
   SimpleFunctionWrapper(void),
