@@ -24,6 +24,37 @@ from joy.library import DefinitionWrapper
 
 
 D = initialize()
+
+
+from joy.library import SimpleFunctionWrapper
+from joy.utils.stack import list_to_stack
+
+
+@SimpleFunctionWrapper
+def incr_at(stack):
+    '''Given a index and a sequence of integers, increment the integer at the index.
+
+    E.g.:
+
+       3 [0 1 2 3 4 5] incr_at
+    -----------------------------
+         [0 1 2 4 4 5]
+    
+    '''
+    sequence, (i, stack) = stack
+    mem = []
+    while i >= 0:
+        term, sequence = sequence
+        mem.append(term)
+        i -= 1
+    mem[-1] += 1
+    return list_to_stack(mem, sequence), stack
+
+
+D['incr_at'] = incr_at
+
+
+
 DefinitionWrapper.add_definitions('''
 
 
@@ -38,6 +69,18 @@ treestep == swap [map] swoncat [TS1 [TS0] dip] dip genrec
 Q == [tuck / + 2 /] unary
 eps == [sqr - abs] nullary
 K == [<] [popop swap pop] [popd [Q eps] dip] primrec
+
+
+
+get_value == [roll< at] nullary
+incr_value == [[popd incr_at] unary] dip
+add_value == [+] cons dipd
+incr_step_count == [++] dip
+
+F == [popop 5 >=] [roll< popop] [get_value incr_value add_value incr_step_count] primrec
+
+G == [first % not] [first /] [rest [not] [popop 0]] [ifte] genrec
+
 ''', D)
 
 
