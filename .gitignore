@@ -2,3 +2,4 @@
 build/
 dist/
 Joypy.egg-info/
+docs/.ipynb_checkpoints/
