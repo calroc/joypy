@@ -53,7 +53,7 @@ In Joypy all the combinators work by modifying the pending expression.  We have 
 
 Simple functions ignore the expression and pass it through unchanged, combinators do not.  They can modify it and this is enough to define control-flow and other operators.
 
-Actually...  In Joypy the functions all also include a dictionary parameter.  This allows for functions like `print_words` and `help`.  It also allows for the definition of a `define` function which would let Joy code add new definitions to the dictionary during evaluation, but this is an area I am leaving unexplored at least for now.  It is essentially name-binding (variables) sneaking in, breaking the purity of the system.
+(Actually...  In Joypy the functions all also include a dictionary parameter.  This allows for functions like `print_words` and `help`.  It also allows for the definition of a `define` function which would let Joy code add new definitions to the dictionary during evaluation, but this is an area I am leaving unexplored at least for now.  It is essentially name-binding (variables) sneaking in, breaking the purity of the system.)
 
 
 ## Evaluation
@@ -95,7 +95,7 @@ Code that uses `pm` will will work the same but more quickly if the "compiled" v
 
 It would be remiss not to mention **Cython** in this connection.  Many Joy functions can be transparently compiled down to machine code.
 
-Beyond the above, it should be possible to make use of much of the existing body of knowledge for compiling *functional programming* languages to machine code for making an actual Joy compiler.  Joy omits many "features" that are common to most other languages, lambda abstraction and `let` statements for example.  I have not had the time to investigate compilation of Joy in any depth so far, but I have high hopes.
+Beyond the above, it should be possible to make use of much of the existing body of knowledge for compiling *functional programming* languages to machine code for making an actual Joy compiler.  Joy omits many "features" that are common to most other languages, lambda abstraction and `let` statements for example.  I have not had the time to investigate compilation of Joy in any depth so far, but I have high hopes.  It should be possible (and most of the details will have been already worked out in other languages) to go from e.g. the definition form of `pm` to the Python form automatically.
 
 
 ## Partial Evaluation
@@ -239,7 +239,7 @@ In a command-line setting you perform both of these actions the same way: enteri
 
 In order to use their system(s) users must be able to easily and quickly develop a mental model of the system that maps to the actual system abstractions well enough to support the achievement of their goals.
 
-Arguably current systems are pretty poor at this.  Even an abstraction as old and ubiquitous as "filesystem" is only incompletely understood by many computer users.  Many people do not understand the difference between RAM and disk storage!
+(Arguably current systems are pretty poor at this.  Even an abstraction as old and ubiquitous as "filesystem" is only incompletely understood by many computer users.  Many people do not understand the difference between RAM and disk storage!)
 
 The Joy model consists of just these main concepts:
 
@@ -260,12 +260,12 @@ Cf. Graal & Truffle
 
 Universal Solvent
 
-Front-ends for translating other languages into Joy, thence to be refactored and fulminated into more efficient forms.  "The Blob" of software.
+Can write front-ends for translating other languages into Joy, thence to be refactored and fulminated into more efficient forms.  "The Blob" of software.
 
 
 # Minimal Basis
 
-SKI combinators, Peano arithmentic, Church numerals et. al.,
+Cf. SKI combinators, Peano arithmentic, Church numerals et. al.,
 
 Folks have done work on figuring out the minimal set of combinators that are Turing-complete.  Several of these sets are quite small.
 
@@ -339,7 +339,13 @@ It would also be possible to make a dictionary that mapped the math functions to
 
 
 
+# Stack-based laguages as Dataflow
 
+If the "places" in a stack are considered first-class entities and tracked through "stack chatter" operations (like `swap`) we can draw flow-lines for the data and represent the functions as boxes with input and output lines.  Stack chatter becomes topological rearrangements of lines.  The resulting structure is conceptually identical with *Dataflow* paradigm of programming.
+
+(Related to this I suspect that all stack chatter disappears during compilation but I haven't nailed that down yet.)
+
+I'm unable to find the original webpage that describe the above.  :-(
 
 
 
@@ -396,8 +402,10 @@ It would also be possible to make a dictionary that mapped the math functions to
     1 1 >> u_u_*_dup_* sqr           u_u_u_*_dup_*_*
     0      u_u_*_dup_* dup *         u_u_u_*_dup_*_*
     0      u_u_*_dup_* u_u_*_dup_* * u_u_u_*_dup_*_*
+    0      u_..._*                   u_u_u_*_dup_*_*
 
+    0      u_..._*                   u_u_u_*_dup_*_* [popop] dip
 
-    u 
+    u_u_u_*_dup_*_*
     
     ^5 == dup dup * dup * *
