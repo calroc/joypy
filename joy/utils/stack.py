@@ -116,14 +116,15 @@ def expression_to_string(expression):
 
 
 def _to_string(stack, f):
+  if isinstance(stack, long): return str(stack).rstrip('L')
   if not isinstance(stack, tuple): return repr(stack)
   if not stack: return ''  # shortcut
   return ' '.join(map(_s, f(stack)))
 
 
 _s = lambda s: (
-  '[%s]' % expression_to_string(s)
-  if isinstance(s, tuple)
+  '[%s]' % expression_to_string(s) if isinstance(s, tuple)
+  else str(s).rstrip('L') if isinstance(s, long)
   else repr(s)
   )
 
