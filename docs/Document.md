@@ -153,6 +153,65 @@ Here it is in action:
 
 See the appendix below for the derivation of the specialized form from the general form.
 
+It should be possible to write a program `FutamuraI` that works like this:
+
+        [5] [F] FutamuraI
+    -------------------------
+       [dup dup * dup * *]
+
+
+That is, given the quoted program `[F]` and the argument `5`, it returns the new `to-the-fifth` function in quoted form.
+
+
+### First Futamura Projection
+
+A joy interpreter written in Joy is described in the literature (available from the La Trobe archive or the mirror site) so we can apply the program `FutamuraI` to that to get a *residual* program `R` for some program `Q`:
+
+       [Q] [joy] FutamuraI
+    -------------------------
+              [R]
+
+The expected result is that, for a given input, the runtime of `R` is less than or equal to the runtime of `Q`.
+
+If we had a partial evaluator for Python we could create a residual program in Python for the Joy program `Q`.
+
+
+### Second Futamura Projection
+
+       [joy] [FutamuraI] FutamuraI
+    ---------------------------------
+                [C]
+
+Making a compiler by "specializing the specializer for the interpreter".
+
+
+### Third Futamura Projection
+
+       [FutamuraI] [FutamuraI] FutamuraI
+    ---------------------------------------
+                     [K]
+
+"Specializing the specializer for itself yielding a tool that can convert any interpreter to an equivalent compiler"
+
+       [joy] K
+    -------------
+         [C]
+
+
+
+       [Q] [joy] K i 
+    -------------------
+           [Q] C
+        -----------
+            [R]
+
+
+
+
+    [K] K -> [K]
+
+
+
 
 ## Super-Compilation
 
@@ -183,7 +242,7 @@ The above also suggests a new combinator, call it `dipdip` that abstracts the pa
     ----------------------------
            ... F a G b
 
-This permits the compiler to make whatever optimizations without having to work to notice the pattern.  The `dipdip` function and the interpreter can work together to do the more efficient thing.
+This permits the compiler to make optimizations without having to work to notice the pattern.  The `dipdip` function and the interpreter can work together to do the more efficient thing.
 
 Joy function definitions form Directed Graphs.  Not acyclical though, definition bodies do not contain references to other functions, but rather "Symbols" that name functions, so you can form e.g. two definitions that each make use of the other.  Generally speaking though, you don't do this, instead you write definitions that use e.g. `genrec` general recursion combinator. 
 
@@ -346,7 +405,6 @@ If the "places" in a stack are considered first-class entities and tracked throu
 (Related to this I suspect that all stack chatter disappears during compilation but I haven't nailed that down yet.)
 
 I'm unable to find the original webpage that describe the above.  :-(
-
 
 
 # Appendix Partial Evaluation Example
